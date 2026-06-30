@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class FichePaie extends Model
+{
+    use HasFactory;
+
+    protected $table = 'fiche_paies';
+
+    protected $fillable = [
+        'employe_id',
+        'mois_annee',
+        'net_a_payer',
+    ];
+
+    protected $casts = [
+        'net_a_payer' => 'decimal:2',
+    ];
+
+    public function employe()
+    {
+        return $this->belongsTo(Employe::class, 'employe_id');
+    }
+
+    public function fluxTresorerie()
+    {
+        return $this->hasOne(FluxTresorerie::class, 'fiche_paie_id');
+    }
+}
