@@ -15,6 +15,7 @@ class AssetController extends Controller
      */
     public function index()
     {
+        // On récupère les matériels avec leurs relations (Eager Loading)
         $assets = AssetMateriel::with(['typeMateriel', 'users'])->get();
         return view('assets.index', compact('assets'));
     }
@@ -24,8 +25,9 @@ class AssetController extends Controller
      */
     public function create()
     {
+        // On récupère les données nécessaires pour alimenter les listes déroulantes du formulaire
         $types = TypeMateriel::all();
-        $users = User::all(); // Pour l'assignation optionnelle au moment de la création
+        $users = User::all();
         return view('assets.create', compact('types', 'users'));
     }
 
@@ -34,31 +36,35 @@ class AssetController extends Controller
      */
     public function store(Request $request)
     {
+        // Validation des données du formulaire (Adaptée aux noms du modèle)
         $request->validate([
-            'num_serie'        => 'required|string|max:100|unique:asset_materiels',
+            'num_serie'        => 'required|string|max:100|unique:asset_materiels,num_serie',
             'marque'           => 'required|string|max:100',
             'modele'           => 'required|string|max:100',
-            'statut'           => 'required|in:disponible,attribue,en_panne,reforme',
+            'statut_materiel'  => 'required|in:disponible,attribue,en_panne,reforme', // Modifié ici !
             'type_materiel_id' => 'required|exists:type_materiels,id',
-            'user_id'          => 'nullable|exists:users,id', // L'attribution n'est pas obligatoire dès le départ (0,1)
+            'user_id'          => 'nullable|exists:users,id',
         ]);
 
+        // Utilisation de la transaction pour garantir le "Tout ou Rien"
         DB::transaction(function () use ($request) {
-            // 1. Création de l'asset
+
+            // 1. Création de l'asset en utilisant les clés exactes du modèle
             $asset = AssetMateriel::create([
                 'num_serie'        => $request->num_serie,
                 'marque'           => $request->marque,
                 'modele'           => $request->modele,
-                'statut'           => $request->statut,
+                'statut_materiel'  => $request->statut_materiel, // Modifié ici !
                 'type_materiel_id' => $request->type_materiel_id,
             ]);
 
-            // 2. Si un utilisateur est sélectionné, on crée l'assignation dans le pivot
+            // 2. Si un utilisateur est sélectionné, on écrit dans la table pivot via la relation ajoutée
             if ($request->filled('user_id')) {
                 $asset->users()->attach($request->user_id, ['date_assignation' => now()]);
             }
         });
 
+        // Redirection vers la liste avec un message Flash de succès
         return redirect()->route('assets.index')->with('success', 'Matériel enregistré dans le parc.');
     }
 }
