@@ -13,19 +13,20 @@ return new class extends Migration
     {
         Schema::create('stagiaires', function (Blueprint $table) {
             // Clé primaire et héritage avec la table 'users'
-            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('user_id')->primary();
 
             // Attributs propres au stagiaire
             $table->string('ecole_origine', 150);
             $table->text('sujet_stage');
 
             // Association : Un stagiaire est encadré obligatoirement par un employé (Clé Étrangère)
-            $table->foreignId('employe_id')->constrained('employes')->onDelete('restrict');
+            $table->unsignedBigInteger('employe_id');
 
             $table->timestamps();
 
             // Déclaration de la contrainte d'héritage d'identité
-            $table->foreign('id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('employe_id')->references('user_id')->on('employes')->onDelete('restrict');
         });
     }
 

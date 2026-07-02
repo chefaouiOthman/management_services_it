@@ -11,11 +11,12 @@ class Employe extends Model
 
     protected $table = 'employes';
 
+    protected $primaryKey = 'user_id';
     public $incrementing = false;
     protected $keyType = 'int';
 
     protected $fillable = [
-        'id',
+        'user_id',
         'date_embauche',
         'CIN',
         'departement_id',
@@ -27,7 +28,7 @@ class Employe extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function departement()
@@ -37,42 +38,41 @@ class Employe extends Model
 
     public function contrats()
     {
-        return $this->hasMany(Contrat::class, 'employe_id');
+        return $this->hasMany(Contrat::class, 'employe_id', 'user_id');
     }
 
     public function stagiairesEncadres()
     {
-        return $this->hasMany(Stagiaire::class, 'employe_id');
+        return $this->hasMany(Stagiaire::class, 'employe_id', 'user_id');
     }
 
     public function feuilleTemps()
     {
-        return $this->hasMany(FeuilleTemps::class, 'employe_id');
+        return $this->hasMany(FeuilleTemps::class, 'employe_id', 'user_id');
     }
 
     public function sessionsEnseignees()
     {
-        return $this->hasMany(SessionFormation::class, 'employe_id');
+        return $this->belongsToMany(SessionFormation::class, 'employe_session_formation', 'employe_id', 'session_formation_id');
     }
 
     public function ticketsMaintenanceSignales()
     {
-        return $this->hasMany(TicketMaintenance::class, 'employe_id');
+        return $this->hasMany(TicketMaintenance::class, 'user_id', 'user_id');
     }
 
     public function assignationsLicences()
     {
-        return $this->hasMany(AssignationLicence::class, 'employe_id');
+        return $this->hasMany(AssignationLicence::class, 'user_id', 'user_id');
     }
-
 
     public function fichePaies()
     {
-        return $this->hasMany(FichePaie::class, 'employe_id');
+        return $this->hasMany(FichePaie::class, 'employe_id', 'user_id');
     }
 
     public function noteDeFrais()
     {
-        return $this->hasMany(NoteDeFrais::class, 'employe_id');
+        return $this->hasMany(NoteDeFrais::class, 'employe_id', 'user_id');
     }
 }

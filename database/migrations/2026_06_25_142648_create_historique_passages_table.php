@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('zone_id');
             $table->dateTime('horodatage');
-            $table->enum('tentative_statut', ['accorde', 'refuse']);
+            $table->enum('tentative_statut', ['autorise', 'refuse_niveau_insuffisant', 'refuse_zone_desactivee']);
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

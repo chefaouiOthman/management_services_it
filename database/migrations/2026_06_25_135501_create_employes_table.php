@@ -12,21 +12,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('employes', function (Blueprint $table) {
-            // Clé primaire et héritage avec la table 'users'
-            $table->unsignedBigInteger('id')->primary();
+            // Clé primaire et héritage d'identité avec la table 'users'
+            $table->unsignedBigInteger('user_id')->primary();
 
             // Attributs propres de l'employé
             $table->date('date_embauche');
             $table->string('CIN', 50)->unique();
 
             // Association : Un employé appartient à un département (Clé Étrangère)
-            // On utilise foreignId pour plus de clarté
             $table->foreignId('departement_id')->constrained('departements')->onDelete('restrict');
 
             $table->timestamps();
 
             // Déclaration de la contrainte d'héritage d'identité
-            $table->foreign('id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

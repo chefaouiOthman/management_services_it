@@ -32,17 +32,17 @@ class User extends Authenticatable
 
     public function employe()
     {
-        return $this->hasOne(Employe::class, 'id');
+        return $this->hasOne(Employe::class, 'user_id');
     }
 
     public function stagiaire()
     {
-        return $this->hasOne(Stagiaire::class, 'id');
+        return $this->hasOne(Stagiaire::class, 'user_id');
     }
 
     public function client()
     {
-        return $this->hasOne(Client::class, 'id');
+        return $this->hasOne(Client::class, 'user_id');
     }
 
     public function pointages()

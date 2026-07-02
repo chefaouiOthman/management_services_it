@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('contrats', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employe_id');
-            $table->enum('type_contrat', ['CDI', 'CDD', 'Stage', 'Freelance']);
+            $table->enum('type_contrat', ['CDI', 'CDD', 'Freelance']);
             $table->date('date_debut');
             $table->date('date_fin')->nullable();
             $table->decimal('salaire_base', 10, 2);
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum('statut', ['actif', 'suspendu', 'termine']);
             $table->timestamps();
 
-            $table->foreign('employe_id')->references('id')->on('employes')->onDelete('cascade');
+            $table->foreign('employe_id')->references('user_id')->on('employes')->onDelete('cascade');
         });
     }
 

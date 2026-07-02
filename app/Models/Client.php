@@ -11,11 +11,12 @@ class Client extends Model
 
     protected $table = 'clients';
 
+    protected $primaryKey = 'user_id';
     public $incrementing = false;
     protected $keyType = 'int';
 
     protected $fillable = [
-        'id',
+        'user_id',
         'type_client',
         'nom_societe',
         'ice',
@@ -23,16 +24,16 @@ class Client extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function projets()
     {
-        return $this->hasMany(Projet::class, 'client_id');
+        return $this->hasMany(Projet::class, 'client_id', 'user_id');
     }
 
     public function factures()
     {
-        return $this->hasMany(Facture::class, 'client_id');
+        return $this->hasMany(Facture::class, 'client_id', 'user_id');
     }
 }

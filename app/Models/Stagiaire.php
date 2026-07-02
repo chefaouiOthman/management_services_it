@@ -11,11 +11,12 @@ class Stagiaire extends Model
 
     protected $table = 'stagiaires';
 
+    protected $primaryKey = 'user_id';
     public $incrementing = false;
     protected $keyType = 'int';
 
     protected $fillable = [
-        'id',
+        'user_id',
         'ecole_origine',
         'sujet_stage',
         'employe_id',
@@ -23,11 +24,11 @@ class Stagiaire extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function encadrant()
     {
-        return $this->belongsTo(Employe::class, 'employe_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
     }
 }
