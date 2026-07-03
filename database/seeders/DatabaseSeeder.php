@@ -2,21 +2,23 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     * Ordre d'exécution strict pour éviter les erreurs de clés étrangères.
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        $this->call([
+            RolesAndAdminSeeder::class, // Modèle Humain (Rôles, Admin)
+            HumainRHSeeder::class,      // Modèle Humain & RH (Employes, Stagiaires, Clients, Contrats)
+            ProductionSeeder::class,    // Modèle Production (Projets, Tâches, etc.)
+            FormationSeeder::class,     // Modèle Formation (Catalogues, Sessions, etc.)
+            AssetITSeeder::class,       // Modèle Actifs IT (Matériel, Licences)
+            FinanceSeeder::class,       // Modèle Finance (Flux liés aux précédentes entités)
+        ]);
     }
 }

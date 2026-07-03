@@ -14,11 +14,13 @@ return new class extends Migration
         Schema::create('fiche_paies', function (Blueprint $table) {
             $table->id(); // Id_fiche_paie [cite: 23]
             $table->unsignedBigInteger('employe_id');
+            $table->unsignedBigInteger('flux_tresorerie_id')->nullable();
             $table->string('mois_annee', 7);
             $table->decimal('net_a_payer', 10, 2);
             $table->timestamps();
 
-            $table->foreign('employe_id')->references('id')->on('employes')->onDelete('cascade');
+            $table->foreign('employe_id')->references('user_id')->on('employes')->onDelete('cascade');
+            $table->foreign('flux_tresorerie_id')->references('id')->on('flux_tresoreries')->onDelete('set null');
         });
     }
 

@@ -6,48 +6,119 @@ use App\Models\CatalogueFormation;
 use App\Models\SupportCours;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CatalogueFormationController extends Controller
 {
+    /**
+     * 1. INDEX
+     */
     public function index()
     {
-        $formations = CatalogueFormation::with('supports')->get();
-        return view('formations.catalogue.index', compact('formations'));
+        $catalogues = CatalogueFormation::with('supportCours')->get();
+        return view('catalogues.index', compact('catalogues'));
     }
 
+    /**
+     * 2. CREATE
+     */
     public function create()
     {
-        return view('formations.catalogue.create');
+        $supports = SupportCours::all();
+        return view('catalogues.create', compact('supports'));
     }
 
+    /**
+     * 3. STORE
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'titre'         => 'required|string|max:150',
-            'description'   => 'required|string',
-            'duree_heures'  => 'required|integer|min:1',
-            'nom_support'   => 'nullable|string|max:150',
-            'url_document'  => 'nullable|url',
+            'titre_formation'       => 'required|string|max:200|unique:catalogue_formations,titre_formation',
+            'description_programme' => 'required|string',
+            'prix_standard'         => 'required|numeric|min:0',
+            'supports'              => 'nullable|array',
+            'supports.*'            => 'exists:support_cours,id',
         ]);
 
         DB::transaction(function () use ($request) {
-            // 1. Création du cours dans le catalogue
-            $formation = CatalogueFormation::create([
-                'titre'        => $request->titre,
-                'description'  => $request->description,
-                'duree_heures' => $request->duree_heures,
+            $catalogue = CatalogueFormation::create([
+                'titre_formation'       => $request->titre_formation,
+                'description_programme' => $request->description_programme,
+                'prix_standard'         => $request->prix_standard,
             ]);
 
-            // 2. Ajout du support de cours si renseigné (Relation 1-N dépendante)
-            if ($request->filled('nom_support')) {
-                SupportCours::create([
-                    'catalogue_formation_id' => $formation->id,
-                    'nom_support'            => $request->nom_support,
-                    'url_document'           => $request->url_document,
-                ]);
+            if ($request->has('supports')) {
+                $catalogue->supportCours()->attach($request->supports);
             }
         });
 
-        return redirect()->route('catalogue.index')->with('success', 'Formation ajoutée au catalogue.');
+        return redirect()->route('catalogue.index')->with('success', 'Catalogue créé avec succès.');
+    }
+
+    /**
+     * 4. SHOW
+     */
+    public function show($id)
+    {
+        $catalogue = CatalogueFormation::with(['supportCours', 'sessions'])->findOrFail($id);
+        return view('catalogues.show', compact('catalogue'));
+    }
+
+    /**
+     * 5. EDIT
+     */
+    public function edit($id)
+    {
+        $catalogue = CatalogueFormation::with('supportCours')->findOrFail($id);
+        $supports = SupportCours::all();
+        return view('catalogues.edit', compact('catalogue', 'supports'));
+    }
+
+    /**
+     * 6. UPDATE
+     */
+    public function update(Request $request, $id)
+    {
+        $catalogue = CatalogueFormation::findOrFail($id);
+
+        $request->validate([
+            'titre_formation'       => ['required', 'string', 'max:200', Rule::unique('catalogue_formations')->ignore($catalogue->id)],
+            'description_programme' => 'required|string',
+            'prix_standard'         => 'required|numeric|min:0',
+            'supports'              => 'nullable|array',
+            'supports.*'            => 'exists:support_cours,id',
+        ]);
+
+        DB::transaction(function () use ($request, $catalogue) {
+            $catalogue->update([
+                'titre_formation'       => $request->titre_formation,
+                'description_programme' => $request->description_programme,
+                'prix_standard'         => $request->prix_standard,
+            ]);
+
+            if ($request->has('supports')) {
+                $catalogue->supportCours()->sync($request->supports);
+            } else {
+                $catalogue->supportCours()->detach();
+            }
+        });
+
+        return redirect()->route('catalogue.index')->with('success', 'Catalogue mis à jour avec succès.');
+    }
+
+    /**
+     * 7. DESTROY
+     */
+    public function destroy($id)
+    {
+        $catalogue = CatalogueFormation::findOrFail($id);
+
+        DB::transaction(function () use ($catalogue) {
+            $catalogue->supportCours()->detach();
+            $catalogue->delete();
+        });
+
+        return redirect()->route('catalogue.index')->with('success', 'Catalogue supprimé avec succès.');
     }
 }

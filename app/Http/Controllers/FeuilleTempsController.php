@@ -3,58 +3,169 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeuilleTemps;
-use App\Models\Tache;
 use App\Models\Employe;
+use App\Models\Projet;
+use App\Models\Tache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class FeuilleTempsController extends Controller
 {
     /**
-     * LISTE DES FEUILLES DE TEMPS
+     * 1. INDEX
      */
     public function index()
     {
-        $feuilles = FeuilleTemps::with(['employe.user', 'taches'])->get();
+        $query = FeuilleTemps::with(['employe.user', 'projet', 'taches']);
+        
+        if (!Auth::user()->hasRole('Admin')) {
+            $query->where('employe_id', Auth::id());
+        }
+
+        $feuilles = $query->get();
         return view('feuille_temps.index', compact('feuilles'));
     }
 
     /**
-     * FORMULAIRE DE CREATION
+     * 2. CREATE
      */
     public function create()
     {
-        $taches = Tache::all(); // Pour associer des tâches à la feuille de temps
-        return view('feuille_temps.create', compact('taches'));
+        $employes = Auth::user()->hasRole('Admin') ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $projets = Projet::all();
+        $taches = Tache::all();
+        return view('feuille_temps.create', compact('employes', 'projets', 'taches'));
     }
 
     /**
-     * ENREGISTREMENT ET VENTILATION DE LA FEUILLE DE TEMPS
+     * 3. STORE
      */
     public function store(Request $request)
     {
         $request->validate([
-            'date_soumission' => 'required|date',
-            'heures_declarees'=> 'required|numeric|min:0.5',
-            'tache_id'        => 'required|exists:taches,id', // Tâche principale liée
+            'employe_id'   => 'required|exists:employes,user_id',
+            'projet_id'    => 'required|exists:projets,id',
+            'date_effort'  => 'required|date',
+            'duree_heures' => 'required|numeric|min:0.5|max:24',
+            'commentaire'  => 'nullable|string',
+            'taches'       => 'nullable|array',
+            'taches.*'     => 'exists:taches,id',
         ]);
 
-        // L'ID de l'employé correspond à l'ID de l'User connecté (Héritage 1-1)
-        $employeId = auth()->id();
+        if (!Auth::user()->hasRole('Admin') && $request->employe_id != Auth::id()) {
+            abort(403, 'Vous ne pouvez pas créer de feuille de temps pour un autre employé.');
+        }
 
-        DB::transaction(function () use ($request, $employeId) {
-            // 1. Création de la feuille de temps
+        DB::transaction(function () use ($request) {
             $feuille = FeuilleTemps::create([
-                'employe_id'       => $employeId,
-                'date_soumission'  => $request->date_soumission,
-                'heures_declarees' => $request->heures_declarees,
-                'statut_validation'=> 'en_attente', // Statut par défaut
+                'employe_id'   => $request->employe_id,
+                'projet_id'    => $request->projet_id,
+                'date_effort'  => $request->date_effort,
+                'duree_heures' => $request->duree_heures,
+                'commentaire'  => $request->commentaire,
             ]);
 
-            // 2. Liaison immédiate dans la table pivot feuille_temps_tache
-            $feuille->taches()->attach($request->tache_id);
+            if ($request->has('taches')) {
+                $feuille->taches()->attach($request->taches);
+            }
         });
 
-        return redirect()->route('feuille_temps.index')->with('success', 'Feuille de temps soumise pour validation.');
+        return redirect()->route('feuille_temps.index')->with('success', 'Feuille de temps créée avec succès.');
+    }
+
+    /**
+     * 4. SHOW
+     */
+    public function show($id)
+    {
+        $feuille = FeuilleTemps::with(['employe.user', 'projet', 'taches'])->findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
+            abort(403);
+        }
+
+        return view('feuille_temps.show', compact('feuille'));
+    }
+
+    /**
+     * 5. EDIT
+     */
+    public function edit($id)
+    {
+        $feuille = FeuilleTemps::with('taches')->findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
+            abort(403);
+        }
+
+        $employes = Auth::user()->hasRole('Admin') ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $projets = Projet::all();
+        $taches = Tache::all();
+        
+        return view('feuille_temps.edit', compact('feuille', 'employes', 'projets', 'taches'));
+    }
+
+    /**
+     * 6. UPDATE
+     */
+    public function update(Request $request, $id)
+    {
+        $feuille = FeuilleTemps::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'employe_id'   => 'required|exists:employes,user_id',
+            'projet_id'    => 'required|exists:projets,id',
+            'date_effort'  => 'required|date',
+            'duree_heures' => 'required|numeric|min:0.5|max:24',
+            'commentaire'  => 'nullable|string',
+            'taches'       => 'nullable|array',
+            'taches.*'     => 'exists:taches,id',
+        ]);
+
+        if (!Auth::user()->hasRole('Admin') && $request->employe_id != Auth::id()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($request, $feuille) {
+            $feuille->update([
+                'employe_id'   => $request->employe_id,
+                'projet_id'    => $request->projet_id,
+                'date_effort'  => $request->date_effort,
+                'duree_heures' => $request->duree_heures,
+                'commentaire'  => $request->commentaire,
+            ]);
+
+            if ($request->has('taches')) {
+                $feuille->taches()->sync($request->taches);
+            } else {
+                $feuille->taches()->detach();
+            }
+        });
+
+        return redirect()->route('feuille_temps.index')->with('success', 'Feuille de temps mise à jour avec succès.');
+    }
+
+    /**
+     * 7. DESTROY
+     */
+    public function destroy($id)
+    {
+        $feuille = FeuilleTemps::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($feuille) {
+            $feuille->taches()->detach();
+            $feuille->delete();
+        });
+
+        return redirect()->route('feuille_temps.index')->with('success', 'Feuille de temps supprimée avec succès.');
     }
 }

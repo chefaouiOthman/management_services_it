@@ -12,21 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('stagiaires', function (Blueprint $table) {
-            // Clé primaire et héritage avec la table 'users'
+            // Clé primaire et héritage d'identité (pattern One-to-One identitaire)
+            // user_id est à la fois PK et FK vers users.id — PAS d'auto-increment
             $table->unsignedBigInteger('user_id')->primary();
 
-            // Attributs propres au stagiaire
+            // Attributs propres au stagiaire (conformes GEMINI.md)
             $table->string('ecole_origine', 150);
             $table->text('sujet_stage');
 
-            // Association : Un stagiaire est encadré obligatoirement par un employé (Clé Étrangère)
-            $table->unsignedBigInteger('employe_id');
-
             $table->timestamps();
 
-            // Déclaration de la contrainte d'héritage d'identité
+            // Contrainte d'héritage : cascade si l'utilisateur est supprimé
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('employe_id')->references('user_id')->on('employes')->onDelete('restrict');
         });
     }
 

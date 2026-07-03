@@ -13,7 +13,7 @@ class TicketMaintenance extends Model
 
     protected $fillable = [
         'asset_materiel_id',
-        'employe_id',
+        'user_id',
         'description_panne',
         'cout_reparation',
         'statut_ticket',
@@ -28,8 +28,8 @@ class TicketMaintenance extends Model
         return $this->belongsTo(AssetMateriel::class, 'asset_materiel_id');
     }
 
-    public function employe()
+    public function user()
     {
-        return $this->belongsTo(Employe::class, 'employe_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

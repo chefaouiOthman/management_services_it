@@ -8,17 +8,16 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * GEMINI.md : SupportCours est une entité standalone.
+     * Le lien CatalogueFormation ↔ SupportCours passe par le pivot catalogue_formation_support.
      */
     public function up(): void
     {
         Schema::create('support_cours', function (Blueprint $table) {
-            $table->id(); // Id_support_cours
-            $table->unsignedBigInteger('catalogue_formation_id');
+            $table->id();
             $table->string('nom_fichier', 150);
             $table->string('url_stockage', 255);
             $table->timestamps();
-
-            $table->foreign('catalogue_formation_id')->references('id')->on('catalogue_formations')->onDelete('cascade');
         });
     }
 

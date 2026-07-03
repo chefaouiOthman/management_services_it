@@ -22,7 +22,12 @@ class Livrable extends Model
         'date_limite_soumission' => 'date',
     ];
 
-    public function projet()
+    // =========================================================
+    // RELATIONS MODULE 3
+    // =========================================================
+
+    /** Projet auquel appartient ce livrable/jalon */
+    public function projet(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Projet::class, 'projet_id');
     }

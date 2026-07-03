@@ -31,7 +31,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Clé étrangère
-            $table->foreign('type_materiel_id')->references('id')->on('type_materials')->onDelete('cascade');
+            // CORRECTION : 'type_materiels' (français) et non 'type_materials' (anglais)
+            $table->foreign('type_materiel_id')->references('id')->on('type_materiels')->onDelete('cascade');
         });
     }
 

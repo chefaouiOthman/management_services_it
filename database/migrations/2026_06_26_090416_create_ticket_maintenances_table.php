@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::create('ticket_maintenances', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('asset_materiel_id');
-            $table->unsignedBigInteger('employe_id');
+            $table->unsignedBigInteger('user_id');
             $table->text('description_panne');
             $table->decimal('cout_reparation', 10, 2);
             $table->enum('statut_ticket', ['signale', 'en_atelier', 'resolu']);
             $table->timestamps();
 
             $table->foreign('asset_materiel_id')->references('id')->on('asset_materiels')->onDelete('cascade');
-            $table->foreign('employe_id')->references('id')->on('employes')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

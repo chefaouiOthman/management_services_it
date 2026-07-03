@@ -11,67 +11,93 @@ class Employe extends Model
 
     protected $table = 'employes';
 
+    /**
+     * Clé primaire identitaire : user_id est la PK mais PAS auto-incrémentée.
+     * Elle est partagée avec la table 'users' (One-to-One identitaire).
+     */
     protected $primaryKey = 'user_id';
-    public $incrementing = false;
-    protected $keyType = 'int';
+    public $incrementing  = false;
+    protected $keyType    = 'int';
 
+    /**
+     * Champs autorisés en mass-assignment (conformes GEMINI.md).
+     * 'departement_id' a été supprimé car absent du dictionnaire de données.
+     */
     protected $fillable = [
         'user_id',
         'date_embauche',
         'CIN',
-        'departement_id',
     ];
 
     protected $casts = [
         'date_embauche' => 'date',
     ];
 
-    public function user()
+    // =========================================================
+    // RELATION PARENTE : remontée vers le User propriétaire
+    // =========================================================
+
+    /** Remonte vers le compte utilisateur (table users) */
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function departement()
-    {
-        return $this->belongsTo(Departement::class, 'departement_id');
-    }
+    // =========================================================
+    // RELATIONS MODULE 2 : RH
+    // Clé étrangère : employe_id sur la table enfant pointe vers user_id ici
+    // =========================================================
 
-    public function contrats()
+    /** Contrats de travail de cet employé */
+    public function contrats(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Contrat::class, 'employe_id', 'user_id');
     }
 
-    public function stagiairesEncadres()
-    {
-        return $this->hasMany(Stagiaire::class, 'employe_id', 'user_id');
-    }
+    // =========================================================
+    // RELATIONS MODULE 3 : PRODUCTION
+    // =========================================================
 
-    public function feuilleTemps()
+    /** Feuilles de temps saisies par cet employé */
+    public function feuilleTemps(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(FeuilleTemps::class, 'employe_id', 'user_id');
     }
 
-    public function sessionsEnseignees()
+    // =========================================================
+    // RELATIONS MODULE 4 : FORMATIONS
+    // Employe agit ici en tant que Formateur (Trainer)
+    // =========================================================
+
+    /** Sessions de formation animées par cet employé (rôle Formateur) */
+    public function sessionsEnseignees(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(SessionFormation::class, 'employe_session_formation', 'employe_id', 'session_formation_id');
+        return $this->belongsToMany(
+            SessionFormation::class,
+            'employe_session_formation', // table pivot
+            'employe_id',               // FK de ce modèle dans le pivot
+            'session_formation_id'       // FK du modèle lié dans le pivot
+        );
     }
 
-    public function ticketsMaintenanceSignales()
+    /** Évaluations reçues par cet employé en tant que formateur */
+    public function evaluationsRecues(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(TicketMaintenance::class, 'user_id', 'user_id');
+        return $this->hasMany(EvaluationSession::class, 'employe_id', 'user_id');
     }
 
-    public function assignationsLicences()
-    {
-        return $this->hasMany(AssignationLicence::class, 'user_id', 'user_id');
-    }
+    // =========================================================
+    // RELATIONS MODULE 6 : FINANCE
+    // =========================================================
 
-    public function fichePaies()
+    /** Fiches de paie de cet employé */
+    public function fichePaies(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(FichePaie::class, 'employe_id', 'user_id');
     }
 
-    public function noteDeFrais()
+    /** Notes de frais soumises par cet employé */
+    public function noteDeFrais(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(NoteDeFrais::class, 'employe_id', 'user_id');
     }

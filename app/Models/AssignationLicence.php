@@ -12,7 +12,7 @@ class AssignationLicence extends Model
     protected $table = 'assignation_licences';
 
     protected $fillable = [
-        'employe_id',
+        'user_id',
         'licence_logiciel_id',
         'date_attribution',
         'date_revocation',
@@ -23,9 +23,9 @@ class AssignationLicence extends Model
         'date_revocation' => 'date',
     ];
 
-    public function employe()
+    public function user()
     {
-        return $this->belongsTo(Employe::class, 'employe_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function licenceLogiciel()

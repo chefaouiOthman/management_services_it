@@ -20,7 +20,8 @@ return new class extends Migration
             $table->text('commentaire');
             $table->timestamps();
 
-            $table->foreign('employe_id')->references('id')->on('employes')->onDelete('cascade');
+            // employe_id FK → employes.user_id (PK identitaire, pas employes.id)
+            $table->foreign('employe_id')->references('user_id')->on('employes')->onDelete('cascade');
             $table->foreign('projet_id')->references('id')->on('projets')->onDelete('cascade');
         });
     }

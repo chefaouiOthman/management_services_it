@@ -17,12 +17,20 @@ class Inscription extends Model
         'statut_inscription',
     ];
 
-    public function user()
+    protected $casts = [];
+
+    // =========================================================
+    // RELATIONS MODULE 4 : FORMATIONS
+    // =========================================================
+
+    /** Apprenant inscrit à cette session */
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function sessionFormation()
+    /** Session de formation concernée */
+    public function sessionFormation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(SessionFormation::class, 'session_formation_id');
     }

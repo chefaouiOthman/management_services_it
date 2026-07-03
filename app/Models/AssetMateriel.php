@@ -39,12 +39,12 @@ class AssetMateriel extends Model
 
     /**
      * RELATION MANQUANTE AJOUTÉE : Un matériel peut être assigné à des utilisateurs
-     * Fait le lien avec la table pivot 'asset_user'
+     * Fait le lien avec la table pivot 'assignation_materiels' (conforme GEMINI.md)
      */
     public function users()
     {
-        return $this->belongsToMany(User::class, 'asset_user', 'asset_materiel_id', 'user_id')
-            ->withPivot('date_assignation')
+        return $this->belongsToMany(User::class, 'assignation_materiels', 'asset_materiel_id', 'user_id')
+            ->withPivot(['date_remise', 'date_restitution'])
             ->withTimestamps();
     }
 

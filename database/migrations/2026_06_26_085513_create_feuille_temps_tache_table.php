@@ -8,18 +8,20 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * GEMINI.md : Composite PK (feuille_temps_id, tache_id). Pas d'attributs de pivot supplémentaires.
      */
     public function up(): void
     {
         Schema::create('feuille_temps_tache', function (Blueprint $table) {
-            $table->id();
+            // Clés étrangères composant la PK composite
             $table->unsignedBigInteger('feuille_temps_id');
             $table->unsignedBigInteger('tache_id');
-            $table->timestamps();
+
+            // Clé primaire composite (conforme GEMINI.md)
+            $table->primary(['feuille_temps_id', 'tache_id']);
 
             $table->foreign('feuille_temps_id')->references('id')->on('feuille_temps')->onDelete('cascade');
             $table->foreign('tache_id')->references('id')->on('taches')->onDelete('cascade');
-            $table->unique(['feuille_temps_id', 'tache_id'], 'ft_tache_unique');
         });
     }
 

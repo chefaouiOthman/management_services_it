@@ -3,41 +3,143 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pointage;
-use App\Models\Employe;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PointageController extends Controller
 {
     /**
-     * LISTE DES POINTAGES
+     * 1. INDEX : LISTE DES POINTAGES
      */
     public function index()
     {
-        // Récupère les pointages avec l'identité de l'employé
-        $pointages = Pointage::with('employe.user')->get();
+        // Si l'utilisateur est admin, il voit tout. Sinon, il ne voit que les siens.
+        $query = Pointage::with('user');
+        if (!Auth::user()->hasRole('Admin')) {
+            $query->where('user_id', Auth::id());
+        }
+        
+        $pointages = $query->get();
         return view('pointages.index', compact('pointages'));
     }
 
     /**
-     * ENREGISTRER UN POINTAGE (ENTRÉE OU SORTIE)
+     * 2. CREATE : FORMULAIRE DE CREATION
+     */
+    public function create()
+    {
+        // Seul l'admin peut créer un pointage pour quelqu'un d'autre manuellement.
+        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        return view('pointages.create', compact('users'));
+    }
+
+    /**
+     * 3. STORE : ENREGISTREMENT EN BASE DE DONNEES
      */
     public function store(Request $request)
     {
-        // Si l'utilisateur est un employé standard, il pointe pour lui-même.
-        // Si c'est l'admin, il peut pointer pour n'importe quel employe_id passé dans la requête.
-        $employeId = auth()->user()->hasRole('Admin') ? $request->employe_id : auth()->id();
+        $request->validate([
+            'user_id'         => 'required|exists:users,id',
+            'date_jour'       => 'required|date',
+            'heure_arrivee'   => 'required|date_format:Y-m-d H:i:s',
+            'heure_depart'    => 'nullable|date_format:Y-m-d H:i:s|after:heure_arrivee',
+            'statut_presence' => 'required|in:a_l_heure,en_retard,depart_anticipe',
+        ]);
+
+        // Vérification de sécurité : un non-admin ne peut pointer que pour lui-même
+        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+            abort(403, 'Vous ne pouvez pas pointer pour un autre utilisateur.');
+        }
+
+        DB::transaction(function () use ($request) {
+            Pointage::create([
+                'user_id'         => $request->user_id,
+                'date_jour'       => $request->date_jour,
+                'heure_arrivee'   => $request->heure_arrivee,
+                'heure_depart'    => $request->heure_depart,
+                'statut_presence' => $request->statut_presence,
+            ]);
+        });
+
+        return redirect()->route('pointages.index')->with('success', 'Pointage enregistré avec succès.');
+    }
+
+    /**
+     * 4. SHOW : AFFICHER UN POINTAGE
+     */
+    public function show($id)
+    {
+        $pointage = Pointage::with('user')->findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $pointage->user_id != Auth::id()) {
+            abort(403);
+        }
+
+        return view('pointages.show', compact('pointage'));
+    }
+
+    /**
+     * 5. EDIT : FORMULAIRE DE MISE A JOUR
+     */
+    public function edit($id)
+    {
+        $pointage = Pointage::with('user')->findOrFail($id);
+        
+        if (!Auth::user()->hasRole('Admin') && $pointage->user_id != Auth::id()) {
+            abort(403);
+        }
+
+        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        return view('pointages.edit', compact('pointage', 'users'));
+    }
+
+    /**
+     * 6. UPDATE : MISE A JOUR EN BASE DE DONNEES
+     */
+    public function update(Request $request, $id)
+    {
+        $pointage = Pointage::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $pointage->user_id != Auth::id()) {
+            abort(403);
+        }
 
         $request->validate([
-            'type_pointage' => 'required|in:entree,sortie',
-            'horodatage'    => 'required|date',
+            'date_jour'       => 'required|date',
+            'heure_arrivee'   => 'required|date_format:Y-m-d H:i:s',
+            'heure_depart'    => 'nullable|date_format:Y-m-d H:i:s|after:heure_arrivee',
+            'statut_presence' => 'required|in:a_l_heure,en_retard,depart_anticipe',
         ]);
 
-        Pointage::create([
-            'employe_id'    => $employeId,
-            'type_pointage' => $request->type_pointage,
-            'horodatage'    => $request->horodatage,
-        ]);
+        DB::transaction(function () use ($request, $pointage) {
+            $pointage->update([
+                'date_jour'       => $request->date_jour,
+                'heure_arrivee'   => $request->heure_arrivee,
+                'heure_depart'    => $request->heure_depart,
+                'statut_presence' => $request->statut_presence,
+            ]);
+        });
 
-        return redirect()->back()->with('success', 'Pointage enregistré avec succès.');
+        return redirect()->route('pointages.index')->with('success', 'Pointage mis à jour avec succès.');
+    }
+
+    /**
+     * 7. DESTROY : SUPPRESSION DEFINITIVE
+     */
+    public function destroy($id)
+    {
+        $pointage = Pointage::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin')) {
+            abort(403, 'Seul un administrateur peut supprimer un pointage.');
+        }
+
+        DB::transaction(function () use ($pointage) {
+            $pointage->delete();
+        });
+
+        return redirect()->route('pointages.index')->with('success', 'Pointage supprimé avec succès.');
     }
 }

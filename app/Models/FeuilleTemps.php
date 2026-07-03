@@ -20,22 +20,40 @@ class FeuilleTemps extends Model
     ];
 
     protected $casts = [
-        'date_effort' => 'date',
+        'date_effort'  => 'date',
         'duree_heures' => 'decimal:2',
     ];
 
-    public function employe()
+    // =========================================================
+    // RELATIONS MODULE 3
+    // =========================================================
+
+    /**
+     * Employé qui a saisi cette feuille de temps.
+     * employe_id FK → employes.user_id (PK identitaire, ownerKey explicite).
+     */
+    public function employe(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Employe::class, 'employe_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
     }
 
-    public function projet()
+    /** Projet sur lequel est imputé cet effort */
+    public function projet(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Projet::class, 'projet_id');
     }
 
-    public function taches()
+    /**
+     * Tâches rattachées à cette feuille de temps (via pivot feuille_temps_tache).
+     * Pivot simple sans attributs supplémentaires ni timestamps.
+     */
+    public function taches(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(Tache::class, 'feuille_temps_tache', 'feuille_temps_id', 'tache_id')->withTimestamps();
+        return $this->belongsToMany(
+            Tache::class,
+            'feuille_temps_tache', // table pivot
+            'feuille_temps_id',    // FK de ce modèle dans le pivot
+            'tache_id'             // FK du modèle lié dans le pivot
+        );
     }
 }

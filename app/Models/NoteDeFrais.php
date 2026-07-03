@@ -13,6 +13,7 @@ class NoteDeFrais extends Model
 
     protected $fillable = [
         'employe_id',
+        'flux_tresorerie_id',
         'motif_depense',
         'montant_ttc',
         'justificatif_path',
@@ -25,11 +26,11 @@ class NoteDeFrais extends Model
 
     public function employe()
     {
-        return $this->belongsTo(Employe::class, 'employe_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
     }
 
     public function fluxTresorerie()
     {
-        return $this->hasOne(FluxTresorerie::class, 'note_de_frais_id');
+        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id');
     }
 }

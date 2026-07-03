@@ -13,6 +13,7 @@ class Facture extends Model
 
     protected $fillable = [
         'client_id',
+        'flux_tresorerie_id',
         'num_facture',
         'date_emission',
         'statut_paiement',
@@ -24,7 +25,7 @@ class Facture extends Model
 
     public function client()
     {
-        return $this->belongsTo(Client::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id', 'user_id');
     }
 
     public function ligneFactures()
@@ -34,6 +35,6 @@ class Facture extends Model
 
     public function fluxTresorerie()
     {
-        return $this->hasOne(FluxTresorerie::class, 'facture_id');
+        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id');
     }
 }

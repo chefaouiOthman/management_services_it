@@ -15,10 +15,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('categorie_flux_id');
 
-            $table->unsignedBigInteger('facture_id')->nullable();
-            $table->unsignedBigInteger('fiche_paie_id')->nullable();
-            $table->unsignedBigInteger('note_de_frais_id')->nullable();
-
             $table->enum('type_mouvement', ['entree', 'sortie']);
             $table->decimal('montant_operation', 12, 2);
             $table->dateTime('date_comptable');
@@ -26,9 +22,6 @@ return new class extends Migration
 
             // Clés étrangères
             $table->foreign('categorie_flux_id')->references('id')->on('categorie_flux')->onDelete('cascade');
-            $table->foreign('facture_id')->references('id')->on('factures')->onDelete('set null');
-            $table->foreign('fiche_paie_id')->references('id')->on('fiche_paies')->onDelete('set null');
-            $table->foreign('note_de_frais_id')->references('id')->on('note_de_frais')->onDelete('set null');
         });
     }
 

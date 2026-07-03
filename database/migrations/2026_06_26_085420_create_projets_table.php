@@ -20,7 +20,8 @@ return new class extends Migration
             $table->enum('statut_projet', ['analyse', 'developpement', 'recette', 'deploie', 'maintenance']);
             $table->timestamps();
 
-            $table->foreign('client_id')->references('id')->on('clients')->onDelete('cascade');
+            // client_id FK → clients.user_id (PK identitaire, pas clients.id)
+            $table->foreign('client_id')->references('user_id')->on('clients')->onDelete('cascade');
         });
     }
 

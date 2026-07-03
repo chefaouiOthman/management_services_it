@@ -2,73 +2,144 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SessionFormation;
 use App\Models\Inscription;
-use App\Models\EvaluationSession;
+use App\Models\SessionFormation;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class InscriptionController extends Controller
 {
     /**
-     * S'INSCRIRE A UNE SESSION (Accessible à toutes les entités humaines connectées)
+     * 1. INDEX
+     */
+    public function index()
+    {
+        $query = Inscription::with(['user', 'sessionFormation.catalogueFormation']);
+        
+        if (!Auth::user()->hasRole('Admin')) {
+            $query->where('user_id', Auth::id());
+        }
+
+        $inscriptions = $query->get();
+        return view('inscriptions.index', compact('inscriptions'));
+    }
+
+    /**
+     * 2. CREATE
+     */
+    public function create()
+    {
+        $sessions = SessionFormation::with('catalogueFormation')->get();
+        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        return view('inscriptions.create', compact('sessions', 'users'));
+    }
+
+    /**
+     * 3. STORE
      */
     public function store(Request $request)
     {
         $request->validate([
             'session_formation_id' => 'required|exists:session_formations,id',
+            'user_id'              => 'required|exists:users,id',
+            'statut_inscription'   => 'required|in:valide,annule,present,certifie',
         ]);
 
-        $userId = auth()->id();
-
-        // Sécurité anti-doublon pour éviter qu'un utilisateur s'inscrive 2 fois à la même session
-        $dejaInscrit = Inscription::where('user_id', $userId)
-            ->where('session_formation_id', $request->session_formation_id)
-            ->exists();
-
-        if ($dejaInscrit) {
-            return redirect()->back()->with('error', 'Vous êtes déjà inscrit à cette session.');
+        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+            abort(403, 'Vous ne pouvez pas inscrire un autre utilisateur.');
         }
 
-        Inscription::create([
-            'user_id'              => $userId,
-            'session_formation_id' => $request->session_formation_id,
-            'date_inscription'     => now(),
-            'statut'               => 'confirme',
-        ]);
+        DB::transaction(function () use ($request) {
+            Inscription::create([
+                'session_formation_id' => $request->session_formation_id,
+                'user_id'              => $request->user_id,
+                'statut_inscription'   => $request->statut_inscription,
+            ]);
+        });
 
-        return redirect()->back()->with('success', 'Votre inscription a bien été enregistrée.');
+        return redirect()->route('inscriptions.index')->with('success', 'Inscription réalisée avec succès.');
     }
 
     /**
-     * SOUUMETTRE UNE EVALUATION DE FIN DE SESSION
+     * 4. SHOW
      */
-    public function evaluer(Request $request)
+    public function show($id)
     {
-        $request->validate([
-            'session_formation_id' => 'required|exists:session_formations,id',
-            'note'                 => 'required|integer|between:1,5',
-            'commentaire'          => 'nullable|string',
-        ]);
+        $inscription = Inscription::with(['user', 'sessionFormation'])->findOrFail($id);
 
-        $userId = auth()->id();
-
-        // Sécurité : l'utilisateur doit être inscrit à la session pour pouvoir l'évaluer
-        $isInscrit = Inscription::where('user_id', $userId)
-            ->where('session_formation_id', $request->session_formation_id)
-            ->exists();
-
-        if (!$isInscrit) {
-            return redirect()->back()->with('error', 'Vous ne pouvez pas évaluer une session à laquelle vous n\'avez pas participé.');
+        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+            abort(403);
         }
 
-        EvaluationSession::create([
-            'session_formation_id' => $request->session_formation_id,
-            'user_id'              => $userId,
-            'note'                 => $request->note,
-            'commentaire'          => $request->commentaire,
+        return view('inscriptions.show', compact('inscription'));
+    }
+
+    /**
+     * 5. EDIT
+     */
+    public function edit($id)
+    {
+        $inscription = Inscription::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+            abort(403);
+        }
+
+        $sessions = SessionFormation::with('catalogueFormation')->get();
+        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        
+        return view('inscriptions.edit', compact('inscription', 'sessions', 'users'));
+    }
+
+    /**
+     * 6. UPDATE
+     */
+    public function update(Request $request, $id)
+    {
+        $inscription = Inscription::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'session_formation_id' => 'required|exists:session_formations,id',
+            'user_id'              => 'required|exists:users,id',
+            'statut_inscription'   => 'required|in:valide,annule,present,certifie',
         ]);
 
-        return redirect()->back()->with('success', 'Merci pour votre évaluation !');
+        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($request, $inscription) {
+            $inscription->update([
+                'session_formation_id' => $request->session_formation_id,
+                'user_id'              => $request->user_id,
+                'statut_inscription'   => $request->statut_inscription,
+            ]);
+        });
+
+        return redirect()->route('inscriptions.index')->with('success', 'Inscription mise à jour avec succès.');
+    }
+
+    /**
+     * 7. DESTROY
+     */
+    public function destroy($id)
+    {
+        $inscription = Inscription::findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($inscription) {
+            $inscription->delete();
+        });
+
+        return redirect()->route('inscriptions.index')->with('success', 'Inscription supprimée avec succès.');
     }
 }

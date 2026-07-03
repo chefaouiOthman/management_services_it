@@ -4,71 +4,129 @@ namespace App\Http\Controllers;
 
 use App\Models\Stagiaire;
 use App\Models\User;
-use App\Models\Employe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class StagiaireController extends Controller
 {
     /**
-     * LISTE DES STAGIAIRES
+     * 1. INDEX : LISTE DES STAGIAIRES
      */
     public function index()
     {
-        // Récupère le stagiaire, son identité et l'identité de son encadrant (employé)
-        $stagiaires = Stagiaire::with(['user', 'encadrant.user'])->get();
+        $stagiaires = Stagiaire::with('user')->get();
         return view('stagiaires.index', compact('stagiaires'));
     }
 
     /**
-     * FORMULAIRE DE CREATION
+     * 2. CREATE : FORMULAIRE DE CREATION
      */
     public function create()
     {
-        // Liste des employés pour choisir l'encadrant obligatoire (Page 10 du PDF)
-        $employes = Employe::with('user')->get();
-        return view('stagiaires.create', compact('employes'));
+        return view('stagiaires.create');
     }
 
     /**
-     * ENREGISTREMENT EN BASE DE DONNEES
+     * 3. STORE : ENREGISTREMENT EN BASE DE DONNEES
      */
     public function store(Request $request)
     {
-        // Validation stricte
         $request->validate([
             'nom_complet'   => 'required|string|max:150',
             'email'         => 'required|string|email|max:255|unique:users',
             'password'      => 'required|string|min:8',
+            'est_actif'     => 'boolean',
             'ecole_origine' => 'required|string|max:150',
             'sujet_stage'   => 'required|string',
-            'employe_id'    => 'required|exists:employes,id', // L'encadrant doit exister
         ]);
 
-        // Transaction globale pour l'intégrité de l'héritage d'ID
         DB::transaction(function () use ($request) {
-
-            // A. Création de l'identité globale de l'utilisateur
             $user = User::create([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
                 'password'    => Hash::make($request->password),
-                'est_actif'   => true,
+                'est_actif'   => $request->input('est_actif', true),
             ]);
 
-            // B. Création du profil stagiaire (Liaison 1-1 via héritage d'ID)
             Stagiaire::create([
-                'id'            => $user->id,
+                'user_id'       => $user->id,
                 'ecole_origine' => $request->ecole_origine,
                 'sujet_stage'   => $request->sujet_stage,
-                'employe_id'    => $request->employe_id,
             ]);
 
-            // C. Attribution du rôle de sécurité
             $user->assignRole('Stagiaire');
         });
 
         return redirect()->route('stagiaires.index')->with('success', 'Stagiaire ajouté avec succès.');
+    }
+
+    /**
+     * 4. SHOW : AFFICHER UN STAGIAIRE
+     */
+    public function show($id)
+    {
+        $stagiaire = Stagiaire::with('user')->findOrFail($id);
+        return view('stagiaires.show', compact('stagiaire'));
+    }
+
+    /**
+     * 5. EDIT : FORMULAIRE DE MISE A JOUR
+     */
+    public function edit($id)
+    {
+        $stagiaire = Stagiaire::with('user')->findOrFail($id);
+        return view('stagiaires.edit', compact('stagiaire'));
+    }
+
+    /**
+     * 6. UPDATE : MISE A JOUR EN BASE DE DONNEES
+     */
+    public function update(Request $request, $id)
+    {
+        $stagiaire = Stagiaire::findOrFail($id);
+        $user = $stagiaire->user;
+
+        $request->validate([
+            'nom_complet'   => 'required|string|max:150',
+            'email'         => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'password'      => 'nullable|string|min:8',
+            'est_actif'     => 'boolean',
+            'ecole_origine' => 'required|string|max:150',
+            'sujet_stage'   => 'required|string',
+        ]);
+
+        DB::transaction(function () use ($request, $user, $stagiaire) {
+            $user->update([
+                'nom_complet' => $request->nom_complet,
+                'email'       => $request->email,
+                'est_actif'   => $request->has('est_actif') ? $request->est_actif : $user->est_actif,
+            ]);
+
+            if ($request->filled('password')) {
+                $user->update(['password' => Hash::make($request->password)]);
+            }
+
+            $stagiaire->update([
+                'ecole_origine' => $request->ecole_origine,
+                'sujet_stage'   => $request->sujet_stage,
+            ]);
+        });
+
+        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire mis à jour avec succès.');
+    }
+
+    /**
+     * 7. DESTROY : SUPPRESSION DEFINITIVE
+     */
+    public function destroy($id)
+    {
+        DB::transaction(function () use ($id) {
+            $stagiaire = Stagiaire::findOrFail($id);
+            $stagiaire->user->delete(); // Supprime l'User et cascade sur Stagiaire
+        });
+
+        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire supprimé avec succès.');
     }
 }

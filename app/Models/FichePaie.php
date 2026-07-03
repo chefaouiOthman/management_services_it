@@ -13,6 +13,7 @@ class FichePaie extends Model
 
     protected $fillable = [
         'employe_id',
+        'flux_tresorerie_id',
         'mois_annee',
         'net_a_payer',
     ];
@@ -23,11 +24,11 @@ class FichePaie extends Model
 
     public function employe()
     {
-        return $this->belongsTo(Employe::class, 'employe_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
     }
 
     public function fluxTresorerie()
     {
-        return $this->hasOne(FluxTresorerie::class, 'fiche_paie_id');
+        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id');
     }
 }

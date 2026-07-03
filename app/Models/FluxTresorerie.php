@@ -13,9 +13,6 @@ class FluxTresorerie extends Model
 
     protected $fillable = [
         'categorie_flux_id',
-        'facture_id',
-        'fiche_paie_id',
-        'note_de_frais_id',
         'type_mouvement',
         'montant_operation',
         'date_comptable',
@@ -33,16 +30,16 @@ class FluxTresorerie extends Model
 
     public function facture()
     {
-        return $this->belongsTo(Facture::class, 'facture_id');
+        return $this->hasOne(Facture::class, 'flux_tresorerie_id');
     }
 
     public function fichePaie()
     {
-        return $this->belongsTo(FichePaie::class, 'fiche_paie_id');
+        return $this->hasOne(FichePaie::class, 'flux_tresorerie_id');
     }
 
     public function noteDeFrais()
     {
-        return $this->belongsTo(NoteDeFrais::class, 'note_de_frais_id');
+        return $this->hasOne(NoteDeFrais::class, 'flux_tresorerie_id');
     }
 }

@@ -11,12 +11,24 @@ class Departement extends Model
 
     protected $table = 'departements';
 
+    /**
+     * Champs autorisés en mass-assignment (conformes GEMINI.md).
+     */
     protected $fillable = [
         'nom_departement',
     ];
 
-    public function employes()
-    {
-        return $this->hasMany(Employe::class, 'departement_id');
-    }
+    /**
+     * Aucun cast spécifique requis pour Departement.
+     */
+    protected $casts = [];
+
+    // =========================================================
+    // NOTE ARCHITECTURALE :
+    // Selon GEMINI.md, la table 'employes' ne possède PAS de colonne
+    // 'departement_id'. La relation Departement → Employes est donc
+    // supprimée car elle référencerait un champ inexistant en BDD.
+    // Si cette relation est nécessaire fonctionnellement, il faudra
+    // amender le GEMINI.md et ajouter la colonne dans une nouvelle migration.
+    // =========================================================
 }
