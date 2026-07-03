@@ -11,6 +11,14 @@ use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:client-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:client-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:client-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:client-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX : LISTE DES CLIENTS
      */

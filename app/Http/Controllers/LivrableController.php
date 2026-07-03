@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class LivrableController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:livrable-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:livrable-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:livrable-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:livrable-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

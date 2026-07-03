@@ -11,6 +11,14 @@ use Illuminate\Validation\Rule;
 
 class ProjetController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:projet-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:projet-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:projet-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:projet-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Auth;
 
 class EvaluationSessionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:evaluation-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:evaluation-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:evaluation-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:evaluation-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

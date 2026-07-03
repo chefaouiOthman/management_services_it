@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class LicenceLogicielController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:licence-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:licence-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:licence-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:licence-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

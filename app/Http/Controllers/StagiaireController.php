@@ -11,6 +11,14 @@ use Illuminate\Validation\Rule;
 
 class StagiaireController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:stagiaire-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:stagiaire-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:stagiaire-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:stagiaire-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX : LISTE DES STAGIAIRES
      */

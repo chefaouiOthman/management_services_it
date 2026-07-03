@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class TacheController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:tache-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:tache-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:tache-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:tache-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

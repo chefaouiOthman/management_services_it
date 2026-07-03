@@ -9,6 +9,14 @@ use Illuminate\Validation\Rule;
 
 class ZoneController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:zone-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:zone-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:zone-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:zone-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

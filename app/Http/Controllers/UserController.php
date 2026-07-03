@@ -11,22 +11,12 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-     function __construct() 
-
+    public function __construct()
     {
-
-         $this->middleware('permission:view-humain|user-create|user-edit|user-delete', ['only' => ['index','store']]);
-
-         $this->middleware('permission:user-create', ['only' => ['create','store']]);
-
-         $this->middleware('permission:user-edit', ['only' => ['edit','update']]);
-
-         $this->middleware('permission:user-delete', ['only' => ['destroy']]);
-
-         
-         
-         
-        
+        $this->middleware('permission:user-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:user-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:user-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:user-delete', ['only' => ['destroy']]);
     }
 
     /**

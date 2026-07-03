@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class AssignationLicenceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:assignation-licence-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:assignation-licence-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:assignation-licence-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:assignation-licence-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

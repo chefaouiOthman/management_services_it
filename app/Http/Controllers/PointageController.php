@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Auth;
 
 class PointageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:pointage-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:pointage-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:pointage-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:pointage-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX : LISTE DES POINTAGES
      */

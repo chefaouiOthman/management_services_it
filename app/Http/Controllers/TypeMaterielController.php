@@ -9,6 +9,14 @@ use Illuminate\Validation\Rule;
 
 class TypeMaterielController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:type-materiel-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:type-materiel-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:type-materiel-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:type-materiel-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

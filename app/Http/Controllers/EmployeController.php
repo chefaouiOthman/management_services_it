@@ -13,6 +13,14 @@ use Illuminate\Validation\Rule;
 
 class EmployeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:employe-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:employe-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:employe-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:employe-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX : LISTE DES EMPLOYES
      */

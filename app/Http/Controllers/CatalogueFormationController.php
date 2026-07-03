@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 class CatalogueFormationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:catalogue-formation-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:catalogue-formation-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:catalogue-formation-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:catalogue-formation-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

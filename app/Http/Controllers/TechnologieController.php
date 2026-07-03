@@ -9,6 +9,14 @@ use Illuminate\Validation\Rule;
 
 class TechnologieController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:technologie-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:technologie-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:technologie-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:technologie-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

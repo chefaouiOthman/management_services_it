@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class SessionFormationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:session-formation-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:session-formation-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:session-formation-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:session-formation-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

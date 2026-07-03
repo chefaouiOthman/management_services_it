@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Auth;
 
 class TicketMaintenanceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:ticket-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:ticket-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:ticket-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:ticket-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

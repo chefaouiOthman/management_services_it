@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class ContratController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:contrat-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:contrat-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:contrat-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:contrat-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

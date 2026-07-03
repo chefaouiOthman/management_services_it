@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class LigneFactureController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:ligne-facture-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:ligne-facture-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:ligne-facture-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:ligne-facture-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

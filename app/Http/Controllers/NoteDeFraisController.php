@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Auth;
 
 class NoteDeFraisController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:note-de-frais-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:note-de-frais-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:note-de-frais-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:note-de-frais-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */
@@ -19,7 +27,7 @@ class NoteDeFraisController extends Controller
     {
         $query = NoteDeFrais::with(['employe.user', 'fluxTresorerie']);
         
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-finance')) {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view')) {
             $query->where('employe_id', Auth::id());
         }
 
@@ -32,7 +40,7 @@ class NoteDeFraisController extends Controller
      */
     public function create()
     {
-        $employes = (Auth::user()->hasRole('Admin') || Auth::user()->hasPermissionTo('manage-finance')) ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $employes = (Auth::user()->hasRole('Admin') || Auth::user()->hasPermissionTo('flux-tresorerie-view')) ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
         return view('note_de_frais.create', compact('employes'));
     }
 
@@ -49,7 +57,7 @@ class NoteDeFraisController extends Controller
             'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-finance') && $request->employe_id != Auth::id()) {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $request->employe_id != Auth::id()) {
             abort(403);
         }
 
@@ -77,7 +85,7 @@ class NoteDeFraisController extends Controller
     {
         $note = NoteDeFrais::with(['employe.user', 'fluxTresorerie'])->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-finance') && $note->employe_id != Auth::id()) {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
             abort(403);
         }
 
@@ -91,11 +99,11 @@ class NoteDeFraisController extends Controller
     {
         $note = NoteDeFrais::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-finance') && $note->employe_id != Auth::id()) {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
             abort(403);
         }
 
-        $employes = (Auth::user()->hasRole('Admin') || Auth::user()->hasPermissionTo('manage-finance')) ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $employes = (Auth::user()->hasRole('Admin') || Auth::user()->hasPermissionTo('flux-tresorerie-view')) ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
         return view('note_de_frais.edit', compact('note', 'employes'));
     }
 
@@ -106,7 +114,7 @@ class NoteDeFraisController extends Controller
     {
         $note = NoteDeFrais::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-finance') && $note->employe_id != Auth::id()) {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
             abort(403);
         }
 
@@ -148,7 +156,7 @@ class NoteDeFraisController extends Controller
     {
         $note = NoteDeFrais::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-finance') && $note->employe_id != Auth::id()) {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
             abort(403);
         }
 

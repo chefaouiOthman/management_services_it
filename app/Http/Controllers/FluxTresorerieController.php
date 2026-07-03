@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class FluxTresorerieController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:flux-tresorerie-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:flux-tresorerie-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:flux-tresorerie-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:flux-tresorerie-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

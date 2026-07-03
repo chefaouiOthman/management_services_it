@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Auth;
 
 class FeuilleTempsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:feuille-temps-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:feuille-temps-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:feuille-temps-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:feuille-temps-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

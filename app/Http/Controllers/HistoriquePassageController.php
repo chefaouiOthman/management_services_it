@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class HistoriquePassageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:historique-passage-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:historique-passage-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:historique-passage-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:historique-passage-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

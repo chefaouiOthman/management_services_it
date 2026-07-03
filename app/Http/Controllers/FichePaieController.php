@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class FichePaieController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:fiche-paie-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:fiche-paie-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:fiche-paie-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:fiche-paie-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

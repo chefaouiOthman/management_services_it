@@ -9,6 +9,14 @@ use Illuminate\Validation\Rule;
 
 class CategorieFluxController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:categorie-flux-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:categorie-flux-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:categorie-flux-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:categorie-flux-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

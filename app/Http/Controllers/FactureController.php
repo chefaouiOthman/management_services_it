@@ -12,6 +12,14 @@ use Illuminate\Validation\Rule;
 
 class FactureController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:facture-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:facture-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:facture-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:facture-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

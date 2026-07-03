@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Auth;
 
 class InscriptionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:inscription-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:inscription-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:inscription-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:inscription-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

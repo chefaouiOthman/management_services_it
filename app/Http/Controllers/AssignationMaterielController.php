@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class AssignationMaterielController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:assignation-materiel-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:assignation-materiel-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:assignation-materiel-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:assignation-materiel-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */

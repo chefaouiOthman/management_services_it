@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 class AssetMaterielController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:asset-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:asset-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:asset-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:asset-delete', ['only' => ['destroy']]);
+    }
+
     /**
      * 1. INDEX
      */
