@@ -25,4 +25,14 @@ class LicenceLogiciel extends Model
     {
         return $this->hasMany(AssignationLicence::class, 'licence_logiciel_id');
     }
+
+    /**
+     * RELATION N,N : Utilisateurs assignés à cette licence
+     */
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'assignation_licences', 'licence_logiciel_id', 'user_id')
+            ->withPivot(['id', 'date_attribution', 'date_revocation'])
+            ->withTimestamps();
+    }
 }

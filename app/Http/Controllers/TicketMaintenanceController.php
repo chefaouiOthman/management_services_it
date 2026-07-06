@@ -167,4 +167,44 @@ class TicketMaintenanceController extends Controller
 
         return redirect()->route('tickets.index')->with('success', 'Ticket supprimé avec succès.');
     }
+
+    /**
+     * 8. UPDATE STATUT (Asynchrone Alpine Fetch pour le Helpdesk)
+     */
+    public function updateStatut(Request $request, TicketMaintenance $ticket)
+    {
+        $request->validate([
+            'statut_ticket' => 'required|in:signale,en_atelier,resolu',
+        ]);
+
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-assets') && !Auth::user()->hasPermissionTo('ticket-edit')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        DB::transaction(function () use ($request, $ticket) {
+            $ticket->update([
+                'statut_ticket' => $request->statut_ticket,
+            ]);
+
+            // Verrou de Panne : Mettre à jour le statut du matériel en conséquence
+            if ($request->statut_ticket === 'en_atelier') {
+                AssetMateriel::where('id', $ticket->asset_materiel_id)->update(['statut_materiel' => 'en_panne']);
+            } elseif ($request->statut_ticket === 'resolu') {
+                $asset = AssetMateriel::find($ticket->asset_materiel_id);
+                // S'il est assigné à quelqu'un en ce moment, on le remet 'attribue', sinon 'disponible'
+                $estAssigne = DB::table('assignation_materiels')
+                    ->where('asset_materiel_id', $asset->id)
+                    ->whereNull('date_restitution')
+                    ->exists();
+
+                $asset->update(['statut_materiel' => $estAssigne ? 'attribue' : 'disponible']);
+            }
+        });
+
+        return response()->json([
+            'success'       => true,
+            'statut_ticket' => $request->statut_ticket,
+            'message'       => 'Statut du ticket mis à jour.',
+        ]);
+    }
 }

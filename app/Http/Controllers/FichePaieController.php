@@ -24,8 +24,8 @@ class FichePaieController extends Controller
      */
     public function index()
     {
-        $fiches = FichePaie::with(['employe.user', 'fluxTresorerie'])->get();
-        return view('fiche_paies.index', compact('fiches'));
+        // Redirection vers le hub central financier
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh');
     }
 
     /**
@@ -149,5 +149,36 @@ class FichePaieController extends Controller
             ]);
             $fiche->update(['flux_tresorerie_id' => $flux->id]);
         }
+    }
+
+    /**
+     * 8. PAYER (Asynchrone Alpine Fetch)
+     */
+    public function payer(Request $request, FichePaie $fiche)
+    {
+        if (!auth()->user()->hasPermissionTo('fiche-paie-edit')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        DB::transaction(function () use ($fiche) {
+            // Dans ce scénario métier, la paie est émise puis payée
+            // On s'assure qu'elle n'est pas déjà payée (id de flux existant)
+            // Bien que dans la logique de store() elle crée un flux automatiquement, 
+            // la DAF peut valider le paiement ici si on considère qu'une Fiche a un statut "Payée"
+            // Pour l'instant, le store() crée directement le flux, donc `payer()` pourrait juste mettre à jour la date comptable du flux.
+            
+            if ($fiche->flux_tresorerie_id) {
+                FluxTresorerie::where('id', $fiche->flux_tresorerie_id)->update([
+                    'date_comptable' => now(),
+                ]);
+            } else {
+                $this->syncFluxTresorerie($fiche);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fiche de paie payée (Flux mis à jour).',
+        ]);
     }
 }

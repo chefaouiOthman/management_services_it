@@ -150,4 +150,30 @@ class InscriptionController extends Controller
 
         return redirect()->route('inscriptions.index')->with('success', 'Inscription supprimée avec succès.');
     }
+
+    /**
+     * 8. UPDATE STATUT (Asynchrone Alpine Fetch)
+     */
+    public function updateStatut(Request $request, Inscription $inscription)
+    {
+        $request->validate([
+            'statut_inscription' => 'required|in:valide,annule,present,certifie',
+        ]);
+
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('inscription-edit')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        DB::transaction(function () use ($request, $inscription) {
+            $inscription->update([
+                'statut_inscription' => $request->statut_inscription,
+            ]);
+        });
+
+        return response()->json([
+            'success'            => true,
+            'statut_inscription' => $request->statut_inscription,
+            'message'            => 'Statut mis à jour.',
+        ]);
+    }
 }

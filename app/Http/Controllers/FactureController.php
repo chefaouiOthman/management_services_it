@@ -177,4 +177,40 @@ class FactureController extends Controller
             $facture->update(['flux_tresorerie_id' => $flux->id]);
         }
     }
+
+    /**
+     * 8. UPDATE STATUT (Asynchrone Alpine Fetch)
+     */
+    public function updateStatut(Request $request, Facture $facture)
+    {
+        $request->validate([
+            'statut_paiement' => 'required|in:emise,en_retard_paiement,soldee',
+        ]);
+
+        if (!auth()->user()->hasPermissionTo('facture-edit')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        DB::transaction(function () use ($request, $facture) {
+            $facture->update([
+                'statut_paiement' => $request->statut_paiement,
+            ]);
+
+            if ($facture->statut_paiement === 'soldee') {
+                $this->syncFluxTresorerie($facture);
+            } else {
+                if ($facture->flux_tresorerie_id) {
+                    $flux_id = $facture->flux_tresorerie_id;
+                    $facture->update(['flux_tresorerie_id' => null]);
+                    FluxTresorerie::where('id', $flux_id)->delete();
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'statut_paiement' => $request->statut_paiement,
+            'message' => 'Statut de la facture mis à jour.',
+        ]);
+    }
 }

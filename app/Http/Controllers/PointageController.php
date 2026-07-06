@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class PointageController extends Controller
 {
@@ -149,5 +150,48 @@ class PointageController extends Controller
         });
 
         return redirect()->route('pointages.index')->with('success', 'Pointage supprimé avec succès.');
+    }
+
+    /**
+     * BADGE : ACTION RAPIDE DU WIDGET TABLEAU DE BORD
+     * Enregistre l'entrée (store) ou la sortie (update) de l'utilisateur connecté.
+     */
+    public function badge(Request $request)
+    {
+        $userId = Auth::id();
+        $today  = Carbon::today()->toDateString();
+        $now    = Carbon::now();
+
+        // Heure limite arbitraire : 9h00 pour décider si c'est "en_retard"
+        $heureLimite = Carbon::today()->setHour(9)->setMinute(0)->setSecond(0);
+
+        DB::transaction(function () use ($userId, $today, $now, $heureLimite) {
+            $pointage = Pointage::where('user_id', $userId)
+                ->where('date_jour', $today)
+                ->first();
+
+            if (!$pointage) {
+                // Premier badge : Entrée
+                $statut = $now->greaterThan($heureLimite) ? 'en_retard' : 'a_l_heure';
+                Pointage::create([
+                    'user_id'         => $userId,
+                    'date_jour'       => $today,
+                    'heure_arrivee'   => $now->toDateTimeString(),
+                    'heure_depart'    => null,
+                    'statut_presence' => $statut,
+                ]);
+            } else {
+                // Deuxième badge : Sortie
+                // Heure normale de sortie : 17h00
+                $heureSortieNormale = Carbon::today()->setHour(17)->setMinute(0)->setSecond(0);
+                if ($now->lessThan($heureSortieNormale)) {
+                    $pointage->statut_presence = 'depart_anticipe';
+                }
+                $pointage->heure_depart = $now->toDateTimeString();
+                $pointage->save();
+            }
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Pointage enregistré avec succès !');
     }
 }

@@ -2,147 +2,92 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AssignationMateriel;
 use App\Models\AssetMateriel;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AssignationMaterielController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:assignation-materiel-view', ['only' => ['index', 'show']]);
-        $this->middleware('permission:assignation-materiel-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:assignation-materiel-edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:assignation-materiel-delete', ['only' => ['destroy']]);
+        $this->middleware('permission:manage-assets');
     }
 
     /**
-     * 1. INDEX
+     * Assigner un matériel à un utilisateur
      */
-    public function index()
-    {
-        $assignations = AssignationMateriel::with(['user', 'assetMateriel'])->get();
-        return view('assignation_materiels.index', compact('assignations'));
-    }
-
-    /**
-     * 2. CREATE
-     */
-    public function create()
-    {
-        $users = User::all();
-        // On ne propose que les matériels disponibles
-        $assets = AssetMateriel::where('statut_materiel', 'disponible')->get();
-        return view('assignation_materiels.create', compact('users', 'assets'));
-    }
-
-    /**
-     * 3. STORE
-     */
-    public function store(Request $request)
+    public function store(Request $request, AssetMateriel $asset)
     {
         $request->validate([
-            'user_id'           => 'required|exists:users,id',
-            'asset_materiel_id' => 'required|exists:asset_materiels,id',
-            'date_remise'       => 'required|date',
-            'date_restitution'  => 'nullable|date|after_or_equal:date_remise',
+            'user_id' => 'required|exists:users,id',
+            'date_remise' => 'required|date',
         ]);
 
-        DB::transaction(function () use ($request) {
-            AssignationMateriel::create([
-                'user_id'           => $request->user_id,
-                'asset_materiel_id' => $request->asset_materiel_id,
-                'date_remise'       => $request->date_remise,
-                'date_restitution'  => $request->date_restitution,
+        if ($asset->statut_materiel !== 'disponible') {
+            return back()->with('error', 'Ce matériel n\'est pas disponible pour une assignation.');
+        }
+
+        DB::transaction(function () use ($request, $asset) {
+            // 1. Assigner via le pivot
+            $asset->users()->attach($request->user_id, [
+                'date_remise' => $request->date_remise,
             ]);
 
-            // Mettre à jour le statut de l'actif
-            AssetMateriel::where('id', $request->asset_materiel_id)->update(['statut_materiel' => 'attribue']);
+            // 2. Mettre à jour le statut du matériel
+            $asset->update(['statut_materiel' => 'attribue']);
         });
 
-        return redirect()->route('assignation_materiels.index')->with('success', 'Assignation créée avec succès.');
+        return redirect()->route('asset_materiels.show', $asset->id)->with('success', 'Matériel assigné avec succès.');
     }
 
     /**
-     * 4. SHOW
+     * Restituer un matériel (via Alpine/Fetch asynchrone)
      */
-    public function show($id)
+    public function restituer(Request $request, $id)
     {
-        $assignation = AssignationMateriel::with(['user', 'assetMateriel'])->findOrFail($id);
-        return view('assignation_materiels.show', compact('assignation'));
-    }
+        // $id est l'ID de la table pivot (assignation_materiels.id)
+        
+        try {
+            DB::transaction(function () use ($id) {
+                // Trouver la ligne pivot correspondante
+                $assignation = DB::table('assignation_materiels')->where('id', $id)->first();
+                
+                if (!$assignation) {
+                    throw new \Exception("Assignation introuvable.");
+                }
 
-    /**
-     * 5. EDIT
-     */
-    public function edit($id)
-    {
-        $assignation = AssignationMateriel::findOrFail($id);
-        $users = User::all();
-        // On inclut le matériel actuellement assigné dans la liste
-        $assets = AssetMateriel::where('statut_materiel', 'disponible')
-                               ->orWhere('id', $assignation->asset_materiel_id)
-                               ->get();
+                if ($assignation->date_restitution !== null) {
+                    throw new \Exception("Ce matériel a déjà été restitué.");
+                }
 
-        return view('assignation_materiels.edit', compact('assignation', 'users', 'assets'));
-    }
+                // 1. Mettre à jour la date de restitution
+                DB::table('assignation_materiels')->where('id', $id)->update([
+                    'date_restitution' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
 
-    /**
-     * 6. UPDATE
-     */
-    public function update(Request $request, $id)
-    {
-        $assignation = AssignationMateriel::findOrFail($id);
+                // 2. Mettre à jour le statut du matériel à 'disponible'
+                $asset = AssetMateriel::find($assignation->asset_materiel_id);
+                // Si l'actif était en panne, on ne le remet pas forcément disponible, mais selon la logique métier :
+                // La restitution libère l'actif. S'il était en panne, il reste en panne ?
+                // Si un collaborateur le rend car il est cassé, il sera "en_panne".
+                // Le mieux est de le remettre 'disponible' SAUF s'il est actuellement 'en_panne'.
+                if ($asset->statut_materiel !== 'en_panne') {
+                    $asset->update(['statut_materiel' => 'disponible']);
+                }
+            });
 
-        $request->validate([
-            'user_id'           => 'required|exists:users,id',
-            'asset_materiel_id' => 'required|exists:asset_materiels,id',
-            'date_remise'       => 'required|date',
-            'date_restitution'  => 'nullable|date|after_or_equal:date_remise',
-        ]);
-
-        DB::transaction(function () use ($request, $assignation) {
-            $oldAssetId = $assignation->asset_materiel_id;
-            
-            $assignation->update([
-                'user_id'           => $request->user_id,
-                'asset_materiel_id' => $request->asset_materiel_id,
-                'date_remise'       => $request->date_remise,
-                'date_restitution'  => $request->date_restitution,
+            return response()->json([
+                'success' => true,
+                'message' => 'Matériel restitué avec succès.',
+                'date_restitution' => Carbon::now()->format('d/m/Y')
             ]);
-
-            // Gestion du changement de matériel
-            if ($oldAssetId != $request->asset_materiel_id) {
-                AssetMateriel::where('id', $oldAssetId)->update(['statut_materiel' => 'disponible']);
-                AssetMateriel::where('id', $request->asset_materiel_id)->update(['statut_materiel' => 'attribue']);
-            }
-
-            // Si la date de restitution est remplie, le matériel redevient disponible
-            if ($request->filled('date_restitution')) {
-                AssetMateriel::where('id', $request->asset_materiel_id)->update(['statut_materiel' => 'disponible']);
-            }
-        });
-
-        return redirect()->route('assignation_materiels.index')->with('success', 'Assignation mise à jour avec succès.');
-    }
-
-    /**
-     * 7. DESTROY
-     */
-    public function destroy($id)
-    {
-        $assignation = AssignationMateriel::findOrFail($id);
-
-        DB::transaction(function () use ($assignation) {
-            // Libérer le matériel si l'assignation n'était pas terminée
-            if (is_null($assignation->date_restitution)) {
-                AssetMateriel::where('id', $assignation->asset_materiel_id)->update(['statut_materiel' => 'disponible']);
-            }
-            $assignation->delete();
-        });
-
-        return redirect()->route('assignation_materiels.index')->with('success', 'Assignation supprimée avec succès.');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 }

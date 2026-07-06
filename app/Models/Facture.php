@@ -37,4 +37,16 @@ class Facture extends Model
     {
         return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id');
     }
+
+    /**
+     * Accesseur calculant le Total TTC de la facture dynamiquement.
+     */
+    public function getTotalTtcAttribute()
+    {
+        return $this->ligneFactures->sum(function ($ligne) {
+            $ht = $ligne->quantite * $ligne->prix_unitaire_ht;
+            $tva = $ht * ($ligne->taux_tva / 100);
+            return $ht + $tva;
+        });
+    }
 }

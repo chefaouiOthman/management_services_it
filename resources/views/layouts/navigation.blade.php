@@ -15,6 +15,55 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    <!-- M1 & M2 : Annuaire & RH -->
+                    @can('user-view')
+                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*') || request()->routeIs('employes.*') || request()->routeIs('stagiaires.*') || request()->routeIs('clients.*')">
+                        Annuaire & RH
+                    </x-nav-link>
+                    @endcan
+
+                    <!-- M2 : Contrôle d'accès -->
+                    @can('zone-view')
+                    <x-nav-link :href="route('zones.index')" :active="request()->routeIs('zones.*')">
+                        Contrôle d'Accès
+                    </x-nav-link>
+                    @endcan
+
+                    <!-- M3 : Projets -->
+                    @can('projet-view')
+                    <x-nav-link :href="route('projets.index')" :active="request()->routeIs('projets.*')">
+                        Projets
+                    </x-nav-link>
+                    @endcan
+
+                    <!-- M4 : Académie -->
+                    @can('session-formation-view')
+                    <x-nav-link :href="route('sessions.index')" :active="request()->routeIs('sessions.*')">
+                        Académie
+                    </x-nav-link>
+                    @endcan
+
+                    <!-- M5 : Inventaire -->
+                    @can('asset-view')
+                    <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                        Inventaire IT
+                    </x-nav-link>
+                    @endcan
+
+                    <!-- M6 : Trésorerie -->
+                    @can('flux-tresorerie-view')
+                    <x-nav-link :href="route('flux_tresoreries.index')" :active="request()->routeIs('flux_tresoreries.*')">
+                        Trésorerie
+                    </x-nav-link>
+                    @endcan
+
+                    <!-- Self-Service : Notes de frais -->
+                    @can('note-de-frais-view')
+                    <x-nav-link :href="route('note_de_frais.index')" :active="request()->routeIs('note_de_frais.*')">
+                        Mes Notes de Frais
+                    </x-nav-link>
+                    @endcan
                 </div>
             </div>
 

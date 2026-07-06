@@ -44,7 +44,7 @@ class AssetMateriel extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'assignation_materiels', 'asset_materiel_id', 'user_id')
-            ->withPivot(['date_remise', 'date_restitution'])
+            ->withPivot(['id', 'date_remise', 'date_restitution'])
             ->withTimestamps();
     }
 

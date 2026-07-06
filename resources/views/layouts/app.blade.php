@@ -32,5 +32,8 @@
                 {{ $slot }}
             </main>
         </div>
+
+        <!-- Global Toast Notifications -->
+        <x-toast />
     </body>
 </html>

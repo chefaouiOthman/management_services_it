@@ -22,8 +22,17 @@ class FluxTresorerieController extends Controller
      */
     public function index()
     {
-        $flux = FluxTresorerie::with('categorieFlux')->get();
-        return view('flux_tresoreries.index', compact('flux'));
+        // 1. Charger les flux pour le Grand Livre
+        $flux = FluxTresorerie::with(['categorieFlux', 'facture', 'fichePaie', 'noteDeFrais'])->orderByDesc('date_comptable')->get();
+        
+        // 2. Charger les données pour l'onglet Facturation
+        $factures = \App\Models\Facture::with(['client.user', 'ligneFactures'])->orderByDesc('date_emission')->get();
+        
+        // 3. Charger les données pour l'onglet Masse Salariale & Frais
+        $fiches = \App\Models\FichePaie::with('employe.user')->orderByDesc('created_at')->get();
+        $notes = \App\Models\NoteDeFrais::with('employe.user')->orderByDesc('created_at')->get();
+
+        return view('flux_tresoreries.index', compact('flux', 'factures', 'fiches', 'notes'));
     }
 
     /**

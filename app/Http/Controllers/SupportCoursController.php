@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\SupportCours;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class SupportCoursController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:support-cours-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:support-cours-view', ['only' => ['index', 'show', 'download']]);
         $this->middleware('permission:support-cours-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:support-cours-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:support-cours-delete', ['only' => ['destroy']]);
@@ -34,23 +35,26 @@ class SupportCoursController extends Controller
     }
 
     /**
-     * 3. STORE
+     * 3. STORE (Modifié pour gérer l'upload sécurisé)
      */
     public function store(Request $request)
     {
         $request->validate([
-            'nom_fichier'  => 'required|string|max:150',
-            'url_stockage' => 'required|string|max:255',
+            'fichier' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,mp4|max:51200', // max 50MB
         ]);
 
         DB::transaction(function () use ($request) {
+            $file = $request->file('fichier');
+            $path = $file->store('supports_cours', 'private');
+            $nomOriginal = $file->getClientOriginalName();
+
             SupportCours::create([
-                'nom_fichier'  => $request->nom_fichier,
-                'url_stockage' => $request->url_stockage,
+                'nom_fichier'  => $nomOriginal,
+                'url_stockage' => $path,
             ]);
         });
 
-        return redirect()->route('supports.index')->with('success', 'Support de cours ajouté avec succès.');
+        return redirect()->route('supports.index')->with('success', 'Support de cours uploadé avec succès.');
     }
 
     /**
@@ -79,14 +83,25 @@ class SupportCoursController extends Controller
         $support = SupportCours::findOrFail($id);
 
         $request->validate([
-            'nom_fichier'  => 'required|string|max:150',
-            'url_stockage' => 'required|string|max:255',
+            'fichier' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,zip,mp4|max:51200',
         ]);
 
         DB::transaction(function () use ($request, $support) {
+            $path = $support->url_stockage;
+            $nomOriginal = $support->nom_fichier;
+
+            if ($request->hasFile('fichier')) {
+                if ($path && Storage::disk('private')->exists($path)) {
+                    Storage::disk('private')->delete($path);
+                }
+                $file = $request->file('fichier');
+                $path = $file->store('supports_cours', 'private');
+                $nomOriginal = $file->getClientOriginalName();
+            }
+
             $support->update([
-                'nom_fichier'  => $request->nom_fichier,
-                'url_stockage' => $request->url_stockage,
+                'nom_fichier'  => $nomOriginal,
+                'url_stockage' => $path,
             ]);
         });
 
@@ -101,10 +116,30 @@ class SupportCoursController extends Controller
         $support = SupportCours::findOrFail($id);
 
         DB::transaction(function () use ($support) {
+            if ($support->url_stockage && Storage::disk('private')->exists($support->url_stockage)) {
+                Storage::disk('private')->delete($support->url_stockage);
+            }
             $support->catalogueFormations()->detach();
             $support->delete();
         });
 
         return redirect()->route('supports.index')->with('success', 'Support de cours supprimé avec succès.');
+    }
+
+    /**
+     * DOWNLOAD — Téléchargement sécurisé du support
+     */
+    public function download($id)
+    {
+        $support = SupportCours::findOrFail($id);
+
+        if (!$support->url_stockage || !Storage::disk('private')->exists($support->url_stockage)) {
+            return back()->with('error', 'Le fichier de ce support n\'existe plus.');
+        }
+
+        return Storage::disk('private')->download(
+            $support->url_stockage,
+            $support->nom_fichier ?? 'support_cours'
+        );
     }
 }

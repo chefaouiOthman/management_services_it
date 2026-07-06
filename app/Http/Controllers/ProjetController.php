@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Projet;
 use App\Models\Client;
 use App\Models\Technologie;
+use App\Models\Tache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class ProjetController extends Controller
@@ -15,7 +17,7 @@ class ProjetController extends Controller
     {
         $this->middleware('permission:projet-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:projet-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:projet-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:projet-edit', ['only' => ['edit', 'update', 'updateTacheStatut']]);
         $this->middleware('permission:projet-delete', ['only' => ['destroy']]);
     }
 
@@ -24,7 +26,9 @@ class ProjetController extends Controller
      */
     public function index()
     {
-        $projets = Projet::with(['client.user', 'technologies'])->get();
+        $projets = Projet::with(['client.user', 'technologies'])
+            ->withCount('taches')
+            ->get();
         return view('projets.index', compact('projets'));
     }
 
@@ -62,7 +66,7 @@ class ProjetController extends Controller
                 'statut_projet' => $request->statut_projet,
             ]);
 
-            if ($request->has('technologies')) {
+            if ($request->filled('technologies')) {
                 $projet->technologies()->attach($request->technologies);
             }
         });
@@ -71,12 +75,30 @@ class ProjetController extends Controller
     }
 
     /**
-     * 4. SHOW
+     * 4. SHOW — Hub Kanban (Eager Loading anti-N+1 complet)
      */
     public function show($id)
     {
-        $projet = Projet::with(['client.user', 'technologies', 'taches', 'livrables', 'feuilleTemps'])->findOrFail($id);
-        return view('projets.show', compact('projet'));
+        $projet = Projet::with([
+            'client.user',
+            'technologies',
+            'livrables',
+            'feuilleTemps.employe.user',
+            'feuilleTemps.taches',
+            'taches', // inclut les attributs du pivot (priorite, statut_tache)
+        ])->findOrFail($id);
+
+        // Organiser les tâches par colonne Kanban pour Alpine.js
+        $tachesParStatut = [
+            'backlog'   => $projet->taches->where('pivot.statut_tache', 'backlog')->values(),
+            'en_cours'  => $projet->taches->where('pivot.statut_tache', 'en_cours')->values(),
+            'en_revue'  => $projet->taches->where('pivot.statut_tache', 'en_revue')->values(),
+            'termine'   => $projet->taches->where('pivot.statut_tache', 'termine')->values(),
+        ];
+
+        $totalHeures = $projet->feuilleTemps->sum('duree_heures');
+
+        return view('projets.show', compact('projet', 'tachesParStatut', 'totalHeures'));
     }
 
     /**
@@ -116,14 +138,10 @@ class ProjetController extends Controller
                 'statut_projet' => $request->statut_projet,
             ]);
 
-            if ($request->has('technologies')) {
-                $projet->technologies()->sync($request->technologies);
-            } else {
-                $projet->technologies()->detach();
-            }
+            $projet->technologies()->sync($request->technologies ?? []);
         });
 
-        return redirect()->route('projets.index')->with('success', 'Projet mis à jour avec succès.');
+        return redirect()->route('projets.show', $projet->id)->with('success', 'Projet mis à jour avec succès.');
     }
 
     /**
@@ -135,9 +153,37 @@ class ProjetController extends Controller
 
         DB::transaction(function () use ($projet) {
             $projet->technologies()->detach();
+            $projet->taches()->detach();
             $projet->delete();
         });
 
         return redirect()->route('projets.index')->with('success', 'Projet supprimé avec succès.');
+    }
+
+    /**
+     * KANBAN : Mise à jour du statut d'une tâche sur le pivot (appel Fetch asynchrone)
+     */
+    public function updateTacheStatut(Request $request, Projet $projet, Tache $tache)
+    {
+        $request->validate([
+            'statut_tache' => 'required|in:backlog,en_cours,en_revue,termine',
+        ]);
+
+        // Vérifier que la tâche appartient bien à ce projet
+        if (!$projet->taches()->where('taches.id', $tache->id)->exists()) {
+            return response()->json(['error' => 'Tâche non trouvée dans ce projet.'], 404);
+        }
+
+        DB::transaction(function () use ($projet, $tache, $request) {
+            $projet->taches()->updateExistingPivot($tache->id, [
+                'statut_tache' => $request->statut_tache,
+            ]);
+        });
+
+        return response()->json([
+            'success'      => true,
+            'statut_tache' => $request->statut_tache,
+            'message'      => 'Statut mis à jour.',
+        ]);
     }
 }

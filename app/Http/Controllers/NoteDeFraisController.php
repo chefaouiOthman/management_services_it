@@ -9,14 +9,15 @@ use App\Models\CategorieFlux;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class NoteDeFraisController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:note-de-frais-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:note-de-frais-view', ['only' => ['index', 'show', 'download']]);
         $this->middleware('permission:note-de-frais-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:note-de-frais-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:note-de-frais-edit', ['only' => ['edit', 'update', 'updateStatut']]);
         $this->middleware('permission:note-de-frais-delete', ['only' => ['destroy']]);
     }
 
@@ -31,8 +32,8 @@ class NoteDeFraisController extends Controller
             $query->where('employe_id', Auth::id());
         }
 
-        $notes = $query->get();
-        return view('note_de_frais.index', compact('notes'));
+        // Redirection vers le hub central financier
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh');
     }
 
     /**
@@ -53,7 +54,7 @@ class NoteDeFraisController extends Controller
             'employe_id'           => 'required|exists:employes,user_id',
             'motif_depense'        => 'required|string|max:255',
             'montant_ttc'          => 'required|numeric|min:0',
-            'justificatif_path'    => 'required|string|max:255',
+            'justificatif_fichier' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
         ]);
 
@@ -61,12 +62,14 @@ class NoteDeFraisController extends Controller
             abort(403);
         }
 
-        DB::transaction(function () use ($request) {
+        $path = $request->file('justificatif_fichier')->store('notes_de_frais', 'private');
+
+        DB::transaction(function () use ($request, $path) {
             $note = NoteDeFrais::create([
                 'employe_id'           => $request->employe_id,
                 'motif_depense'        => $request->motif_depense,
                 'montant_ttc'          => $request->montant_ttc,
-                'justificatif_path'    => $request->justificatif_path,
+                'justificatif_path'    => $path,
                 'statut_remboursement' => $request->statut_remboursement,
             ]);
 
@@ -122,16 +125,24 @@ class NoteDeFraisController extends Controller
             'employe_id'           => 'required|exists:employes,user_id',
             'motif_depense'        => 'required|string|max:255',
             'montant_ttc'          => 'required|numeric|min:0',
-            'justificatif_path'    => 'required|string|max:255',
+            'justificatif_fichier' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
         ]);
 
-        DB::transaction(function () use ($request, $note) {
+        $path = $note->justificatif_path;
+        if ($request->hasFile('justificatif_fichier')) {
+            if (Storage::disk('private')->exists($path)) {
+                Storage::disk('private')->delete($path);
+            }
+            $path = $request->file('justificatif_fichier')->store('notes_de_frais', 'private');
+        }
+
+        DB::transaction(function () use ($request, $note, $path) {
             $note->update([
                 'employe_id'           => $request->employe_id,
                 'motif_depense'        => $request->motif_depense,
                 'montant_ttc'          => $request->montant_ttc,
-                'justificatif_path'    => $request->justificatif_path,
+                'justificatif_path'    => $path,
                 'statut_remboursement' => $request->statut_remboursement,
             ]);
 
@@ -162,6 +173,11 @@ class NoteDeFraisController extends Controller
 
         DB::transaction(function () use ($note) {
             $flux_id = $note->flux_tresorerie_id;
+            
+            if (Storage::disk('private')->exists($note->justificatif_path)) {
+                Storage::disk('private')->delete($note->justificatif_path);
+            }
+            
             $note->delete();
 
             if ($flux_id) {
@@ -170,6 +186,58 @@ class NoteDeFraisController extends Controller
         });
 
         return redirect()->route('note_de_frais.index')->with('success', 'Note de frais supprimée avec succès.');
+    }
+
+    /**
+     * 8. DOWNLOAD (Téléchargement sécurisé Private Storage)
+     */
+    public function download(NoteDeFrais $note)
+    {
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
+            abort(403);
+        }
+
+        if (!Storage::disk('private')->exists($note->justificatif_path)) {
+            abort(404, 'Le justificatif est introuvable.');
+        }
+
+        return Storage::disk('private')->download($note->justificatif_path);
+    }
+
+    /**
+     * 9. UPDATE STATUT (Asynchrone Alpine Fetch)
+     */
+    public function updateStatut(Request $request, NoteDeFrais $note)
+    {
+        $request->validate([
+            'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
+        ]);
+
+        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('note-de-frais-edit')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        DB::transaction(function () use ($request, $note) {
+            $note->update([
+                'statut_remboursement' => $request->statut_remboursement,
+            ]);
+
+            if ($note->statut_remboursement === 'rembourse') {
+                $this->syncFluxTresorerie($note);
+            } else {
+                if ($note->flux_tresorerie_id) {
+                    $flux_id = $note->flux_tresorerie_id;
+                    $note->update(['flux_tresorerie_id' => null]);
+                    FluxTresorerie::where('id', $flux_id)->delete();
+                }
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'statut_remboursement' => $request->statut_remboursement,
+            'message' => 'Statut de la note de frais mis à jour.',
+        ]);
     }
 
     /**

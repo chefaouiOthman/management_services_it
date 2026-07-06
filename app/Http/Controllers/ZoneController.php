@@ -51,7 +51,7 @@ class ZoneController extends Controller
                 'code_zone'     => $request->code_zone,
                 'nom_salle'     => $request->nom_salle,
                 'niveau_requis' => $request->niveau_requis,
-                'est_active'    => $request->input('est_active', true),
+                'est_active'    => $request->boolean('est_active'), // boolean() gère l'absence de clé (unchecked = false)
             ]);
         });
 
@@ -63,8 +63,22 @@ class ZoneController extends Controller
      */
     public function show($id)
     {
-        $zone = Zone::findOrFail($id);
-        return view('zones.show', compact('zone'));
+        $zone = Zone::with([
+            'historiquePassages' => fn($q) => $q->orderByDesc('horodatage')->take(100),
+            'historiquePassages.user',
+        ])->findOrFail($id);
+
+        // Présences actives = derniers passages "autorise" sans départ (via Pointage)
+        $presencesActives = \App\Models\Pointage::with('user')
+            ->where('date_jour', \Carbon\Carbon::today()->toDateString())
+            ->whereNull('heure_depart')
+            ->get();
+
+        $historiquesPagines = $zone->historiquePassages()->with('user')
+            ->orderByDesc('horodatage')
+            ->paginate(20);
+
+        return view('zones.show', compact('zone', 'presencesActives', 'historiquesPagines'));
     }
 
     /**
@@ -95,7 +109,7 @@ class ZoneController extends Controller
                 'code_zone'     => $request->code_zone,
                 'nom_salle'     => $request->nom_salle,
                 'niveau_requis' => $request->niveau_requis,
-                'est_active'    => $request->has('est_active') ? $request->est_active : $zone->est_active,
+                'est_active'    => $request->boolean('est_active'), // boolean() retourne false même si clé absente (case décochée)
             ]);
         });
 

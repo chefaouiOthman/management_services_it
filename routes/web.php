@@ -48,36 +48,19 @@ use App\Http\Controllers\LigneFactureController;
 use App\Http\Controllers\FichePaieController;
 use App\Http\Controllers\NoteDeFraisController;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes & Outils de Dev
-|--------------------------------------------------------------------------
-*/
-
 Route::get('/', function () {
     return view('welcome');
 });
 
-// ROUTE DE CONNEXION TEMPORAIRE POUR TES TESTS POSTMAN
-Route::get('/dev-login', function () {
-    $admin = User::where('email', 'admin@entreprise.com')->first();
-    if ($admin) {
-        Auth::login($admin);
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Authentifié en Admin avec succès !',
-            'user' => $admin->nom_complet
-        ]);
-    }
-    return response()->json(['status' => 'error', 'message' => 'Admin introuvable'], 404);
-});
+// ROUTAGE STANDARD (Laravel Breeze)
+Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Route de badge rapide (Widget Pointage)
+Route::post('/pointages/badge', [App\Http\Controllers\PointageController::class, 'badge'])
+    ->middleware('auth')
+    ->name('pointages.badge');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -95,6 +78,22 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('employes', EmployeController::class);
     Route::resource('stagiaires', StagiaireController::class);
+
+    // --- MODULE 5 : ACTIFS IT ---
+    Route::resource('assets', AssetMaterielController::class)->names('asset_materiels');
+    Route::resource('licences', LicenceLogicielController::class)->names('licence_logiciels');
+    Route::resource('tickets', TicketMaintenanceController::class)->names('ticket_maintenances');
+    
+    // Helpdesk - Statut du ticket
+    Route::patch('tickets/{ticket}/statut', [TicketMaintenanceController::class, 'updateStatut'])->name('ticket_maintenances.statut');
+    
+    // Assignations et restitutions (Matériels)
+    Route::post('assets/{asset}/assigner', [AssignationMaterielController::class, 'store'])->name('assignation_materiels.store');
+    Route::patch('assignations/{id}/restituer', [AssignationMaterielController::class, 'restituer'])->name('assignation_materiels.restituer');
+    
+    // Assignations et révocations (Licences)
+    Route::post('licences/{licence}/assigner', [AssignationLicenceController::class, 'store'])->name('assignation_licences.store');
+    Route::patch('assignations-licences/{id}/revoquer', [AssignationLicenceController::class, 'revoquer'])->name('assignation_licences.revoquer');
     Route::resource('clients', ClientController::class);
 
     // --- MODULE 2 : RH & SÉCURITÉ PHYSIQUE ---
@@ -110,12 +109,22 @@ Route::middleware('auth')->group(function () {
     Route::resource('feuille_temps', FeuilleTempsController::class);
     Route::resource('livrables', LivrableController::class);
     Route::resource('technologies', TechnologieController::class);
+    // Route Kanban : mise à jour du statut d'une tâche sur le pivot (asynchrone)
+    Route::patch('projets/{projet}/taches/{tache}/statut', [ProjetController::class, 'updateTacheStatut'])->name('projets.taches.statut');
+    // Route de téléchargement sécurisé d'un livrable
+    Route::get('livrables/{livrable}/download', [LivrableController::class, 'download'])->name('livrables.download');
 
     // --- MODULE 4 : FORMATION ---
     Route::resource('catalogue', CatalogueFormationController::class);
     Route::resource('sessions', SessionFormationController::class);
     Route::resource('inscriptions', InscriptionController::class);
+    // Route asynchrone (Alpine Fetch) pour modifier le statut d'inscription
+    Route::patch('inscriptions/{inscription}/statut', [InscriptionController::class, 'updateStatut'])->name('inscriptions.statut');
+    
     Route::resource('supports', SupportCoursController::class);
+    // Route de téléchargement sécurisé du support
+    Route::get('supports/{support}/download', [SupportCoursController::class, 'download'])->name('supports.download');
+    
     Route::resource('evaluations', EvaluationSessionController::class);
 
     // --- MODULE 5 : ACTIFS IT ---
@@ -130,9 +139,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('categorie_flux', CategorieFluxController::class);
     Route::resource('flux_tresoreries', FluxTresorerieController::class);
     Route::resource('factures', FactureController::class);
+    Route::patch('factures/{facture}/statut', [FactureController::class, 'updateStatut'])->name('factures.statut');
+    
     Route::resource('ligne_factures', LigneFactureController::class);
+    
     Route::resource('fiche_paies', FichePaieController::class);
+    Route::patch('fiche_paies/{fiche}/payer', [FichePaieController::class, 'payer'])->name('fiche_paies.payer');
+    
     Route::resource('note_de_frais', NoteDeFraisController::class);
+    Route::patch('note_de_frais/{note}/statut', [NoteDeFraisController::class, 'updateStatut'])->name('note_de_frais.statut');
+    Route::get('note_de_frais/{note}/download', [NoteDeFraisController::class, 'download'])->name('note_de_frais.download');
 });
 
 require __DIR__.'/auth.php';

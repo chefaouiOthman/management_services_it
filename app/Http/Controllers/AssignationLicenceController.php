@@ -2,122 +2,70 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AssignationLicence;
 use App\Models\LicenceLogiciel;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AssignationLicenceController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:assignation-licence-view', ['only' => ['index', 'show']]);
-        $this->middleware('permission:assignation-licence-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:assignation-licence-edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:assignation-licence-delete', ['only' => ['destroy']]);
+        $this->middleware('permission:manage-assets');
     }
 
     /**
-     * 1. INDEX
+     * Assigner une licence à un utilisateur
      */
-    public function index()
-    {
-        $assignations = AssignationLicence::with(['user', 'licenceLogiciel'])->get();
-        return view('assignation_licences.index', compact('assignations'));
-    }
-
-    /**
-     * 2. CREATE
-     */
-    public function create()
-    {
-        $users = User::all();
-        $licences = LicenceLogiciel::all();
-        return view('assignation_licences.create', compact('users', 'licences'));
-    }
-
-    /**
-     * 3. STORE
-     */
-    public function store(Request $request)
+    public function store(Request $request, LicenceLogiciel $licence)
     {
         $request->validate([
-            'user_id'             => 'required|exists:users,id',
-            'licence_logiciel_id' => 'required|exists:licence_logiciels,id',
-            'date_attribution'    => 'required|date',
-            'date_revocation'     => 'nullable|date|after_or_equal:date_attribution',
+            'user_id' => 'required|exists:users,id',
+            'date_attribution' => 'required|date',
         ]);
 
-        DB::transaction(function () use ($request) {
-            AssignationLicence::create([
-                'user_id'             => $request->user_id,
-                'licence_logiciel_id' => $request->licence_logiciel_id,
-                'date_attribution'    => $request->date_attribution,
-                'date_revocation'     => $request->date_revocation,
+        DB::transaction(function () use ($request, $licence) {
+            $licence->users()->attach($request->user_id, [
+                'date_attribution' => $request->date_attribution,
             ]);
         });
 
-        return redirect()->route('assignation_licences.index')->with('success', 'Attribution de licence créée avec succès.');
+        return redirect()->route('licence_logiciels.index')->with('success', 'Licence assignée avec succès.');
     }
 
     /**
-     * 4. SHOW
+     * Révoquer une licence (via Alpine/Fetch asynchrone)
      */
-    public function show($id)
+    public function revoquer(Request $request, $id)
     {
-        $assignation = AssignationLicence::with(['user', 'licenceLogiciel'])->findOrFail($id);
-        return view('assignation_licences.show', compact('assignation'));
-    }
+        try {
+            DB::transaction(function () use ($id) {
+                $assignation = DB::table('assignation_licences')->where('id', $id)->first();
+                
+                if (!$assignation) {
+                    throw new \Exception("Assignation introuvable.");
+                }
 
-    /**
-     * 5. EDIT
-     */
-    public function edit($id)
-    {
-        $assignation = AssignationLicence::findOrFail($id);
-        $users = User::all();
-        $licences = LicenceLogiciel::all();
-        return view('assignation_licences.edit', compact('assignation', 'users', 'licences'));
-    }
+                if ($assignation->date_revocation !== null) {
+                    throw new \Exception("Cette licence a déjà été révoquée.");
+                }
 
-    /**
-     * 6. UPDATE
-     */
-    public function update(Request $request, $id)
-    {
-        $assignation = AssignationLicence::findOrFail($id);
+                DB::table('assignation_licences')->where('id', $id)->update([
+                    'date_revocation' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
+            });
 
-        $request->validate([
-            'user_id'             => 'required|exists:users,id',
-            'licence_logiciel_id' => 'required|exists:licence_logiciels,id',
-            'date_attribution'    => 'required|date',
-            'date_revocation'     => 'nullable|date|after_or_equal:date_attribution',
-        ]);
-
-        DB::transaction(function () use ($request, $assignation) {
-            $assignation->update([
-                'user_id'             => $request->user_id,
-                'licence_logiciel_id' => $request->licence_logiciel_id,
-                'date_attribution'    => $request->date_attribution,
-                'date_revocation'     => $request->date_revocation,
+            return response()->json([
+                'success' => true,
+                'message' => 'Licence révoquée avec succès.',
+                'date_revocation' => Carbon::now()->format('d/m/Y')
             ]);
-        });
-
-        return redirect()->route('assignation_licences.index')->with('success', 'Attribution de licence mise à jour avec succès.');
-    }
-
-    /**
-     * 7. DESTROY
-     */
-    public function destroy($id)
-    {
-        $assignation = AssignationLicence::findOrFail($id);
-
-        DB::transaction(function () use ($assignation) {
-            $assignation->delete();
-        });
-
-        return redirect()->route('assignation_licences.index')->with('success', 'Attribution de licence supprimée avec succès.');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 }

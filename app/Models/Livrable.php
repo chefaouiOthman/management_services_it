@@ -16,6 +16,8 @@ class Livrable extends Model
         'titre_jalon',
         'date_limite_soumission',
         'statut_client',
+        'fichier_path',
+        'fichier_nom_original',
     ];
 
     protected $casts = [
