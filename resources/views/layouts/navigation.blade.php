@@ -23,6 +23,13 @@
                     </x-nav-link>
                     @endcan
 
+                    <!-- M2 : Départements -->
+                    @can('user-view')
+                    <x-nav-link :href="route('departements.index')" :active="request()->routeIs('departements.*')">
+                        Départements
+                    </x-nav-link>
+                    @endcan
+
                     <!-- M2 : Contrôle d'accès -->
                     @can('zone-view')
                     <x-nav-link :href="route('zones.index')" :active="request()->routeIs('zones.*')">

@@ -49,15 +49,17 @@ class EmployeController extends Controller
             'email'           => 'required|string|email|max:255|unique:users',
             'password'        => 'required|string|min:8',
             'est_actif'       => 'boolean',
-            'CIN'             => 'required|string|max:50|unique:employes',
+            'CIN'             => 'required|string|max:50|unique:employes,CIN',
             'date_embauche'   => 'required|date',
+            'departement_id'  => 'nullable|exists:departements,id',
             'type_contrat'    => 'required|in:CDI,CDD,Freelance',
             'date_debut'      => 'required|date',
             'date_fin'        => 'nullable|date|after_or_equal:date_debut',
             'salaire_base'    => 'required|numeric|min:0',
             'heures_hebdo'    => 'required|integer|min:0',
             'statut'          => 'required|in:actif,suspendu,termine',
-            'role'            => 'required|exists:roles,name',
+            'roles'           => 'required|array',
+            'roles.*'         => 'exists:roles,name',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -66,12 +68,14 @@ class EmployeController extends Controller
                 'email'       => $request->email,
                 'password'    => Hash::make($request->password),
                 'est_actif'   => $request->input('est_actif', true),
+                'cin'         => $request->CIN, // Sync with users table as well if it exists
             ]);
 
             $employe = Employe::create([
                 'user_id'        => $user->id,
                 'CIN'            => $request->CIN,
                 'date_embauche'  => $request->date_embauche,
+                'departement_id' => $request->departement_id,
             ]);
 
             Contrat::create([
@@ -84,10 +88,10 @@ class EmployeController extends Controller
                 'statut'        => $request->statut,
             ]);
 
-            $user->assignRole($request->role);
+            $user->syncRoles($request->roles);
         });
 
-        return redirect()->route('employes.index')->with('success', 'Employé créé avec succès !');
+        return redirect()->route('users.index')->with('success', 'Employé créé avec succès !');
     }
 
     /**

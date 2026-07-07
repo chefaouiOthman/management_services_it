@@ -23,6 +23,22 @@ class Departement extends Model
      */
     protected $casts = [];
 
+    /**
+     * Relation avec Employes
+     */
+    public function employes()
+    {
+        return $this->hasMany(Employe::class);
+    }
+
+    /**
+     * Relation avec Stagiaires
+     */
+    public function stagiaires()
+    {
+        return $this->hasMany(Stagiaire::class);
+    }
+
     // =========================================================
     // NOTE ARCHITECTURALE :
     // Selon GEMINI.md, la table 'employes' ne possède PAS de colonne

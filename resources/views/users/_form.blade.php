@@ -48,13 +48,13 @@
                     <!-- Champs communs (User) -->
                     <div>
                         <x-input-label for="nom_complet" value="Nom Complet" />
-                        <x-text-input id="nom_complet" name="nom_complet" type="text" class="mt-1 block w-full" :value="old('nom_complet', $user->nom_complet ?? '')" required />
+                        <x-text-input id="nom_complet" name="nom_complet" type="text" class="mt-1 block w-full" value="{{ old('nom_complet', $user->nom_complet ?? '') }}" required />
                         <x-input-error :messages="$errors->get('nom_complet')" class="mt-2" />
                     </div>
 
                     <div>
                         <x-input-label for="email" value="Email" />
-                        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email ?? '')" required />
+                        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" value="{{ old('email', $user->email ?? '') }}" required />
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
@@ -78,15 +78,25 @@
                         <x-slot name="header">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Informations Employé</h3>
                         </x-slot>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <x-input-label for="CIN" value="CIN" />
-                                <x-text-input id="CIN" name="CIN" type="text" class="mt-1 block w-full" :value="old('CIN', $user->employe->CIN ?? '')" x-bind:required="role === 'Employe_Standard'" />
+                                <x-text-input id="CIN" name="CIN" type="text" class="mt-1 block w-full" value="{{ old('CIN', $user->employe->CIN ?? '') }}" x-bind:required="role === 'Employe_Standard'" />
                                 <x-input-error :messages="$errors->get('CIN')" class="mt-2" />
                             </div>
                             <div>
+                                <x-input-label for="departement_id_employe" value="Département" />
+                                <select id="departement_id_employe" name="departement_id" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" x-bind:required="role === 'Employe_Standard'">
+                                    <option value="">-- Sélectionner un département --</option>
+                                    @foreach(\App\Models\Departement::all() as $dept)
+                                        <option value="{{ $dept->id }}" {{ old('departement_id', $user->employe->departement_id ?? '') == $dept->id ? 'selected' : '' }}>{{ $dept->nom_departement }}</option>
+                                    @endforeach
+                                </select>
+                                <x-input-error :messages="$errors->get('departement_id')" class="mt-2" />
+                            </div>
+                            <div>
                                 <x-input-label for="date_embauche" value="Date d'embauche" />
-                                <x-text-input id="date_embauche" name="date_embauche" type="date" class="mt-1 block w-full" :value="old('date_embauche', isset($user->employe->date_embauche) ? $user->employe->date_embauche->format('Y-m-d') : '')" x-bind:required="role === 'Employe_Standard'" />
+                                <x-text-input id="date_embauche" name="date_embauche" type="date" class="mt-1 block w-full" value="{{ old('date_embauche', isset($user->employe->date_embauche) ? $user->employe->date_embauche->format('Y-m-d') : '') }}" x-bind:required="role === 'Employe_Standard'" />
                                 <x-input-error :messages="$errors->get('date_embauche')" class="mt-2" />
                             </div>
                         </div>
@@ -108,22 +118,22 @@
                             </div>
                             <div>
                                 <x-input-label for="date_debut" value="Date de Début" />
-                                <x-text-input id="date_debut" name="date_debut" type="date" class="mt-1 block w-full" :value="old('date_debut', isset($user->employe->contrat->date_debut) ? $user->employe->contrat->date_debut->format('Y-m-d') : '')" x-bind:required="role === 'Employe_Standard'" />
+                                <x-text-input id="date_debut" name="date_debut" type="date" class="mt-1 block w-full" value="{{ old('date_debut', isset($user->employe->contrat->date_debut) ? $user->employe->contrat->date_debut->format('Y-m-d') : '') }}" x-bind:required="role === 'Employe_Standard'" />
                                 <x-input-error :messages="$errors->get('date_debut')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="date_fin" value="Date de Fin (Optionnelle)" />
-                                <x-text-input id="date_fin" name="date_fin" type="date" class="mt-1 block w-full" :value="old('date_fin', isset($user->employe->contrat->date_fin) ? $user->employe->contrat->date_fin->format('Y-m-d') : '')" />
+                                <x-text-input id="date_fin" name="date_fin" type="date" class="mt-1 block w-full" value="{{ old('date_fin', isset($user->employe->contrat->date_fin) ? $user->employe->contrat->date_fin->format('Y-m-d') : '') }}" />
                                 <x-input-error :messages="$errors->get('date_fin')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="salaire_base" value="Salaire de Base" />
-                                <x-text-input id="salaire_base" name="salaire_base" type="number" step="0.01" class="mt-1 block w-full" :value="old('salaire_base', $user->employe->contrat->salaire_base ?? '')" x-bind:required="role === 'Employe_Standard'" />
+                                <x-text-input id="salaire_base" name="salaire_base" type="number" step="0.01" class="mt-1 block w-full" value="{{ old('salaire_base', $user->employe->contrat->salaire_base ?? '') }}" x-bind:required="role === 'Employe_Standard'" />
                                 <x-input-error :messages="$errors->get('salaire_base')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="heures_hebdo" value="Heures Hebdomadaires" />
-                                <x-text-input id="heures_hebdo" name="heures_hebdo" type="number" class="mt-1 block w-full" :value="old('heures_hebdo', $user->employe->contrat->heures_hebdo ?? '')" x-bind:required="role === 'Employe_Standard'" />
+                                <x-text-input id="heures_hebdo" name="heures_hebdo" type="number" class="mt-1 block w-full" value="{{ old('heures_hebdo', $user->employe->contrat->heures_hebdo ?? '') }}" x-bind:required="role === 'Employe_Standard'" />
                                 <x-input-error :messages="$errors->get('heures_hebdo')" class="mt-2" />
                             </div>
                             <div>
@@ -149,8 +159,18 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="ecole_origine" value="École d'origine" />
-                            <x-text-input id="ecole_origine" name="ecole_origine" type="text" class="mt-1 block w-full" :value="old('ecole_origine', $user->stagiaire->ecole_origine ?? '')" x-bind:required="role === 'Stagiaire'" />
+                            <x-text-input id="ecole_origine" name="ecole_origine" type="text" class="mt-1 block w-full" value="{{ old('ecole_origine', $user->stagiaire->ecole_origine ?? '') }}" x-bind:required="role === 'Stagiaire'" />
                             <x-input-error :messages="$errors->get('ecole_origine')" class="mt-2" />
+                        </div>
+                        <div>
+                            <x-input-label for="departement_id_stagiaire" value="Département" />
+                            <select id="departement_id_stagiaire" name="departement_id" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" x-bind:required="role === 'Stagiaire'">
+                                <option value="">-- Sélectionner un département --</option>
+                                @foreach(\App\Models\Departement::all() as $dept)
+                                    <option value="{{ $dept->id }}" {{ old('departement_id', $user->stagiaire->departement_id ?? '') == $dept->id ? 'selected' : '' }}>{{ $dept->nom_departement }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('departement_id')" class="mt-2" />
                         </div>
                         <div class="col-span-full">
                             <x-input-label for="sujet_stage" value="Sujet de stage" />

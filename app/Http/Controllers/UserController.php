@@ -24,7 +24,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with(['roles', 'employe', 'stagiaire', 'client'])->paginate(25);
+        $users = User::with(['roles', 'employe.contrats', 'employe.departement', 'stagiaire.departement', 'client'])->paginate(25);
         return view('users.index', compact('users'));
     }
 
@@ -94,24 +94,33 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with(['employe', 'stagiaire', 'client'])->findOrFail($id);
 
         $request->validate([
-            'nom_complet' => 'required|string|max:150',
-            'email'       => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'cin'         => ['nullable', 'string', 'max:50', Rule::unique('users', 'cin')->ignore($user->id)],
-            'password'    => 'nullable|string|min:8',
-            'est_actif'   => 'boolean',
-            'roles'       => 'nullable|array',
-            'roles.*'     => 'exists:roles,name',
+            'nom_complet'    => 'required|string|max:150',
+            'email'          => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'cin'            => ['nullable', 'string', 'max:50', Rule::unique('users', 'cin')->ignore($user->id)],
+            'password'       => 'nullable|string|min:8',
+            'est_actif'      => 'boolean',
+            'roles'          => 'nullable|array',
+            'roles.*'        => 'exists:roles,name',
+            'departement_id' => 'nullable|exists:departements,id',
+            'date_embauche'  => 'nullable|date',
+            'CIN'            => 'nullable|string|max:50',
+            'ecole_origine'  => 'nullable|string|max:150',
+            'sujet_stage'    => 'nullable|string',
+            'type_client'    => 'nullable|in:physique,morale',
+            'nom_societe'    => 'nullable|string|max:150',
+            'ice'            => 'nullable|string|max:50',
         ]);
 
         DB::transaction(function () use ($request, $user) {
+            // 1. Mise à jour du User parent
             $user->update([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
                 'cin'         => $request->cin,
-                'est_actif'   => $request->has('est_actif') ? $request->est_actif : $user->est_actif,
+                'est_actif'   => $request->has('est_actif') ? (bool)$request->est_actif : $user->est_actif,
             ]);
 
             if ($request->filled('password')) {
@@ -122,6 +131,27 @@ class UserController extends Controller
                 $user->syncRoles($request->roles);
             } else {
                 $user->syncRoles([]);
+            }
+
+            // 2. Mise à jour polymorphique de l'entité fille
+            if ($user->employe) {
+                $user->employe->update(array_filter([
+                    'departement_id' => $request->departement_id,
+                    'date_embauche'  => $request->date_embauche ?: $user->employe->date_embauche,
+                    'CIN'            => $request->CIN ?: $user->employe->CIN,
+                ], fn($v) => !is_null($v)));
+            } elseif ($user->stagiaire) {
+                $user->stagiaire->update(array_filter([
+                    'departement_id' => $request->departement_id,
+                    'ecole_origine'  => $request->ecole_origine ?: $user->stagiaire->ecole_origine,
+                    'sujet_stage'    => $request->sujet_stage ?: $user->stagiaire->sujet_stage,
+                ], fn($v) => !is_null($v)));
+            } elseif ($user->client) {
+                $user->client->update(array_filter([
+                    'type_client'  => $request->type_client ?: $user->client->type_client,
+                    'nom_societe'  => $request->nom_societe,
+                    'ice'          => $request->ice,
+                ], fn($v) => !is_null($v)));
             }
         });
 

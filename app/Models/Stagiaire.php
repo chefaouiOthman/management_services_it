@@ -27,6 +27,7 @@ class Stagiaire extends Model
         'user_id',
         'ecole_origine',
         'sujet_stage',
+        'departement_id',
     ];
 
     /**
@@ -40,8 +41,15 @@ class Stagiaire extends Model
     // =========================================================
 
     /** Remonte vers le compte utilisateur (table users) */
+    /** Remonte vers le compte utilisateur (table users) */
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Relation vers le Departement */
+    public function departement(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Departement::class);
     }
 }

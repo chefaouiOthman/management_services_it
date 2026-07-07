@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('employes', EmployeController::class);
     Route::resource('stagiaires', StagiaireController::class);
     Route::resource('clients', ClientController::class);
+    Route::resource('departements', DepartementController::class);
 
     // --- MODULE 5 : ACTIFS IT ---
     // assets.* = AssetMaterielController (URL: /assets, noms: assets.index, assets.show, etc.)

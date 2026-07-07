@@ -27,6 +27,7 @@ class Employe extends Model
         'user_id',
         'date_embauche',
         'CIN',
+        'departement_id',
     ];
 
     protected $casts = [
@@ -41,6 +42,12 @@ class Employe extends Model
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Relation vers le Departement */
+    public function departement(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Departement::class);
     }
 
     // =========================================================
