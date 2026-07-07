@@ -22,16 +22,24 @@ class PointageController extends Controller
     /**
      * 1. INDEX : LISTE DES POINTAGES
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Si l'utilisateur est admin, il voit tout. Sinon, il ne voit que les siens.
-        $query = Pointage::with('user');
-        if (!Auth::user()->hasRole('Admin')) {
+        $query = Pointage::with('user')->orderByDesc('date_jour');
+        
+        if (Auth::user()->hasRole('Admin')) {
+            // Admin : peut filtrer par employé via query string ?user_id=
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+            $users = User::orderBy('nom_complet')->get(['id', 'nom_complet']);
+        } else {
+            // Non-admin : uniquement ses propres pointages
             $query->where('user_id', Auth::id());
+            $users = collect();
         }
         
-        $pointages = $query->get();
-        return view('pointages.index', compact('pointages'));
+        $pointages = $query->paginate(50);
+        return view('pointages.index', compact('pointages', 'users'));
     }
 
     /**

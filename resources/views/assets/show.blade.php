@@ -9,11 +9,11 @@
             </div>
             <div class="flex gap-2">
                 @can('asset-edit')
-                <a href="{{ route('asset_materiels.edit', $asset->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
+                <a href="{{ route('assets.edit', $asset->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
                     Modifier Matériel
                 </a>
                 @endcan
-                <a href="{{ route('asset_materiels.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                <a href="{{ route('assets.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                     ← Retour
                 </a>
             </div>
@@ -143,7 +143,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-gray-900">Historique des pannes</h3>
                     @can('ticket-create')
-                    <a href="{{ route('ticket_maintenances.create') }}" class="text-xs font-medium text-indigo-600 hover:underline">
+                    <a href="{{ route('tickets.create') }}" class="text-xs font-medium text-indigo-600 hover:underline">
                         + Signaler un incident
                     </a>
                     @endcan

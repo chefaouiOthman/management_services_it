@@ -186,7 +186,50 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Notes de Frais</h3>
                         @can('note-de-frais-create')
+                        @role('Admin')
+                        <!-- Modale Admin : Créer une Note de Frais -->
+                        <div x-data="{ openFraisModal: false }">
+                            <button @click="openFraisModal = true" class="text-sm font-medium text-indigo-600 hover:underline">
+                                + Créer Note de Frais (Admin)
+                            </button>
+                            <div x-show="openFraisModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @click.self="openFraisModal = false">
+                                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4">
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Nouvelle Note de Frais</h3>
+                                    <form action="{{ route('note_de_frais.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                                        @csrf
+                                        <input type="hidden" name="statut_remboursement" value="soumis">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employé *</label>
+                                            <select name="employe_id" required class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 rounded-md shadow-sm text-sm">
+                                                <option value="">-- Sélectionner un employé --</option>
+                                                @foreach(\App\Models\Employe::with('user')->get() as $emp)
+                                                    <option value="{{ $emp->user_id }}">{{ $emp->user->nom_complet }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Motif de la dépense *</label>
+                                            <input type="text" name="motif_depense" required class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 rounded-md shadow-sm text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Montant TTC *</label>
+                                            <input type="number" step="0.01" name="montant_ttc" required class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 rounded-md shadow-sm text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Justificatif (PDF/Image) *</label>
+                                            <input type="file" name="justificatif_fichier" required class="block w-full text-sm text-gray-500">
+                                        </div>
+                                        <div class="flex justify-end gap-3 pt-2">
+                                            <button type="button" @click="openFraisModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200">Annuler</button>
+                                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-bold hover:bg-indigo-700">Soumettre</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        @else
                         <a href="{{ route('note_de_frais.create') }}" class="text-sm font-medium text-indigo-600 hover:underline">+ Soumettre Frais</a>
+                        @endrole
                         @endcan
                     </div>
                     <div class="grid grid-cols-1 gap-4">

@@ -18,7 +18,7 @@
                     <div>
                         <x-input-label for="projet_id" value="Projet (Optionnel)" />
                         <select name="projet_id" class="mt-1 block w-full border-gray-300 rounded-md">
-                            <option value="">Aucun projet lié</option>
+                            <option value="">-- Independent Task (No Project Link) --</option>
                             @foreach(\App\Models\Projet::all() as $p)
                                 <option value="{{ $p->id }}">{{ $p->nom_projet }}</option>
                             @endforeach

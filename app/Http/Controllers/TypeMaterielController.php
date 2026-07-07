@@ -51,7 +51,7 @@ class TypeMaterielController extends Controller
             ]);
         });
 
-        return redirect()->route('type_materiels.index')->with('success', 'Type de matériel créé avec succès.');
+        return redirect()->back()->with('success', 'Type de matériel créé avec succès.');
     }
 
     /**
@@ -91,7 +91,7 @@ class TypeMaterielController extends Controller
             ]);
         });
 
-        return redirect()->route('type_materiels.index')->with('success', 'Type de matériel mis à jour avec succès.');
+        return redirect()->back()->with('success', 'Type de matériel mis à jour avec succès.');
     }
 
     /**
@@ -105,6 +105,6 @@ class TypeMaterielController extends Controller
             $type->delete();
         });
 
-        return redirect()->route('type_materiels.index')->with('success', 'Type de matériel supprimé avec succès.');
+        return redirect()->back()->with('success', 'Type de matériel supprimé avec succès.');
     }
 }

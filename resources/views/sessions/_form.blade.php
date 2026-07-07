@@ -59,15 +59,16 @@
             <div class="md:col-span-2">
                 <x-input-label value="Formateurs Assignés (Employés)" />
                 <p class="text-sm text-gray-500 mb-2">Cochez les employés qui animeront cette session.</p>
-                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
+                <div class="max-h-60 overflow-y-auto border border-gray-300 rounded p-2 bg-white">
                     @php
                         $selectedFormateurs = old('formateurs', isset($session) ? $session->formateurs->pluck('user_id')->toArray() : []);
                     @endphp
                     @foreach($employes as $employe)
-                        <label class="inline-flex items-center p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-sm hover:bg-gray-50 cursor-pointer">
-                            <input type="checkbox" name="formateurs[]" value="{{ $employe->user_id }}" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" 
-                                @checked(in_array($employe->user_id, $selectedFormateurs))>
-                            <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-200">{{ $employe->user->nom_complet }}</span>
+                        <label class="flex items-center space-x-2 p-1 hover:bg-gray-50">
+                            <input type="checkbox" name="formateurs[]" value="{{ $employe->user_id }}" 
+                                   @checked(in_array($employe->user_id, $selectedFormateurs))
+                                   class="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                            <span class="text-sm text-gray-700">{{ $employe->user->nom_complet }} ({{ $employe->user->email }})</span>
                         </label>
                     @endforeach
                 </div>

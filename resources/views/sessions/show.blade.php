@@ -93,9 +93,44 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Liste des Apprenants</h3>
                     @can('inscription-create')
-                    <a href="{{ route('inscriptions.create') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
-                        + Ajouter Inscription
-                    </a>
+                    <!-- Modale Admin : Inscrire manuellement n'importe quel utilisateur -->
+                    <div x-data="{ openModal: false }">
+                        <button @click="openModal = true" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                            + Inscrire un Utilisateur
+                        </button>
+                        <!-- Overlay -->
+                        <div x-show="openModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @click.self="openModal = false">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Inscription Manuelle à la Session</h3>
+                                <form action="{{ route('inscriptions.store') }}" method="POST" class="space-y-4">
+                                    @csrf
+                                    <input type="hidden" name="session_formation_id" value="{{ $session->id }}">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Utilisateur *</label>
+                                        <select name="user_id" required class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 rounded-md shadow-sm text-sm">
+                                            <option value="">-- Choisir un utilisateur --</option>
+                                            @foreach($allUsers as $u)
+                                                <option value="{{ $u->id }}">{{ $u->nom_complet }} ({{ $u->email }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Statut initial</label>
+                                        <select name="statut_inscription" class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 rounded-md shadow-sm text-sm">
+                                            <option value="valide">Validé</option>
+                                            <option value="present">Présent</option>
+                                            <option value="certifie">Certifié</option>
+                                            <option value="annule">Annulé</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex justify-end gap-3 pt-2">
+                                        <button type="button" @click="openModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200">Annuler</button>
+                                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-bold hover:bg-indigo-700">Inscrire</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     @endcan
                 </div>
 

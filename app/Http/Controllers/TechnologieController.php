@@ -51,7 +51,7 @@ class TechnologieController extends Controller
             ]);
         });
 
-        return redirect()->route('technologies.index')->with('success', 'Technologie ajoutée avec succès.');
+        return redirect()->back()->with('success', 'Technologie ajoutée avec succès.');
     }
 
     /**
@@ -91,7 +91,7 @@ class TechnologieController extends Controller
             ]);
         });
 
-        return redirect()->route('technologies.index')->with('success', 'Technologie mise à jour avec succès.');
+        return redirect()->back()->with('success', 'Technologie mise à jour avec succès.');
     }
 
     /**
@@ -107,6 +107,6 @@ class TechnologieController extends Controller
             $technologie->delete();
         });
 
-        return redirect()->route('technologies.index')->with('success', 'Technologie supprimée avec succès.');
+        return redirect()->back()->with('success', 'Technologie supprimée avec succès.');
     }
 }

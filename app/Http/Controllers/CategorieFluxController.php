@@ -51,7 +51,7 @@ class CategorieFluxController extends Controller
             ]);
         });
 
-        return redirect()->route('categorie_flux.index')->with('success', 'Catégorie ajoutée avec succès.');
+        return redirect()->back()->with('success', 'Catégorie ajoutée avec succès.');
     }
 
     /**
@@ -91,7 +91,7 @@ class CategorieFluxController extends Controller
             ]);
         });
 
-        return redirect()->route('categorie_flux.index')->with('success', 'Catégorie mise à jour avec succès.');
+        return redirect()->back()->with('success', 'Catégorie mise à jour avec succès.');
     }
 
     /**
@@ -105,6 +105,6 @@ class CategorieFluxController extends Controller
             $categorie->delete();
         });
 
-        return redirect()->route('categorie_flux.index')->with('success', 'Catégorie supprimée avec succès.');
+        return redirect()->back()->with('success', 'Catégorie supprimée avec succès.');
     }
 }

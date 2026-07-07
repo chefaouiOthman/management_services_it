@@ -44,29 +44,44 @@ class FactureController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'client_id'      => 'required|exists:clients,user_id',
-            'num_facture'    => 'required|string|max:50|unique:factures,num_facture',
-            'date_emission'  => 'required|date',
-            'statut_paiement'=> 'required|in:emise,en_retard_paiement,soldee',
+            'client_id'       => 'required|exists:clients,user_id',
+            'num_facture'     => 'required|string|max:50|unique:factures,num_facture',
+            'date_emission'   => 'required|date',
+            'statut_paiement' => 'required|in:emise,en_retard_paiement,soldee',
+            'lignes'          => 'nullable|array',
+            'lignes.*.designation'    => 'required_with:lignes|string|max:255',
+            'lignes.*.quantite'       => 'required_with:lignes|numeric|min:0',
+            'lignes.*.prix_unitaire_ht' => 'required_with:lignes|numeric|min:0',
+            'lignes.*.taux_tva'       => 'required_with:lignes|numeric|min:0|max:100',
         ]);
 
         DB::transaction(function () use ($request) {
             $facture = Facture::create([
-                'client_id'      => $request->client_id,
-                'num_facture'    => $request->num_facture,
-                'date_emission'  => $request->date_emission,
-                'statut_paiement'=> $request->statut_paiement,
+                'client_id'       => $request->client_id,
+                'num_facture'     => $request->num_facture,
+                'date_emission'   => $request->date_emission,
+                'statut_paiement' => $request->statut_paiement,
             ]);
 
-            // Si la facture est créée "soldee" directement, on génère un flux de trésorerie à 0 
-            // (car aucune ligne n'a encore été ajoutée dans cet écran, les lignes se font via LigneFactureController).
-            // L'idéal est de mettre à jour le flux une fois les lignes ajoutées.
+            // Créer les lignes de facture si elles sont fournies
+            if ($request->filled('lignes')) {
+                foreach ($request->lignes as $ligne) {
+                    $facture->ligneFactures()->create([
+                        'designation'      => $ligne['designation'],
+                        'quantite'         => $ligne['quantite'],
+                        'prix_unitaire_ht' => $ligne['prix_unitaire_ht'],
+                        'taux_tva'         => $ligne['taux_tva'],
+                    ]);
+                }
+            }
+
+            // Si soldée dès la création, générer le flux de trésorerie
             if ($request->statut_paiement === 'soldee') {
-                $this->syncFluxTresorerie($facture);
+                $this->syncFluxTresorerie($facture->fresh('ligneFactures'));
             }
         });
 
-        return redirect()->route('factures.index')->with('success', 'Facture créée avec succès.');
+        return redirect()->route('flux_tresoreries.index', ['#facturation'])->with('success', 'Facture créée avec succès.');
     }
 
     /**

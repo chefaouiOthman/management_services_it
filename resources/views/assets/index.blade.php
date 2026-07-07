@@ -30,7 +30,7 @@
                                 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                                     <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                         <div class="flex flex-col">
-                                            <a href="{{ route('asset_materiels.show', $asset->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline text-base font-semibold">
+                                            <a href="{{ route('assets.show', $asset->id) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline text-base font-semibold">
                                                 {{ $asset->typeMateriel->libelle_type }} - {{ $asset->marque }}
                                             </a>
                                             <span class="text-xs text-gray-500">Ajouté le {{ \Carbon\Carbon::parse($asset->date_achat_actif)->format('d/m/Y') }}</span>

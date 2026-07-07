@@ -78,14 +78,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('employes', EmployeController::class);
     Route::resource('stagiaires', StagiaireController::class);
+    Route::resource('clients', ClientController::class);
 
     // --- MODULE 5 : ACTIFS IT ---
-    Route::resource('assets', AssetMaterielController::class)->names('asset_materiels');
-    Route::resource('licences', LicenceLogicielController::class)->names('licence_logiciels');
-    Route::resource('tickets', TicketMaintenanceController::class)->names('ticket_maintenances');
+    // assets.* = AssetMaterielController (URL: /assets, noms: assets.index, assets.show, etc.)
+    Route::resource('assets', AssetMaterielController::class);
+    Route::resource('licences', LicenceLogicielController::class);
+    Route::resource('tickets', TicketMaintenanceController::class);
     
     // Helpdesk - Statut du ticket
-    Route::patch('tickets/{ticket}/statut', [TicketMaintenanceController::class, 'updateStatut'])->name('ticket_maintenances.statut');
+    Route::patch('tickets/{ticket}/statut', [TicketMaintenanceController::class, 'updateStatut'])->name('tickets.statut');
     
     // Assignations et restitutions (Matériels)
     Route::post('assets/{asset}/assigner', [AssignationMaterielController::class, 'store'])->name('assignation_materiels.store');
@@ -94,7 +96,7 @@ Route::middleware('auth')->group(function () {
     // Assignations et révocations (Licences)
     Route::post('licences/{licence}/assigner', [AssignationLicenceController::class, 'store'])->name('assignation_licences.store');
     Route::patch('assignations-licences/{id}/revoquer', [AssignationLicenceController::class, 'revoquer'])->name('assignation_licences.revoquer');
-    Route::resource('clients', ClientController::class);
+
 
     // --- MODULE 2 : RH & SÉCURITÉ PHYSIQUE ---
     Route::resource('departements', DepartementController::class);
@@ -127,13 +129,20 @@ Route::middleware('auth')->group(function () {
     
     Route::resource('evaluations', EvaluationSessionController::class);
 
-    // --- MODULE 5 : ACTIFS IT ---
+    // --- MODULE 5 : ACTIFS IT (tables de config) ---
     Route::resource('type_materiels', TypeMaterielController::class);
-    Route::resource('assets', AssetMaterielController::class);
-    Route::resource('tickets', TicketMaintenanceController::class);
-    Route::resource('licences', LicenceLogicielController::class);
     Route::resource('assignation_materiels', AssignationMaterielController::class);
     Route::resource('assignation_licences', AssignationLicenceController::class);
+
+    // --- PARAMETRES ADMIN ---
+    Route::middleware('role:Admin')->group(function () {
+        Route::get('/admin/parametres', function () {
+            $technologies = \App\Models\Technologie::orderBy('nom_tech')->get();
+            $typeMaterialels = \App\Models\TypeMateriel::orderBy('libelle_type')->get();
+            $categoriesFlux = \App\Models\CategorieFlux::orderBy('libelle_categorie')->get();
+            return view('admin.parametres', compact('technologies', 'typeMaterialels', 'categoriesFlux'));
+        })->name('admin.parametres');
+    });
 
     // --- MODULE 6 : FINANCE ---
     Route::resource('categorie_flux', CategorieFluxController::class);

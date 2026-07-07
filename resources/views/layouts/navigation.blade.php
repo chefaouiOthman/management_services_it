@@ -83,8 +83,14 @@
                     </x-slot>
 
                     <x-slot name="content">
+                        @role('Admin')
+                        <x-dropdown-link :href="route('admin.parametres')">
+                            ⚙️ {{ __('Paramètres Admin') }}
+                        </x-dropdown-link>
+                        @endrole
+                        
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            👤 {{ __('Profile') }}
                         </x-dropdown-link>
 
                         <!-- Authentication -->

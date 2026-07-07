@@ -74,8 +74,9 @@ class SessionFormationController extends Controller
      */
     public function show($id)
     {
-        $session = SessionFormation::with(['catalogueFormation', 'formateurs.user', 'inscriptions.user', 'evaluations'])->findOrFail($id);
-        return view('sessions.show', compact('session'));
+        $session = SessionFormation::with(['catalogueFormation', 'formateurs.user', 'inscriptions.user', 'evaluations.user', 'evaluations.formateur.user'])->findOrFail($id);
+        $allUsers = \App\Models\User::orderBy('nom_complet')->get(['id', 'nom_complet', 'email']);
+        return view('sessions.show', compact('session', 'allUsers'));
     }
 
     /**

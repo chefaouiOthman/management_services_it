@@ -24,7 +24,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with(['roles', 'employe', 'stagiaire', 'client'])->paginate(50);
+        $users = User::with(['roles', 'employe', 'stagiaire', 'client'])->paginate(25);
         return view('users.index', compact('users'));
     }
 
@@ -46,6 +46,7 @@ class UserController extends Controller
         $request->validate([
             'nom_complet' => 'required|string|max:150',
             'email'       => 'required|string|email|max:255|unique:users',
+            'cin'         => 'nullable|string|max:50|unique:users,cin',
             'password'    => 'required|string|min:8',
             'est_actif'   => 'boolean',
             'roles'       => 'nullable|array',
@@ -56,6 +57,7 @@ class UserController extends Controller
             $user = User::create([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
+                'cin'         => $request->cin,
                 'password'    => Hash::make($request->password),
                 'est_actif'   => $request->input('est_actif', true),
             ]);
@@ -97,6 +99,7 @@ class UserController extends Controller
         $request->validate([
             'nom_complet' => 'required|string|max:150',
             'email'       => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'cin'         => ['nullable', 'string', 'max:50', Rule::unique('users', 'cin')->ignore($user->id)],
             'password'    => 'nullable|string|min:8',
             'est_actif'   => 'boolean',
             'roles'       => 'nullable|array',
@@ -107,6 +110,7 @@ class UserController extends Controller
             $user->update([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
+                'cin'         => $request->cin,
                 'est_actif'   => $request->has('est_actif') ? $request->est_actif : $user->est_actif,
             ]);
 
