@@ -28,12 +28,20 @@
                                 <td class="px-6 py-4">{{ $tech->id }}</td>
                                 <td class="px-6 py-4 font-bold">{{ $tech->nom_tech }}</td>
                                 <td class="px-6 py-4 font-mono">{{ $tech->version }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    <form action="{{ route('technologies.destroy', $tech->id) }}" method="POST" onsubmit="return confirm('Supprimer ?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 font-bold text-xs">Supprimer</button>
-                                    </form>
+                                <td class="px-6 py-4 text-right space-x-2">
+                                    @can('technologie-view')
+                                        <a href="{{ route('technologies.show', $tech->id) }}" class="text-blue-600 hover:text-blue-900 font-medium text-xs">Voir les détails</a>
+                                    @endcan
+                                    @can('technologie-edit')
+                                        <a href="{{ route('technologies.edit', $tech->id) }}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">Modifier</a>
+                                    @endcan
+                                    @can('technologie-delete')
+                                        <form action="{{ route('technologies.destroy', $tech->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Supprimer ?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-xs">Supprimer</button>
+                                        </form>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

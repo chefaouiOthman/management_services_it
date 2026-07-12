@@ -65,4 +65,13 @@ class SessionFormation extends Model
     {
         return $this->hasMany(EvaluationSession::class, 'session_formation_id');
     }
+
+    /**
+     * Alias pour compatibilité avec les vues qui utilisent $session->evaluations.
+     * Délègue à evaluationSessions().
+     */
+    public function evaluations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EvaluationSession::class, 'session_formation_id');
+    }
 }

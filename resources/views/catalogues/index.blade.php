@@ -34,6 +34,13 @@
                                 @can('catalogue-formation-edit')
                                 <a href="{{ route('catalogue.edit', $catalogue->id) }}" class="text-gray-500 hover:text-gray-900 font-medium text-sm">Éditer</a>
                                 @endcan
+                                @can('catalogue-formation-delete')
+                                <form action="{{ route('catalogue.destroy', $catalogue->id) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ce catalogue ?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-sm">Supprimer</button>
+                                </form>
+                                @endcan
                             </div>
                         </div>
                     </x-card>

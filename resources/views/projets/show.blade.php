@@ -73,7 +73,7 @@
             <div x-show="tab === 'kanban'" x-cloak class="space-y-4">
                 <div class="flex justify-end">
                     @can('tache-create')
-                    <a href="{{ route('taches.create') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                    <a href="{{ route('projets.taches.create', $projet->id) }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                         + Nouvelle Tâche
                     </a>
                     @endcan
@@ -114,7 +114,7 @@
                                         <x-badge :type="$prioColor" class="text-[10px] uppercase">{{ $tache->pivot->priorite }}</x-badge>
                                         <div class="text-xs text-gray-400 flex gap-1">
                                             @can('tache-edit')
-                                            <a href="{{ route('taches.edit', $tache->id) }}" class="hover:text-indigo-500" title="Éditer">✎</a>
+                                            <a href="{{ route('projets.taches.edit', [$projet->id, $tache->id]) }}" class="hover:text-indigo-500" title="Éditer">✎</a>
                                             @endcan
                                         </div>
                                     </div>
@@ -131,7 +131,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Jalons & Documents</h3>
                     @can('livrable-create')
-                    <a href="{{ route('livrables.create') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                    <a href="{{ route('projets.livrables.create', $projet->id) }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                         + Nouveau Livrable
                     </a>
                     @endcan
@@ -180,7 +180,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Heures Saisies</h3>
                     @can('feuille-temps-create')
-                    <a href="{{ route('feuille_temps.create') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                    <a href="{{ route('projets.feuille_temps.create', $projet->id) }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                         + Saisir des heures
                     </a>
                     @endcan

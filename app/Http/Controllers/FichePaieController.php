@@ -46,6 +46,8 @@ class FichePaieController extends Controller
             'employe_id'  => 'required|exists:employes,user_id',
             'mois_annee'  => 'required|string|max:7',
             'net_a_payer' => 'required|numeric|min:0',
+            'categorie_flux_id' => 'nullable|exists:categorie_flux,id',
+            'new_categorie_flux' => 'nullable|string|max:100',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -55,10 +57,11 @@ class FichePaieController extends Controller
                 'net_a_payer' => $request->net_a_payer,
             ]);
 
-            $this->syncFluxTresorerie($fiche);
+            $categorieId = $this->getOrCreateCategorie($request);
+            $this->syncFluxTresorerie($fiche, $categorieId);
         });
 
-        return redirect()->route('fiche_paies.index')->with('success', 'Fiche de paie générée avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Fiche de paie générée avec succès.');
     }
 
     /**
@@ -91,6 +94,8 @@ class FichePaieController extends Controller
             'employe_id'  => 'required|exists:employes,user_id',
             'mois_annee'  => 'required|string|max:7',
             'net_a_payer' => 'required|numeric|min:0',
+            'categorie_flux_id' => 'nullable|exists:categorie_flux,id',
+            'new_categorie_flux' => 'nullable|string|max:100',
         ]);
 
         DB::transaction(function () use ($request, $fiche) {
@@ -100,10 +105,11 @@ class FichePaieController extends Controller
                 'net_a_payer' => $request->net_a_payer,
             ]);
 
-            $this->syncFluxTresorerie($fiche);
+            $categorieId = $this->getOrCreateCategorie($request);
+            $this->syncFluxTresorerie($fiche, $categorieId);
         });
 
-        return redirect()->route('fiche_paies.index')->with('success', 'Fiche de paie mise à jour avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Fiche de paie mise à jour avec succès.');
     }
 
     /**
@@ -122,33 +128,54 @@ class FichePaieController extends Controller
             }
         });
 
-        return redirect()->route('fiche_paies.index')->with('success', 'Fiche de paie supprimée avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Fiche de paie supprimée avec succès.');
     }
 
     /**
      * Synchronisation Financière
      */
-    private function syncFluxTresorerie(FichePaie $fiche)
+    private function syncFluxTresorerie(FichePaie $fiche, $categorieId = null)
     {
-        $categorie = CategorieFlux::firstOrCreate(
-            ['libelle_categorie' => 'Salaires & Paie'],
-            ['code_comptable'    => '641']
-        );
+        if (!$categorieId) {
+            $categorie = CategorieFlux::firstOrCreate(
+                ['libelle_categorie' => 'Salaires & Paie'],
+                ['code_comptable'    => '641']
+            );
+            $categorieId = $categorie->id;
+        }
 
         if ($fiche->flux_tresorerie_id) {
             FluxTresorerie::where('id', $fiche->flux_tresorerie_id)->update([
+                'categorie_flux_id' => $categorieId,
                 'montant_operation' => $fiche->net_a_payer,
                 'date_comptable'    => now(),
             ]);
         } else {
             $flux = FluxTresorerie::create([
-                'categorie_flux_id' => $categorie->id,
+                'categorie_flux_id' => $categorieId,
                 'type_mouvement'    => 'sortie',
                 'montant_operation' => $fiche->net_a_payer,
                 'date_comptable'    => now(),
             ]);
             $fiche->update(['flux_tresorerie_id' => $flux->id]);
         }
+    }
+
+    private function getOrCreateCategorie(Request $request)
+    {
+        if ($request->filled('categorie_flux_id')) {
+            return $request->categorie_flux_id;
+        }
+
+        if ($request->filled('new_categorie_flux')) {
+            $categorie = CategorieFlux::firstOrCreate(
+                ['libelle_categorie' => $request->new_categorie_flux],
+                ['code_comptable' => null]
+            );
+            return $categorie->id;
+        }
+
+        return null;
     }
 
     /**

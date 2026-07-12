@@ -5,7 +5,7 @@
                 Gestion des Licences Logicielles
             </h2>
             @can('licence-create')
-            <a href="{{ route('licence_logiciels.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+            <a href="{{ route('licences.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                 + Nouvelle Licence
             </a>
             @endcan
@@ -40,7 +40,14 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex items-center gap-4 mb-4">
+                            <button @click="openUsers = !openUsers" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" :class="{'rotate-180': openUsers}"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                Voir les utilisateurs
+                            </button>
+                        </div>
+
+                        <div x-show="openUsers" x-collapse class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-6 mt-2">
                             <!-- Assignation en cours -->
                             <div>
                                 <h4 class="font-semibold text-gray-700 mb-4 flex justify-between items-center">
@@ -107,11 +114,19 @@
                             </div>
                         </div>
                         
-                        @can('licence-edit')
-                        <div class="absolute top-4 right-4 mt-16 mr-2">
-                            <a href="{{ route('licence_logiciels.edit', $licence->id) }}" class="text-xs text-gray-500 hover:text-gray-900 underline">Éditer Licence</a>
+                        
+                        <div class="absolute top-4 right-4 flex items-center gap-3">
+                            @can('licence-edit')
+                            <a href="{{ route('licences.edit', $licence->id) }}" class="text-xs text-indigo-600 hover:text-indigo-900 font-medium">Modifier</a>
+                            @endcan
+                            @can('licence-delete')
+                            <form action="{{ route('licences.destroy', $licence->id) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette licence ?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-xs text-red-600 hover:text-red-900 font-medium">Supprimer</button>
+                            </form>
+                            @endcan
                         </div>
-                        @endcan
                     </x-card>
                 @empty
                     <x-card>
@@ -126,6 +141,7 @@
         function licenceManager() {
             return {
                 openAssignForm: false,
+                openUsers: false,
                 revoquer(pivotId) {
                     if(!confirm('Êtes-vous sûr de vouloir révoquer cette licence pour cet utilisateur ?')) return;
                     

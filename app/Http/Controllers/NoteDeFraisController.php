@@ -56,6 +56,8 @@ class NoteDeFraisController extends Controller
             'montant_ttc'          => 'required|numeric|min:0',
             'justificatif_fichier' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
+            'categorie_flux_id'    => 'nullable|exists:categorie_flux,id',
+            'new_categorie_flux'   => 'nullable|string|max:100',
         ]);
 
         if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $request->employe_id != Auth::id()) {
@@ -74,11 +76,12 @@ class NoteDeFraisController extends Controller
             ]);
 
             if ($note->statut_remboursement === 'rembourse') {
-                $this->syncFluxTresorerie($note);
+                $categorieId = $this->getOrCreateCategorie($request);
+                $this->syncFluxTresorerie($note, $categorieId);
             }
         });
 
-        return redirect()->route('note_de_frais.index')->with('success', 'Note de frais créée avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Note de frais créée avec succès.');
     }
 
     /**
@@ -127,6 +130,8 @@ class NoteDeFraisController extends Controller
             'montant_ttc'          => 'required|numeric|min:0',
             'justificatif_fichier' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
+            'categorie_flux_id'    => 'nullable|exists:categorie_flux,id',
+            'new_categorie_flux'   => 'nullable|string|max:100',
         ]);
 
         $path = $note->justificatif_path;
@@ -147,7 +152,8 @@ class NoteDeFraisController extends Controller
             ]);
 
             if ($note->statut_remboursement === 'rembourse') {
-                $this->syncFluxTresorerie($note);
+                $categorieId = $this->getOrCreateCategorie($request);
+                $this->syncFluxTresorerie($note, $categorieId);
             } else {
                 if ($note->flux_tresorerie_id) {
                     $flux_id = $note->flux_tresorerie_id;
@@ -157,7 +163,7 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        return redirect()->route('note_de_frais.index')->with('success', 'Note de frais mise à jour avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Note de frais mise à jour avec succès.');
     }
 
     /**
@@ -185,7 +191,7 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        return redirect()->route('note_de_frais.index')->with('success', 'Note de frais supprimée avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Note de frais supprimée avec succès.');
     }
 
     /**
@@ -243,26 +249,47 @@ class NoteDeFraisController extends Controller
     /**
      * Synchronisation Financière
      */
-    private function syncFluxTresorerie(NoteDeFrais $note)
+    private function syncFluxTresorerie(NoteDeFrais $note, $categorieId = null)
     {
-        $categorie = CategorieFlux::firstOrCreate(
-            ['libelle_categorie' => 'Notes de frais'],
-            ['code_comptable'    => '625']
-        );
+        if (!$categorieId) {
+            $categorie = CategorieFlux::firstOrCreate(
+                ['libelle_categorie' => 'Notes de frais'],
+                ['code_comptable'    => '625']
+            );
+            $categorieId = $categorie->id;
+        }
 
         if ($note->flux_tresorerie_id) {
             FluxTresorerie::where('id', $note->flux_tresorerie_id)->update([
+                'categorie_flux_id' => $categorieId,
                 'montant_operation' => $note->montant_ttc,
                 'date_comptable'    => now(),
             ]);
         } else {
             $flux = FluxTresorerie::create([
-                'categorie_flux_id' => $categorie->id,
+                'categorie_flux_id' => $categorieId,
                 'type_mouvement'    => 'sortie',
                 'montant_operation' => $note->montant_ttc,
                 'date_comptable'    => now(),
             ]);
             $note->update(['flux_tresorerie_id' => $flux->id]);
         }
+    }
+
+    private function getOrCreateCategorie(Request $request)
+    {
+        if ($request->filled('categorie_flux_id')) {
+            return $request->categorie_flux_id;
+        }
+
+        if ($request->filled('new_categorie_flux')) {
+            $categorie = CategorieFlux::firstOrCreate(
+                ['libelle_categorie' => $request->new_categorie_flux],
+                ['code_comptable' => null]
+            );
+            return $categorie->id;
+        }
+
+        return null;
     }
 }

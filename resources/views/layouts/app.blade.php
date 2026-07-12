@@ -14,23 +14,34 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <body class="font-sans antialiased text-gray-900 bg-gray-50">
+        <div class="flex h-screen overflow-hidden bg-gray-50" x-data="{ sidebarOpen: false }">
+            
+            <!-- Sidebar -->
+            @include('layouts.sidebar')
 
-            <!-- Page Heading -->
-            @if (isset($header))
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
+            <!-- Main Content Wrapper -->
+            <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                
+                <!-- Top Navigation Bar -->
+                @include('layouts.navigation')
+
+                <!-- Page Heading -->
+                @if (isset($header))
+                    <header class="bg-white shadow-sm z-20">
+                        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endif
+
+                <!-- Page Content -->
+                <main class="w-full grow p-6">
+                    <div class="max-w-7xl mx-auto">
+                        {{ $slot }}
                     </div>
-                </header>
-            @endif
-
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+                </main>
+            </div>
         </div>
 
         <!-- Global Toast Notifications -->

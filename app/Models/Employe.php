@@ -21,12 +21,11 @@ class Employe extends Model
 
     /**
      * Champs autorisés en mass-assignment (conformes GEMINI.md).
-     * 'departement_id' a été supprimé car absent du dictionnaire de données.
      */
     protected $fillable = [
         'user_id',
         'date_embauche',
-        'CIN',
+        'cin',
         'departement_id',
     ];
 
@@ -55,10 +54,21 @@ class Employe extends Model
     // Clé étrangère : employe_id sur la table enfant pointe vers user_id ici
     // =========================================================
 
-    /** Contrats de travail de cet employé */
+    /** Contrats de travail de cet employé (1-N) */
     public function contrats(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Contrat::class, 'employe_id', 'user_id');
+    }
+
+    /** Contrat actuel : actif le plus récent, sinon le dernier créé */
+    public function getContratActuelAttribute(): ?Contrat
+    {
+        $contrats = $this->relationLoaded('contrats')
+            ? $this->contrats
+            : $this->contrats()->orderByDesc('id')->get();
+
+        return $contrats->where('statut', 'actif')->sortByDesc('id')->first()
+            ?? $contrats->sortByDesc('id')->first();
     }
 
     // =========================================================

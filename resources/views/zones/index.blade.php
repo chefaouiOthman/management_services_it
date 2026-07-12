@@ -110,7 +110,8 @@
                                                 <input type="checkbox" x-model="useCurrentTime" class="mr-1 rounded"> Heure actuelle
                                             </label>
                                         </div>
-                                        <input type="datetime-local" name="horodatage" class="w-full border-gray-300 rounded-md" x-bind:disabled="useCurrentTime" :value="useCurrentTime ? '' : '{{ now()->format('Y-m-d\TH:i') }}'">
+                                        <input type="text" name="horodatage" class="w-full border-gray-300 rounded-md" placeholder="Format: JJ/MM/AAAA HH:MM" x-bind:disabled="useCurrentTime" :value="useCurrentTime ? '' : '{{ now()->format('d/m/Y H:i') }}'">
+                                        <p class="text-xs text-gray-500 mt-1">Format attendu: JJ/MM/AAAA HH:MM (ex: 02/07/2026 09:54)</p>
                                     </div>
                                     <div>
                                         <x-input-label value="Statut" />
@@ -140,12 +141,12 @@
                                     <th class="px-6 py-3">Utilisateur</th>
                                     <th class="px-6 py-3">Zone</th>
                                     <th class="px-6 py-3">Statut actuel</th>
-                                    <th class="px-6 py-3 text-right">Modération Admin</th>
+                                    <th class="px-6 py-3 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @php
-                                    $logs = \App\Models\HistoriquePassage::with(['user', 'zone'])->latest()->paginate(25);
+                                    $logs = \App\Models\HistoriquePassage::with(['user', 'zone'])->orderBy('horodatage', 'desc')->paginate(25);
                                 @endphp
                                 @forelse($logs as $log)
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50">
@@ -163,19 +164,16 @@
                                                 <x-badge type="gray">En attente / {{ $log->tentative_statut }}</x-badge>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 text-right">
-                                            @can('zone-edit')
-                                            <!-- Moderation Dropdown Form -->
-                                            <form action="{{ route('historique_passages.update', $log->id) }}" method="POST" class="inline-flex items-center space-x-2">
-                                                @csrf
-                                                @method('PUT')
-                                                <select name="tentative_statut" onchange="this.form.submit()" class="text-xs border-gray-300 rounded-md py-1 px-2 focus:ring-indigo-500">
-                                                    <option value="" disabled selected>Modifier...</option>
-                                                    <option value="autorise">Approuver</option>
-                                                    <option value="refuse_niveau_insuffisant">Refuser (Niv.)</option>
-                                                    <option value="refuse_zone_desactivee">Refuser (Zone Off)</option>
-                                                </select>
-                                            </form>
+                                        <td class="px-6 py-4 text-right space-x-2">
+                                            @can('historique-passage-edit')
+                                                <a href="{{ route('historique_passages.edit', $log->id) }}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">Modifier</a>
+                                            @endcan
+                                            @can('historique-passage-delete')
+                                                <form action="{{ route('historique_passages.destroy', $log->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Supprimer cet historique ?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-xs">Supprimer</button>
+                                                </form>
                                             @endcan
                                         </td>
                                     </tr>

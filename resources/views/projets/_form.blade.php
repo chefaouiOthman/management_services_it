@@ -29,7 +29,7 @@
                     <option value="">-- Sélectionner un client --</option>
                     @foreach($clients as $client)
                         <option value="{{ $client->user_id }}" @selected(old('client_id', $projet->client_id ?? '') == $client->user_id)>
-                            {{ $client->user->nom_complet }} ({{ $client->nom_societe ?? 'Client Physique' }})
+                            {{ $client->user?->nom_complet ?? 'Client sans profil (' . ($client->nom_societe ?? 'Physique') . ')' }}
                         </option>
                     @endforeach
                 </select>
@@ -78,7 +78,13 @@
                         </label>
                     @endforeach
                 </div>
+                <div class="mt-3">
+                    <x-input-label for="new_technologies" value="+ Ajouter des nouvelles technologies (séparées par une virgule)" />
+                    <x-text-input id="new_technologies" name="new_technologies" type="text" class="mt-1 block w-full text-sm" placeholder="Ex: React 18, Node.js, Docker" :value="old('new_technologies')" />
+                    <p class="text-xs text-gray-500 mt-1">Elles seront créées automatiquement et associées à ce projet.</p>
+                </div>
                 <x-input-error class="mt-2" :messages="$errors->get('technologies')" />
+                <x-input-error class="mt-2" :messages="$errors->get('new_technologies')" />
             </div>
         </div>
         

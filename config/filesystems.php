@@ -56,6 +56,15 @@ return [
             'throw' => false,
         ],
 
+        // Disque privé sécurisé pour les fichiers sensibles (justificatifs NDF, livrables, etc.)
+        // Stocké dans storage/app/private — jamais exposé publiquement.
+        'private' => [
+            'driver'     => 'local',
+            'root'       => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw'      => false,
+        ],
+
     ],
 
     /*

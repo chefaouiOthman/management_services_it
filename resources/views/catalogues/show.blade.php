@@ -28,7 +28,7 @@
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                     <a href="#programme" :class="tab === 'programme' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Détails du Programme</a>
                     <a href="#supports" :class="tab === 'supports' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Supports de Cours ({{ $catalogue->supportCours->count() }})</a>
-                    <a href="#sessions" :class="tab === 'sessions' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Sessions Planifiées ({{ $catalogue->sessions->count() }})</a>
+                    <a href="#sessions" :class="tab === 'sessions' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Sessions Planifiées ({{ optional($catalogue->sessionFormations)->count() ?? 0 }})</a>
                 </nav>
             </div>
 
@@ -108,7 +108,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($catalogue->sessions as $session)
+                                @forelse($catalogue->sessionFormations ?? [] as $session)
                                     @php
                                         $now = now()->startOfDay();
                                         $debut = \Carbon\Carbon::parse($session->date_debut);

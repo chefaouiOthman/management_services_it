@@ -15,14 +15,22 @@
                     @endif
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                        <div x-data="{ isNewType: {{ old('type_materiel_id') === 'autre' ? 'true' : 'false' }} }">
                             <x-input-label for="type_materiel_id" value="Type de Matériel *" />
-                            <select name="type_materiel_id" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500">
+                            <select name="type_materiel_id" @change="isNewType = ($event.target.value === 'autre')" :required="!isNewType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500">
+                                <option value="">-- Choisir un type --</option>
                                 @foreach(\App\Models\TypeMateriel::all() as $type)
                                     <option value="{{ $type->id }}" @selected(old('type_materiel_id', $asset->type_materiel_id ?? '') == $type->id)>{{ $type->libelle_type }}</option>
                                 @endforeach
+                                <option value="autre" @selected(old('type_materiel_id') === 'autre')>+ Autre (Saisir manuellement)</option>
                             </select>
                             <x-input-error class="mt-2" :messages="$errors->get('type_materiel_id')" />
+                            
+                            <div x-show="isNewType" x-cloak class="mt-3">
+                                <x-input-label for="new_type_materiel" value="Nom du nouveau type *" />
+                                <x-text-input id="new_type_materiel" name="new_type_materiel" type="text" class="mt-1 block w-full" :value="old('new_type_materiel')" x-bind:required="isNewType" />
+                                <x-input-error class="mt-2" :messages="$errors->get('new_type_materiel')" />
+                            </div>
                         </div>
                         <div>
                             <x-input-label for="num_serie" value="Numéro de Série *" />

@@ -69,7 +69,7 @@ class CatalogueFormationController extends Controller
      */
     public function show($id)
     {
-        $catalogue = CatalogueFormation::with(['supportCours', 'sessions'])->findOrFail($id);
+        $catalogue = CatalogueFormation::with(['supportCours', 'sessionFormations'])->findOrFail($id);
         return view('catalogues.show', compact('catalogue'));
     }
 

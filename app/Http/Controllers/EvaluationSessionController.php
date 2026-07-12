@@ -21,20 +21,28 @@ class EvaluationSessionController extends Controller
     }
 
     /**
-     * 1. INDEX
+     * 1. INDEX — optionnellement filtré par session
      */
-    public function index()
+    public function index(Request $request)
     {
-        $query = EvaluationSession::with(['sessionFormation', 'user', 'employe.user']);
-        
-        if (!Auth::user()->hasRole('Admin')) {
-            // L'étudiant ne voit que ses évaluations, le formateur voit celles qui le concernent
-            $query->where('user_id', Auth::id())
-                  ->orWhere('employe_id', Auth::id());
+        $session    = null;
+        $evaluations = collect();
+
+        // Filtre par session si fourni (depuis le bouton "Voir Évaluations" du Kanban)
+        if ($request->filled('session')) {
+            $session = SessionFormation::with(['catalogueFormation'])->findOrFail($request->session);
+            $query = EvaluationSession::with(['user', 'formateur.user'])
+                         ->where('session_formation_id', $session->id);
+        } else {
+            $query = EvaluationSession::with(['sessionFormation.catalogueFormation', 'user', 'formateur.user']);
+            if (!Auth::user()->hasRole('Admin')) {
+                $query->where('user_id', Auth::id())
+                      ->orWhere('employe_id', Auth::id());
+            }
         }
 
         $evaluations = $query->get();
-        return view('evaluations.index', compact('evaluations'));
+        return view('evaluations.index', compact('evaluations', 'session'));
     }
 
     /**

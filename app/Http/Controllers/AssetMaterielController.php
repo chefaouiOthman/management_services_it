@@ -42,18 +42,31 @@ class AssetMaterielController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'type_materiel_id' => 'required|exists:type_materiels,id',
-            'num_serie'        => 'required|string|max:100|unique:asset_materiels,num_serie',
-            'marque'           => 'required|string|max:100',
-            'modele'           => 'required|string|max:100',
-            'date_achat_actif' => 'nullable|date',
-            'statut_materiel'  => 'required|in:disponible,attribue,en_panne,reforme',
-            'prix_achat'       => 'nullable|numeric|min:0',
+            'type_materiel_id'  => 'required',
+            'new_type_materiel' => 'required_if:type_materiel_id,autre|string|max:100',
+            'num_serie'         => 'required|string|max:100|unique:asset_materiels,num_serie',
+            'marque'            => 'required|string|max:100',
+            'modele'            => 'required|string|max:100',
+            'date_achat_actif'  => 'nullable|date',
+            'statut_materiel'   => 'required|in:disponible,attribue,en_panne,reforme',
+            'prix_achat'        => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request) {
+            $typeId = $request->type_materiel_id;
+            
+            if ($typeId === 'autre') {
+                $newType = TypeMateriel::create([
+                    'libelle_type' => $request->new_type_materiel,
+                ]);
+                $typeId = $newType->id;
+            } else {
+                // S'assurer qu'il existe
+                $request->validate(['type_materiel_id' => 'exists:type_materiels,id']);
+            }
+
             AssetMateriel::create([
-                'type_materiel_id' => $request->type_materiel_id,
+                'type_materiel_id' => $typeId,
                 'num_serie'        => $request->num_serie,
                 'marque'           => $request->marque,
                 'modele'           => $request->modele,
@@ -93,18 +106,30 @@ class AssetMaterielController extends Controller
         $asset = AssetMateriel::findOrFail($id);
 
         $request->validate([
-            'type_materiel_id' => 'required|exists:type_materiels,id',
-            'num_serie'        => ['required', 'string', 'max:100', Rule::unique('asset_materiels')->ignore($asset->id)],
-            'marque'           => 'required|string|max:100',
-            'modele'           => 'required|string|max:100',
-            'date_achat_actif' => 'nullable|date',
-            'statut_materiel'  => 'required|in:disponible,attribue,en_panne,reforme',
-            'prix_achat'       => 'nullable|numeric|min:0',
+            'type_materiel_id'  => 'required',
+            'new_type_materiel' => 'required_if:type_materiel_id,autre|string|max:100',
+            'num_serie'         => ['required', 'string', 'max:100', Rule::unique('asset_materiels')->ignore($asset->id)],
+            'marque'            => 'required|string|max:100',
+            'modele'            => 'required|string|max:100',
+            'date_achat_actif'  => 'nullable|date',
+            'statut_materiel'   => 'required|in:disponible,attribue,en_panne,reforme',
+            'prix_achat'        => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $asset) {
+            $typeId = $request->type_materiel_id;
+            
+            if ($typeId === 'autre') {
+                $newType = TypeMateriel::create([
+                    'libelle_type' => $request->new_type_materiel,
+                ]);
+                $typeId = $newType->id;
+            } else {
+                $request->validate(['type_materiel_id' => 'exists:type_materiels,id']);
+            }
+
             $asset->update([
-                'type_materiel_id' => $request->type_materiel_id,
+                'type_materiel_id' => $typeId,
                 'num_serie'        => $request->num_serie,
                 'marque'           => $request->marque,
                 'modele'           => $request->modele,

@@ -31,7 +31,8 @@ class TicketMaintenanceController extends Controller
         }
 
         $tickets = $query->get();
-        return view('tickets.index', compact('tickets'));
+        $assets = AssetMateriel::with('typeMateriel')->get();
+        return view('tickets.index', compact('tickets', 'assets'));
     }
 
     /**
@@ -147,7 +148,7 @@ class TicketMaintenanceController extends Controller
             }
         });
 
-        return redirect()->route('tickets.index')->with('success', 'Ticket mis à jour avec succès.');
+        return redirect()->route('assets.show', $ticket->asset_materiel_id)->with('success', 'Ticket mis à jour avec succès.') ->setTargetUrl(route('assets.show', $ticket->asset_materiel_id) . '#maintenance');
     }
 
     /**

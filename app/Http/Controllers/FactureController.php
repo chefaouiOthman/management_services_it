@@ -48,6 +48,8 @@ class FactureController extends Controller
             'num_facture'     => 'required|string|max:50|unique:factures,num_facture',
             'date_emission'   => 'required|date',
             'statut_paiement' => 'required|in:emise,en_retard_paiement,soldee',
+            'categorie_flux_id' => 'nullable|exists:categorie_flux,id',
+            'new_categorie_flux' => 'nullable|string|max:100',
             'lignes'          => 'nullable|array',
             'lignes.*.designation'    => 'required_with:lignes|string|max:255',
             'lignes.*.quantite'       => 'required_with:lignes|numeric|min:0',
@@ -77,7 +79,8 @@ class FactureController extends Controller
 
             // Si soldée dès la création, générer le flux de trésorerie
             if ($request->statut_paiement === 'soldee') {
-                $this->syncFluxTresorerie($facture->fresh('ligneFactures'));
+                $categorieId = $this->getOrCreateCategorie($request);
+                $this->syncFluxTresorerie($facture->fresh('ligneFactures'), $categorieId);
             }
         });
 
@@ -166,31 +169,52 @@ class FactureController extends Controller
     /**
      * Logique métier interne : Générer/Mettre à jour le Flux de Trésorerie
      */
-    private function syncFluxTresorerie(Facture $facture)
+    private function syncFluxTresorerie(Facture $facture, $categorieId = null)
     {
         $montant_ttc = $facture->ligneFactures->sum(function($ligne) {
             return $ligne->quantite * $ligne->prix_unitaire_ht * (1 + $ligne->taux_tva / 100);
         });
 
-        $categorie = CategorieFlux::firstOrCreate(
-            ['libelle_categorie' => 'Vente / Facture Client'],
-            ['code_comptable'    => '701']
-        );
+        if (!$categorieId) {
+            $categorie = CategorieFlux::firstOrCreate(
+                ['libelle_categorie' => 'Vente / Facture Client'],
+                ['code_comptable'    => '701']
+            );
+            $categorieId = $categorie->id;
+        }
 
         if ($facture->flux_tresorerie_id) {
             FluxTresorerie::where('id', $facture->flux_tresorerie_id)->update([
+                'categorie_flux_id' => $categorieId,
                 'montant_operation' => $montant_ttc,
                 'date_comptable'    => now(),
             ]);
         } else {
             $flux = FluxTresorerie::create([
-                'categorie_flux_id' => $categorie->id,
+                'categorie_flux_id' => $categorieId,
                 'type_mouvement'    => 'entree',
                 'montant_operation' => $montant_ttc,
                 'date_comptable'    => now(),
             ]);
             $facture->update(['flux_tresorerie_id' => $flux->id]);
         }
+    }
+
+    private function getOrCreateCategorie(Request $request)
+    {
+        if ($request->filled('categorie_flux_id')) {
+            return $request->categorie_flux_id;
+        }
+
+        if ($request->filled('new_categorie_flux')) {
+            $categorie = CategorieFlux::firstOrCreate(
+                ['libelle_categorie' => $request->new_categorie_flux],
+                ['code_comptable' => null]
+            );
+            return $categorie->id;
+        }
+
+        return null;
     }
 
     /**

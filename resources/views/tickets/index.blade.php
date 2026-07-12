@@ -5,7 +5,7 @@
                 Helpdesk : Maintenance IT
             </h2>
             @can('ticket-create')
-            <a href="{{ route('ticket_maintenances.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+            <a href="{{ route('tickets.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                 + Signaler une Panne
             </a>
             @endcan
@@ -30,6 +30,55 @@
                 </x-card>
             </div>
 
+            <x-card class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg text-gray-800">Matériels IT / Assets</h3>
+                    <p class="text-sm text-gray-500">Sélectionnez un matériel pour signaler un incident</p>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Matériel</th>
+                                <th scope="col" class="px-6 py-3">Numéro de Série</th>
+                                <th scope="col" class="px-6 py-3">Statut</th>
+                                <th scope="col" class="px-6 py-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($assets as $asset)
+                                <tr class="bg-white border-b hover:bg-gray-50 transition">
+                                    <td class="px-6 py-3 font-medium text-gray-900">
+                                        {{ $asset->marque }} {{ $asset->modele }}<br>
+                                        <span class="text-xs text-gray-500">{{ $asset->typeMateriel->libelle_type ?? 'N/A' }}</span>
+                                    </td>
+                                    <td class="px-6 py-3">{{ $asset->num_serie }}</td>
+                                    <td class="px-6 py-3">
+                                        <span class="px-2 py-1 text-xs font-bold rounded-full border uppercase 
+                                            {{ $asset->statut_materiel === 'disponible' ? 'bg-green-100 text-green-700 border-green-200' : '' }}
+                                            {{ $asset->statut_materiel === 'attribue' ? 'bg-blue-100 text-blue-700 border-blue-200' : '' }}
+                                            {{ $asset->statut_materiel === 'en_panne' ? 'bg-red-100 text-red-700 border-red-200' : '' }}
+                                            {{ $asset->statut_materiel === 'reforme' ? 'bg-gray-100 text-gray-700 border-gray-200' : '' }}">
+                                            {{ str_replace('_', ' ', $asset->statut_materiel) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-3 text-right">
+                                        @can('ticket-create')
+                                        <a href="{{ route('tickets.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-800 border border-red-200 rounded text-xs font-semibold transition">
+                                            + Signaler un incident
+                                        </a>
+                                        @endcan
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Aucun matériel disponible.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </x-card>
+
+            <h3 class="font-bold text-lg text-gray-800 mb-2 mt-8">Historique des Tickets</h3>
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class HistoriquePassageController extends Controller
 {
@@ -45,20 +46,22 @@ class HistoriquePassageController extends Controller
         $request->validate([
             'user_id'          => 'required|exists:users,id',
             'zone_id'          => 'required|exists:zones,id',
-            'horodatage'       => 'required|date_format:Y-m-d H:i:s',
+            'horodatage'       => 'required|date_format:d/m/Y H:i',
             'tentative_statut' => 'required|in:autorise,refuse_niveau_insuffisant,refuse_zone_desactivee',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $horodatageFormatted = Carbon::createFromFormat('d/m/Y H:i', $request->horodatage)->format('Y-m-d H:i:s');
+
+        DB::transaction(function () use ($request, $horodatageFormatted) {
             HistoriquePassage::create([
                 'user_id'          => $request->user_id,
                 'zone_id'          => $request->zone_id,
-                'horodatage'       => $request->horodatage,
+                'horodatage'       => $horodatageFormatted,
                 'tentative_statut' => $request->tentative_statut,
             ]);
         });
 
-        return redirect()->route('historiques.index')->with('success', 'Historique enregistré avec succès.');
+        return redirect()->route('zones.index')->with('success', 'Historique enregistré avec succès.');
     }
 
     /**
@@ -67,7 +70,7 @@ class HistoriquePassageController extends Controller
     public function show($id)
     {
         $historique = HistoriquePassage::with(['user', 'zone'])->findOrFail($id);
-        return view('historiques.show', compact('historique'));
+        return view('historique_passages.show', compact('historique'));
     }
 
     /**
@@ -78,7 +81,7 @@ class HistoriquePassageController extends Controller
         $historique = HistoriquePassage::findOrFail($id);
         $users = User::all();
         $zones = Zone::all();
-        return view('historiques.edit', compact('historique', 'users', 'zones'));
+        return view('historique_passages.edit', compact('historique', 'users', 'zones'));
     }
 
     /**
@@ -91,20 +94,22 @@ class HistoriquePassageController extends Controller
         $request->validate([
             'user_id'          => 'required|exists:users,id',
             'zone_id'          => 'required|exists:zones,id',
-            'horodatage'       => 'required|date_format:Y-m-d H:i:s',
+            'horodatage'       => 'required|date_format:d/m/Y H:i',
             'tentative_statut' => 'required|in:autorise,refuse_niveau_insuffisant,refuse_zone_desactivee',
         ]);
 
-        DB::transaction(function () use ($request, $historique) {
+        $horodatageFormatted = Carbon::createFromFormat('d/m/Y H:i', $request->horodatage)->format('Y-m-d H:i:s');
+
+        DB::transaction(function () use ($request, $historique, $horodatageFormatted) {
             $historique->update([
                 'user_id'          => $request->user_id,
                 'zone_id'          => $request->zone_id,
-                'horodatage'       => $request->horodatage,
+                'horodatage'       => $horodatageFormatted,
                 'tentative_statut' => $request->tentative_statut,
             ]);
         });
 
-        return redirect()->route('historiques.index')->with('success', 'Historique mis à jour avec succès.');
+        return redirect()->route('zones.index')->with('success', 'Historique mis à jour avec succès.');
     }
 
     /**
@@ -118,6 +123,6 @@ class HistoriquePassageController extends Controller
             $historique->delete();
         });
 
-        return redirect()->route('historiques.index')->with('success', 'Historique supprimé avec succès.');
+        return redirect()->route('zones.index')->with('success', 'Historique supprimé avec succès.');
     }
 }

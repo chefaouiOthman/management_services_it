@@ -14,6 +14,15 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            {{-- UX Instruction Banner --}}
+            <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <svg class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p class="text-sm text-blue-700">
+                    <strong>Conseil :</strong> Pour assigner un matériel ou enregistrer une maintenance, veuillez d'abord cliquer sur le matériel concerné.
+                </p>
+            </div>
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">

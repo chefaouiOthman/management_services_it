@@ -73,12 +73,19 @@
                                     </td>
                                     <td class="px-6 py-4 text-right space-x-2">
                                         <a href="{{ route('projets.show', $projet->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-sm">
-                                            Ouvrir Hub
+                                            Voir détails
                                         </a>
                                         @can('projet-edit')
                                         <a href="{{ route('projets.edit', $projet->id) }}" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 font-medium text-sm">
                                             Éditer
                                         </a>
+                                        @endcan
+                                        @can('projet-delete')
+                                        <form action="{{ route('projets.destroy', $projet->id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce projet ?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-900 ml-2">Supprimer</button>
+                                        </form>
                                         @endcan
                                     </td>
                                 </tr>

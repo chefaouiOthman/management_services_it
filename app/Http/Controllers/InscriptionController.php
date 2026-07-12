@@ -13,7 +13,7 @@ class InscriptionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:inscription-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:inscription-view', ['only' => ['index']]);
         $this->middleware('permission:inscription-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:inscription-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:inscription-delete', ['only' => ['destroy']]);
@@ -59,6 +59,14 @@ class InscriptionController extends Controller
             abort(403, 'Vous ne pouvez pas inscrire un autre utilisateur.');
         }
 
+        $exists = Inscription::where('user_id', $request->user_id)
+            ->where('session_formation_id', $request->session_formation_id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withErrors(['user_id' => 'Cet utilisateur est déjà inscrit à cette session.'])->withInput();
+        }
+
         DB::transaction(function () use ($request) {
             Inscription::create([
                 'session_formation_id' => $request->session_formation_id,
@@ -67,21 +75,7 @@ class InscriptionController extends Controller
             ]);
         });
 
-        return redirect()->route('inscriptions.index')->with('success', 'Inscription réalisée avec succès.');
-    }
-
-    /**
-     * 4. SHOW
-     */
-    public function show($id)
-    {
-        $inscription = Inscription::with(['user', 'sessionFormation'])->findOrFail($id);
-
-        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
-            abort(403);
-        }
-
-        return view('inscriptions.show', compact('inscription'));
+        return back()->with('success', 'Inscription réalisée avec succès.');
     }
 
     /**
@@ -120,6 +114,15 @@ class InscriptionController extends Controller
 
         if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
             abort(403);
+        }
+
+        $exists = Inscription::where('user_id', $request->user_id)
+            ->where('session_formation_id', $request->session_formation_id)
+            ->where('id', '!=', $inscription->id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withErrors(['user_id' => 'Cet utilisateur est déjà inscrit à cette session.'])->withInput();
         }
 
         DB::transaction(function () use ($request, $inscription) {

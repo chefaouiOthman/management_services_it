@@ -75,22 +75,22 @@
                         </div>
                     </x-card>
 
-                    @if($user->employe->contrat)
+                    @if($contratActuel = $user->employe->contratActuel)
                         <x-card>
                             <x-slot name="header">
-                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Caractéristiques du Contrat</h3>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Contrat Actuel</h3>
                             </x-slot>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Type de contrat</p>
-                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe->contrat->type_contrat }}</p>
+                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $contratActuel->type_contrat }}</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Statut</p>
                                     <div class="mt-1">
-                                        @if($user->employe->contrat->statut == 'actif')
+                                        @if($contratActuel->statut == 'actif')
                                             <x-badge type="success">Actif</x-badge>
-                                        @elseif($user->employe->contrat->statut == 'suspendu')
+                                        @elseif($contratActuel->statut == 'suspendu')
                                             <x-badge type="danger">Suspendu</x-badge>
                                         @else
                                             <x-badge type="gray">Terminé</x-badge>
@@ -99,19 +99,25 @@
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Date de début</p>
-                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe->contrat->date_debut ? $user->employe->contrat->date_debut->format('d/m/Y') : '-' }}</p>
+                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $contratActuel->date_debut?->format('d/m/Y') ?? '-' }}</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Date de fin</p>
-                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe->contrat->date_fin ? $user->employe->contrat->date_fin->format('d/m/Y') : '-' }}</p>
+                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">
+                                        @if($contratActuel->date_fin)
+                                            {{ $contratActuel->date_fin->format('d/m/Y') }}
+                                        @else
+                                            <span class="italic text-gray-400">Indéterminée</span>
+                                        @endif
+                                    </p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Salaire de base</p>
-                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ number_format($user->employe->contrat->salaire_base, 2, ',', ' ') }} MAD</p>
+                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ number_format($contratActuel->salaire_base, 2, ',', ' ') }} MAD</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Heures hebdo.</p>
-                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe->contrat->heures_hebdo }} h</p>
+                                    <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $contratActuel->heures_hebdo }} h</p>
                                 </div>
                             </div>
                         </x-card>

@@ -48,13 +48,14 @@ class ProjetController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'client_id'      => 'required|exists:clients,user_id',
-            'nom_projet'     => 'required|string|max:150',
-            'description'    => 'required|string',
-            'budget_vendu'   => 'required|numeric|min:0',
-            'statut_projet'  => 'required|in:analyse,developpement,recette,deploie,maintenance',
-            'technologies'   => 'nullable|array',
-            'technologies.*' => 'exists:technologies,id',
+            'client_id'        => 'required|exists:clients,user_id',
+            'nom_projet'       => 'required|string|max:150',
+            'description'      => 'required|string',
+            'budget_vendu'     => 'required|numeric|min:0',
+            'statut_projet'    => 'required|in:analyse,developpement,recette,deploie,maintenance',
+            'technologies'     => 'nullable|array',
+            'technologies.*'   => 'exists:technologies,id',
+            'new_technologies' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -66,8 +67,25 @@ class ProjetController extends Controller
                 'statut_projet' => $request->statut_projet,
             ]);
 
-            if ($request->filled('technologies')) {
-                $projet->technologies()->attach($request->technologies);
+            $techIds = $request->technologies ?? [];
+
+            if ($request->filled('new_technologies')) {
+                $newTechs = array_map('trim', explode(',', $request->new_technologies));
+                foreach ($newTechs as $techName) {
+                    if (!empty($techName)) {
+                        $tech = Technologie::firstOrCreate(
+                            ['nom_tech' => $techName],
+                            ['version' => '1.0'] // Valeur par défaut
+                        );
+                        if (!in_array($tech->id, $techIds)) {
+                            $techIds[] = $tech->id;
+                        }
+                    }
+                }
+            }
+
+            if (!empty($techIds)) {
+                $projet->technologies()->attach($techIds);
             }
         });
 
@@ -120,13 +138,14 @@ class ProjetController extends Controller
         $projet = Projet::findOrFail($id);
 
         $request->validate([
-            'client_id'      => 'required|exists:clients,user_id',
-            'nom_projet'     => 'required|string|max:150',
-            'description'    => 'required|string',
-            'budget_vendu'   => 'required|numeric|min:0',
-            'statut_projet'  => 'required|in:analyse,developpement,recette,deploie,maintenance',
-            'technologies'   => 'nullable|array',
-            'technologies.*' => 'exists:technologies,id',
+            'client_id'        => 'required|exists:clients,user_id',
+            'nom_projet'       => 'required|string|max:150',
+            'description'      => 'required|string',
+            'budget_vendu'     => 'required|numeric|min:0',
+            'statut_projet'    => 'required|in:analyse,developpement,recette,deploie,maintenance',
+            'technologies'     => 'nullable|array',
+            'technologies.*'   => 'exists:technologies,id',
+            'new_technologies' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $projet) {
@@ -138,7 +157,24 @@ class ProjetController extends Controller
                 'statut_projet' => $request->statut_projet,
             ]);
 
-            $projet->technologies()->sync($request->technologies ?? []);
+            $techIds = $request->technologies ?? [];
+
+            if ($request->filled('new_technologies')) {
+                $newTechs = array_map('trim', explode(',', $request->new_technologies));
+                foreach ($newTechs as $techName) {
+                    if (!empty($techName)) {
+                        $tech = Technologie::firstOrCreate(
+                            ['nom_tech' => $techName],
+                            ['version' => '1.0']
+                        );
+                        if (!in_array($tech->id, $techIds)) {
+                            $techIds[] = $tech->id;
+                        }
+                    }
+                }
+            }
+
+            $projet->technologies()->sync($techIds);
         });
 
         return redirect()->route('projets.show', $projet->id)->with('success', 'Projet mis à jour avec succès.');

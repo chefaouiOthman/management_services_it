@@ -148,19 +148,19 @@
                             <tbody>
                                 @forelse($session->inscriptions as $inscription)
                                     @php
-                                        // Déterminer le type d'utilisateur (Employé, Stagiaire, Client) basé sur les relations si nécessaires, 
+                                        // Déterminer le type d'utilisateur (Employé, Stagiaire, Client) basé sur les relations si nécessaires,
                                         // ou on affiche simplement l'email ou un attribut générique ici.
                                         $typeStr = 'Utilisateur';
-                                        if($inscription->user->employe) $typeStr = 'Employé';
-                                        elseif($inscription->user->stagiaire) $typeStr = 'Stagiaire';
-                                        elseif($inscription->user->client) $typeStr = 'Client';
+                                        if(optional($inscription->user)->employe) $typeStr = 'Employé';
+                                        elseif(optional($inscription->user)->stagiaire) $typeStr = 'Stagiaire';
+                                        elseif(optional($inscription->user)->client) $typeStr = 'Client';
                                     @endphp
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700" 
                                         x-data="inscriptionStatus({{ $inscription->id }}, '{{ $inscription->statut_inscription }}')">
                                         
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                            {{ $inscription->user->nom_complet }}
-                                            <br><span class="text-xs text-gray-500 font-normal">{{ $inscription->user->email }}</span>
+                                            {{ optional($inscription->user)->nom_complet ?? 'Inconnu' }}
+                                            <br><span class="text-xs text-gray-500 font-normal">{{ optional($inscription->user)->email ?? 'N/A' }}</span>
                                         </td>
                                         <td class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
                                             {{ $typeStr }}

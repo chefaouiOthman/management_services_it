@@ -26,7 +26,7 @@ class EmployeController extends Controller
      */
     public function index()
     {
-        $employes = Employe::with(['user', 'contrat'])->paginate(50);
+        $employes = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')])->paginate(50);
         return view('employes.index', compact('employes'));
     }
 
@@ -99,7 +99,7 @@ class EmployeController extends Controller
      */
     public function show($id)
     {
-        $employe = Employe::with(['user', 'contrat'])->findOrFail($id);
+        $employe = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')])->findOrFail($id);
         return view('employes.show', compact('employe'));
     }
 
@@ -108,7 +108,7 @@ class EmployeController extends Controller
      */
     public function edit($id)
     {
-        $employe = Employe::with(['user', 'contrat'])->findOrFail($id);
+        $employe = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')])->findOrFail($id);
         $roles = Role::whereIn('name', ['Admin', 'Employe_Standard'])->get();
         return view('employes.edit', compact('employe', 'roles'));
     }
@@ -153,8 +153,8 @@ class EmployeController extends Controller
                 'date_embauche' => $request->date_embauche,
             ]);
 
-            if ($employe->contrat) {
-                $employe->contrat->update([
+            if ($contratActuel = $employe->contratActuel) {
+                $contratActuel->update([
                     'type_contrat'  => $request->type_contrat,
                     'date_debut'    => $request->date_debut,
                     'date_fin'      => $request->date_fin,

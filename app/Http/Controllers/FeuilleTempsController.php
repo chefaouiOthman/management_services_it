@@ -15,7 +15,7 @@ class FeuilleTempsController extends Controller
     public function __construct()
     {
         $this->middleware('permission:feuille-temps-view', ['only' => ['index', 'show']]);
-        $this->middleware('permission:feuille-temps-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:feuille-temps-create', ['only' => ['create', 'store', 'selectProject']]);
         $this->middleware('permission:feuille-temps-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:feuille-temps-delete', ['only' => ['destroy']]);
     }
@@ -26,34 +26,47 @@ class FeuilleTempsController extends Controller
     public function index()
     {
         $query = FeuilleTemps::with(['employe.user', 'projet', 'taches']);
-        
+
         if (!Auth::user()->hasRole('Admin')) {
             $query->where('employe_id', Auth::id());
         }
 
         $feuilles = $query->get();
-        return view('feuille_temps.index', compact('feuilles'));
+        $projets = Projet::all();
+        return view('feuille_temps.index', compact('feuilles', 'projets'));
+    }
+
+    /**
+     * 1b. SELECT PROJECT
+     */
+    public function selectProject(Request $request)
+    {
+        $request->validate([
+            'projet_id' => 'required|exists:projets,id',
+        ]);
+
+        return redirect()->route('projets.feuille_temps.create', $request->projet_id);
     }
 
     /**
      * 2. CREATE
      */
-    public function create()
+    public function create(Projet $projet)
     {
         $employes = Auth::user()->hasRole('Admin') ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
-        $projets = Projet::all();
-        $taches = Tache::all();
-        return view('feuille_temps.create', compact('employes', 'projets', 'taches'));
+        // Les tâches affichées seront uniquement celles de ce projet
+        $taches = $projet->taches;
+        
+        return view('feuille_temps.create', compact('employes', 'projet', 'taches'));
     }
 
     /**
      * 3. STORE
      */
-    public function store(Request $request)
+    public function store(Request $request, Projet $projet)
     {
         $request->validate([
             'employe_id'   => 'required|exists:employes,user_id',
-            'projet_id'    => 'required|exists:projets,id',
             'date_effort'  => 'required|date',
             'duree_heures' => 'required|numeric|min:0.5|max:24',
             'commentaire'  => 'nullable|string',
@@ -65,10 +78,10 @@ class FeuilleTempsController extends Controller
             abort(403, 'Vous ne pouvez pas créer de feuille de temps pour un autre employé.');
         }
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $projet) {
             $feuille = FeuilleTemps::create([
                 'employe_id'   => $request->employe_id,
-                'projet_id'    => $request->projet_id,
+                'projet_id'    => $projet->id,
                 'date_effort'  => $request->date_effort,
                 'duree_heures' => $request->duree_heures,
                 'commentaire'  => $request->commentaire,
@@ -79,7 +92,7 @@ class FeuilleTempsController extends Controller
             }
         });
 
-        return redirect()->route('feuille_temps.index')->with('success', 'Feuille de temps créée avec succès.');
+        return redirect()->route('projets.show', $projet->id)->with('success', 'Feuille de temps créée avec succès.');
     }
 
     /**

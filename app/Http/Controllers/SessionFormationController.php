@@ -23,8 +23,9 @@ class SessionFormationController extends Controller
      */
     public function index()
     {
-        $sessions = SessionFormation::with(['catalogueFormation', 'formateurs.user'])->get();
-        return view('sessions.index', compact('sessions'));
+        $sessions   = SessionFormation::with(['catalogueFormation', 'formateurs.user'])->get();
+        $catalogues = CatalogueFormation::with('supportCours')->get();
+        return view('sessions.index', compact('sessions', 'catalogues'));
     }
 
     /**

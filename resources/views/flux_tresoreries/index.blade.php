@@ -57,6 +57,7 @@
                                     <th class="px-6 py-3">Catégorie</th>
                                     <th class="px-6 py-3">Pièce Justificative (Source)</th>
                                     <th class="px-6 py-3 text-right">Montant Opération</th>
+                                    <th class="px-6 py-3 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,9 +79,24 @@
                                         <td class="px-6 py-4 text-right font-mono font-bold {{ $f->type_mouvement === 'entree' ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $f->type_mouvement === 'entree' ? '+' : '-' }} {{ number_format($f->montant_operation, 2, ',', ' ') }} DHS
                                         </td>
+                                        <td class="px-6 py-4 text-right space-x-2">
+                                            @can('flux-tresorerie-view')
+                                            <a href="{{ route('flux_tresoreries.show', $f->id) }}" class="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded transition shadow-sm">Voir</a>
+                                            @endcan
+                                            @can('flux-tresorerie-edit')
+                                            <a href="{{ route('flux_tresoreries.edit', $f->id) }}" class="px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-bold rounded transition shadow-sm">Modifier</a>
+                                            @endcan
+                                            @can('flux-tresorerie-delete')
+                                            <form action="{{ route('flux_tresoreries.destroy', $f->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmez-vous la suppression de ce flux de trésorerie ?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 text-xs font-bold rounded transition shadow-sm">Supprimer</button>
+                                            </form>
+                                            @endcan
+                                        </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Le grand livre est vide.</td></tr>
+                                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Le grand livre est vide.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -118,10 +134,36 @@
                                                   'bg-green-100 text-green-700': currentStatut === 'soldee'
                                               }" x-text="currentStatut.replace(/_/g, ' ')"></span>
                                         
+                                        @can('facture-view')
+                                        <a :href="`/factures/${factureId}`" class="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded transition shadow-sm">
+                                            👁 Voir
+                                        </a>
+                                        @endcan
+                                        
                                         @can('facture-edit')
-                                        <button x-show="currentStatut !== 'soldee'" @click="marquerSoldee" class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700 transition shadow-sm">
+                                        <a :href="`/factures/${factureId}/edit`" class="px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-bold rounded transition shadow-sm">
+                                            ✎ Modifier
+                                        </a>
+                                        
+                                        <!-- Bouton En Retard -->
+                                        <button x-show="currentStatut === 'emise'" @click="changerStatut('en_retard_paiement')" class="px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded hover:bg-yellow-600 transition shadow-sm">
+                                            En retard
+                                        </button>
+
+                                        <!-- Bouton Encaisser -->
+                                        <button x-show="currentStatut !== 'soldee'" @click="changerStatut('soldee')" class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700 transition shadow-sm">
                                             $ Encaisser
                                         </button>
+                                        @endcan
+                                        
+                                        @can('facture-delete')
+                                        <form :action="`/factures/${factureId}`" method="POST" class="inline-block" onsubmit="return confirm('Confirmez-vous la suppression de cette facture ?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 text-xs font-bold rounded transition shadow-sm">
+                                                ✗ Supprimer
+                                            </button>
+                                        </form>
                                         @endcan
                                     </div>
                                 </div>
@@ -161,16 +203,32 @@
                                         <td class="px-6 py-4 font-bold">{{ $fiche->mois_annee }}</td>
                                         <td class="px-6 py-4 text-right font-mono font-bold text-red-600">{{ number_format($fiche->net_a_payer, 2, ',', ' ') }} DHS</td>
                                         <td class="px-6 py-4 text-center">
-                                            <template x-if="isPaid">
-                                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-bold">Payée</span>
-                                            </template>
-                                            <template x-if="!isPaid">
-                                                @can('fiche-paie-edit')
-                                                <button @click="payer" class="px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded shadow hover:bg-indigo-700">Déclencher Paiement</button>
-                                                @else
-                                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-bold">En attente</span>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <template x-if="isPaid">
+                                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-bold">Payée</span>
+                                                </template>
+                                                <template x-if="!isPaid">
+                                                    @can('fiche-paie-edit')
+                                                    <button @click="payer" class="px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded shadow hover:bg-indigo-700">Déclencher Paiement</button>
+                                                    @else
+                                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-bold">En attente</span>
+                                                    @endcan
+                                                </template>
+
+                                                @can('fiche-paie-view')
+                                                <a href="{{ route('fiche_paies.show', $fiche->id) }}" class="p-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded" title="Voir">👁</a>
                                                 @endcan
-                                            </template>
+                                                @can('fiche-paie-edit')
+                                                <a href="{{ route('fiche_paies.edit', $fiche->id) }}" class="p-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded" title="Modifier">✎</a>
+                                                @endcan
+                                                @can('fiche-paie-delete')
+                                                <form action="{{ route('fiche_paies.destroy', $fiche->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Supprimer définitivement cette fiche de paie ?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="p-1 bg-red-100 text-red-700 hover:bg-red-200 rounded" title="Supprimer">✗</button>
+                                                </form>
+                                                @endcan
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -269,6 +327,20 @@
                                             <button @click="changerStatut('rembourse')" class="px-2 py-1 text-xs bg-green-600 text-white rounded font-bold hover:bg-green-700 shadow-sm">$ Rembourser</button>
                                         </template>
                                         @endcan
+
+                                        @can('note-de-frais-view')
+                                        <a href="{{ route('note_de_frais.show', $note->id) }}" class="p-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded" title="Voir">👁</a>
+                                        @endcan
+                                        @can('note-de-frais-edit')
+                                        <a href="{{ route('note_de_frais.edit', $note->id) }}" class="p-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded" title="Modifier">✎</a>
+                                        @endcan
+                                        @can('note-de-frais-delete')
+                                        <form action="{{ route('note_de_frais.destroy', $note->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Supprimer définitivement cette note de frais ?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1 bg-red-100 text-red-700 hover:bg-red-200 rounded" title="Supprimer">✗</button>
+                                        </form>
+                                        @endcan
                                     </div>
                                 </div>
                             </x-card>
@@ -286,28 +358,34 @@
     <script>
         function factureManager(id, initialStatut) {
             return {
-                id: id,
+                factureId: id,
                 currentStatut: initialStatut,
-                marquerSoldee() {
-                    if(!confirm("Encaisser cette facture ? Cela générera un flux de trésorerie positif (Entrée) définitif.")) return;
+                changerStatut(nouveauStatut) {
+                    let msg = "Confirmer le changement de statut ?";
+                    if(nouveauStatut === 'soldee') msg = "Encaisser cette facture ? Cela générera un flux de trésorerie positif (Entrée) définitif.";
+                    if(!confirm(msg)) return;
                     
-                    fetch(`/factures/${this.id}/statut`, {
+                    fetch(`/factures/${this.factureId}/statut`, {
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({ statut_paiement: 'soldee' })
+                        body: JSON.stringify({ statut_paiement: nouveauStatut })
                     })
                     .then(res => res.json())
                     .then(data => {
                         if(data.success) {
                             this.currentStatut = data.statut_paiement;
-                            alert("Facture encaissée ! Le Grand Livre a été mis à jour.");
-                            window.location.reload(); // Rafraîchir pour mettre à jour les KPIs master
+                            if(nouveauStatut === 'soldee') {
+                                alert("Facture encaissée ! Le Grand Livre a été mis à jour.");
+                                window.location.reload(); // Rafraîchir pour mettre à jour les KPIs master
+                            } else {
+                                alert(data.message || 'Statut mis à jour.');
+                            }
                         } else {
-                            alert(data.error || 'Erreur lors de l\'encaissement.');
+                            alert(data.error || 'Erreur lors du changement de statut.');
                         }
                     }).catch(err => alert('Erreur réseau.'));
                 }

@@ -1,85 +1,26 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<nav class="bg-white border-b border-gray-100 z-30 relative shadow-sm">
+    <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-
-                    <!-- M1 & M2 : Annuaire & RH -->
-                    @can('user-view')
-                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*') || request()->routeIs('employes.*') || request()->routeIs('stagiaires.*') || request()->routeIs('clients.*')">
-                        Annuaire & RH
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- M2 : Départements -->
-                    @can('user-view')
-                    <x-nav-link :href="route('departements.index')" :active="request()->routeIs('departements.*')">
-                        Départements
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- M2 : Contrôle d'accès -->
-                    @can('zone-view')
-                    <x-nav-link :href="route('zones.index')" :active="request()->routeIs('zones.*')">
-                        Contrôle d'Accès
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- M3 : Projets -->
-                    @can('projet-view')
-                    <x-nav-link :href="route('projets.index')" :active="request()->routeIs('projets.*')">
-                        Projets
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- M4 : Académie -->
-                    @can('session-formation-view')
-                    <x-nav-link :href="route('sessions.index')" :active="request()->routeIs('sessions.*')">
-                        Académie
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- M5 : Inventaire -->
-                    @can('asset-view')
-                    <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
-                        Inventaire IT
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- M6 : Trésorerie -->
-                    @can('flux-tresorerie-view')
-                    <x-nav-link :href="route('flux_tresoreries.index')" :active="request()->routeIs('flux_tresoreries.*')">
-                        Trésorerie
-                    </x-nav-link>
-                    @endcan
-
-                    <!-- Self-Service : Notes de frais -->
-                    @can('note-de-frais-view')
-                    <x-nav-link :href="route('note_de_frais.index')" :active="request()->routeIs('note_de_frais.*')">
-                        Mes Notes de Frais
-                    </x-nav-link>
-                    @endcan
-                </div>
+            <div class="flex items-center">
+                <!-- Hamburger -->
+                <button @click="sidebarOpen = !sidebarOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out md:hidden">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="flex items-center">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:text-gray-900 focus:outline-none transition ease-in-out duration-150">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                                    {{ substr(Auth::user()->name, 0, 1) }}
+                                </div>
+                                <span class="hidden sm:inline-block">{{ Auth::user()->name }}</span>
+                            </div>
 
                             <div class="ms-1">
                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -90,15 +31,13 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        @role('Admin')
-                        <x-dropdown-link :href="route('admin.parametres')">
-                            ⚙️ {{ __('Paramètres Admin') }}
-                        </x-dropdown-link>
-                        @endrole
+
                         
                         <x-dropdown-link :href="route('profile.edit')">
                             👤 {{ __('Profile') }}
                         </x-dropdown-link>
+
+                        <div class="border-t border-gray-100"></div>
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
@@ -107,55 +46,11 @@
                             <x-dropdown-link :href="route('logout')"
                                     onclick="event.preventDefault();
                                                 this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                🚪 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
                     </x-slot>
                 </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-        </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
             </div>
         </div>
     </div>

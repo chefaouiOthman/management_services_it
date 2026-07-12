@@ -57,7 +57,7 @@ MODULE 3: PRODUCTION & PROJETS
   * Table: `projets`
   * Fields: `id` (BigInt PK), `client_id` (BigInt FK to `clients.user_id`), `nom_projet` (Varchar 150), `description` (Text), `budget_vendu` (Decimal 12,2), `statut_projet` (Enum: 'analyse', 'developpement', 'recette', 'deploie', 'maintenance'), `timestamps`.
 - Livrable:
-  * Table: `livrabless`
+  * Table: `livrables`
   * Fields: `id` (BigInt PK), `projet_id` (BigInt FK to `projets.id`), `titre_jalon` (Varchar 150), `date_limite_soumission` (Date), `statut_client` (Enum: 'en_attente', 'rejete_avec_corrections', 'valide'), `timestamps`.
 - Tache:
   * Table: `taches`
@@ -101,8 +101,8 @@ MODULE 5: GESTION DES ACTIFS IT (ASSET MANAGEMENT)
   * Table: `ticket_maintenances`
   * Fields: `id` (BigInt PK), `asset_materiel_id` (BigInt FK to `asset_materiels.id`), `user_id` (BigInt FK to `users.id` - Submitter, employee or trainee), `description_panne` (Text), `cout_reparation` (Decimal 10,2), `statut_ticket` (Enum: 'signale', 'en_atelier', 'resolu'), `timestamps`.
 - LicenceLogiciel:
-  * Table: `licence_logiciels`
-  * Fields: `id` (BigInt PK), `nom_logiciel` (Varchar 100), `cle_licence` (Varchar 255), `date_expiration` (Date), `timestamps`.
+    * Table: `licence_logiciels`
+    * Fields: `id` (BigInt PK), `nom_logiciel` (Varchar 100), `cle_licence` (Varchar 255), `date_expiration` (Date), `timestamps`.
 
 ----------------------------------------------------
 MODULE 6: PILOTAGE FINANCIER & COMPTABILITÉ

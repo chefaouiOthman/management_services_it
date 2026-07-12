@@ -13,7 +13,7 @@ class LivrableController extends Controller
     public function __construct()
     {
         $this->middleware('permission:livrable-view', ['only' => ['index', 'show', 'download']]);
-        $this->middleware('permission:livrable-create', ['only' => ['create', 'store']]);
+        $this->middleware('permission:livrable-create', ['only' => ['create', 'store', 'createForProject', 'storeForProject']]);
         $this->middleware('permission:livrable-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:livrable-delete', ['only' => ['destroy']]);
     }
@@ -34,6 +34,14 @@ class LivrableController extends Controller
     {
         $projets = Projet::all();
         return view('livrables.create', compact('projets'));
+    }
+
+    /**
+     * 2b. CREATE NESTED (Project-scoped)
+     */
+    public function createForProject(Projet $projet)
+    {
+        return view('livrables.create', compact('projet'));
     }
 
     /**
@@ -70,6 +78,41 @@ class LivrableController extends Controller
         });
 
         return redirect()->route('livrables.index')->with('success', 'Livrable créé avec succès.');
+    }
+
+    /**
+     * 3b. STORE NESTED (Project-scoped)
+     */
+    public function storeForProject(Request $request, Projet $projet)
+    {
+        $request->validate([
+            'titre_jalon'            => 'required|string|max:150',
+            'date_limite_soumission' => 'required|date',
+            'statut_client'          => 'required|in:en_attente,rejete_avec_corrections,valide',
+            'fichier'                => 'nullable|file|mimes:pdf,doc,docx,zip,png,jpg,jpeg|max:20480',
+        ]);
+
+        DB::transaction(function () use ($request, $projet) {
+            $path = null;
+            $nomOriginal = null;
+
+            if ($request->hasFile('fichier')) {
+                $file = $request->file('fichier');
+                $path = $file->store('livrables', 'private');
+                $nomOriginal = $file->getClientOriginalName();
+            }
+
+            Livrable::create([
+                'projet_id'              => $projet->id,
+                'titre_jalon'            => $request->titre_jalon,
+                'date_limite_soumission' => $request->date_limite_soumission,
+                'statut_client'          => $request->statut_client,
+                'fichier_path'           => $path,
+                'fichier_nom_original'   => $nomOriginal,
+            ]);
+        });
+
+        return redirect()->route('projets.show', $projet->id)->with('success', 'Livrable créé avec succès.');
     }
 
     /**

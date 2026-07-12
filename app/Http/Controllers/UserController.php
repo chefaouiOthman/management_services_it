@@ -22,9 +22,25 @@ class UserController extends Controller
     /**
      * 1. INDEX : LISTE DES UTILISATEURS
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['roles', 'employe.contrats', 'employe.departement', 'stagiaire.departement', 'client'])->paginate(25);
+        $query = User::with([
+            'roles',
+            'employe.departement',
+            'employe.contrats' => fn ($q) => $q->orderByDesc('id'),
+            'stagiaire.departement',
+            'client',
+        ]);
+
+        // Filter by role if query parameter is present
+        if ($request->has('role') && !empty($request->role)) {
+            $role = $request->role;
+            $query->whereHas('roles', function ($q) use ($role) {
+                $q->where('name', 'like', "%{$role}%");
+            });
+        }
+
+        $users = $query->paginate(25);
         return view('users.index', compact('users'));
     }
 
@@ -44,13 +60,26 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nom_complet' => 'required|string|max:150',
-            'email'       => 'required|string|email|max:255|unique:users',
-            'cin'         => 'nullable|string|max:50|unique:users,cin',
-            'password'    => 'required|string|min:8',
-            'est_actif'   => 'boolean',
-            'roles'       => 'nullable|array',
-            'roles.*'     => 'exists:roles,name',
+            'nom_complet'    => 'required|string|max:150',
+            'email'          => 'required|string|email|max:255|unique:users',
+            'cin'            => 'nullable|string|max:50|unique:users,cin|unique:employes,CIN',
+            'password'       => 'required|string|min:8',
+            'est_actif'      => 'boolean',
+            'roles'          => 'nullable|array',
+            'roles.*'        => 'exists:roles,name',
+            'departement_id' => 'nullable|exists:departements,id',
+            'date_embauche'  => 'nullable|date',
+            'ecole_origine'  => 'nullable|string|max:150',
+            'sujet_stage'    => 'nullable|string',
+            'type_client'    => 'nullable|in:physique,morale',
+            'nom_societe'    => 'nullable|string|max:150',
+            'ice'            => 'nullable|string|max:50',
+            'type_contrat'   => 'nullable|in:CDI,CDD,Freelance',
+            'date_debut'     => 'nullable|date',
+            'date_fin'       => 'nullable|date',
+            'salaire_base'   => 'nullable|numeric',
+            'heures_hebdo'   => 'nullable|integer',
+            'statut'         => 'nullable|in:actif,suspendu,termine',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -64,6 +93,39 @@ class UserController extends Controller
 
             if ($request->has('roles')) {
                 $user->syncRoles($request->roles);
+                
+                // Create child entity based on role
+                if (in_array('Employe_Standard', $request->roles)) {
+                    $employe = $user->employe()->create([
+                        'cin'            => $request->cin ?: 'TEMP-' . uniqid(),
+                        'departement_id' => $request->departement_id,
+                        'date_embauche'  => $request->date_embauche ?: now(),
+                    ]);
+                    
+                    // Create contract if contract fields are provided
+                    if ($request->filled('type_contrat') && $request->filled('date_debut')) {
+                        $employe->contrats()->create([
+                            'type_contrat' => $request->type_contrat,
+                            'date_debut'   => $request->date_debut,
+                            'date_fin'     => $request->date_fin,
+                            'salaire_base' => $request->salaire_base,
+                            'heures_hebdo' => $request->heures_hebdo,
+                            'statut'       => $request->statut ?? 'actif',
+                        ]);
+                    }
+                } elseif (in_array('Stagiaire', $request->roles)) {
+                    $user->stagiaire()->create([
+                        'departement_id' => $request->input('departement_id') ?: null,
+                        'ecole_origine' => $request->input('ecole_origine'),
+                        'sujet_stage' => $request->input('sujet_stage'),
+                    ]);
+                } elseif (in_array('Client', $request->roles)) {
+                    $user->client()->create([
+                        'type_client'  => $request->input('type_client') ?: 'physique',
+                        'nom_societe'  => $request->input('nom_societe'),
+                        'ice'          => $request->input('ice'),
+                    ]);
+                }
             }
         });
 
@@ -75,7 +137,13 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::with('roles')->findOrFail($id);
+        $user = User::with([
+            'roles',
+            'employe.departement',
+            'employe.contrats' => fn ($q) => $q->orderByDesc('id'),
+            'stagiaire.departement',
+            'client',
+        ])->findOrFail($id);
         return view('users.show', compact('user'));
     }
 
@@ -84,7 +152,13 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with([
+            'roles',
+            'employe.departement',
+            'employe.contrats' => fn ($q) => $q->orderByDesc('id'),
+            'stagiaire.departement',
+            'client',
+        ])->findOrFail($id);
         $roles = Role::all();
         return view('users.edit', compact('user', 'roles'));
     }
@@ -106,7 +180,6 @@ class UserController extends Controller
             'roles.*'        => 'exists:roles,name',
             'departement_id' => 'nullable|exists:departements,id',
             'date_embauche'  => 'nullable|date',
-            'CIN'            => 'nullable|string|max:50',
             'ecole_origine'  => 'nullable|string|max:150',
             'sujet_stage'    => 'nullable|string',
             'type_client'    => 'nullable|in:physique,morale',
@@ -134,24 +207,48 @@ class UserController extends Controller
             }
 
             // 2. Mise à jour polymorphique de l'entité fille
-            if ($user->employe) {
-                $user->employe->update(array_filter([
+           if ($user->employe) {
+                $user->employe->update([
+                    'cin'            => $request->cin ?? $user->employe->cin, 
                     'departement_id' => $request->departement_id,
-                    'date_embauche'  => $request->date_embauche ?: $user->employe->date_embauche,
-                    'CIN'            => $request->CIN ?: $user->employe->CIN,
-                ], fn($v) => !is_null($v)));
-            } elseif ($user->stagiaire) {
-                $user->stagiaire->update(array_filter([
+                    'date_embauche'  => $request->date_embauche ?? $user->employe->date_embauche,
+                ]);
+            }
+         elseif ($user->stagiaire) {
+                $user->stagiaire->update([
                     'departement_id' => $request->departement_id,
-                    'ecole_origine'  => $request->ecole_origine ?: $user->stagiaire->ecole_origine,
-                    'sujet_stage'    => $request->sujet_stage ?: $user->stagiaire->sujet_stage,
-                ], fn($v) => !is_null($v)));
+                    'ecole_origine'  => $request->ecole_origine ?? $user->stagiaire->ecole_origine,
+                    'sujet_stage'    => $request->sujet_stage ?? $user->stagiaire->sujet_stage,
+                ]);
             } elseif ($user->client) {
-                $user->client->update(array_filter([
-                    'type_client'  => $request->type_client ?: $user->client->type_client,
-                    'nom_societe'  => $request->nom_societe,
-                    'ice'          => $request->ice,
-                ], fn($v) => !is_null($v)));
+                $user->client->update([
+                    'type_client'  => $request->input('type_client') ?: $user->client->type_client,
+                    'nom_societe'  => $request->input('nom_societe'),
+                    'ice'          => $request->input('ice'),
+                ]);
+            }
+
+            // Handle role changes - create new entity if role changed to employee/stagiaire/client
+            if ($request->has('roles')) {
+                if (in_array('Employe_Standard', $request->roles) && !$user->employe) {
+                    $user->employe()->create([
+                        'CIN'            => $request->input('cin') ?: 'TEMP-' . uniqid(),
+                        'departement_id' => $request->input('departement_id') ?: null,
+                        'date_embauche'  => $request->input('date_embauche') ?: now(),
+                    ]);
+                } elseif (in_array('Stagiaire', $request->roles) && !$user->stagiaire) {
+                    $user->stagiaire()->create([
+                        'departement_id' => $request->input('departement_id') ?: null,
+                        'ecole_origine'  => $request->input('ecole_origine'),
+                        'sujet_stage'    => $request->input('sujet_stage'),
+                    ]);
+                } elseif (in_array('Client', $request->roles) && !$user->client) {
+                    $user->client()->create([
+                        'type_client'  => $request->input('type_client') ?: 'physique',
+                        'nom_societe'  => $request->input('nom_societe'),
+                        'ice'          => $request->input('ice'),
+                    ]);
+                }
             }
         });
 
@@ -163,9 +260,41 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with([
+            'employe',
+            'stagiaire', 
+            'client',
+            'pointages',
+            'historiquePassages',
+            'inscriptions',
+            'evaluationsSession',
+            'assignationsMateriel',
+            'assignationsLicence',
+            'ticketsMaintenance',
+        ])->findOrFail($id);
 
         DB::transaction(function () use ($user) {
+            // Delete child entities explicitly
+            if ($user->employe) {
+                $user->employe->delete();
+            }
+            if ($user->stagiaire) {
+                $user->stagiaire->delete();
+            }
+            if ($user->client) {
+                $user->client->delete();
+            }
+
+            // Delete related records that don't have cascade deletes
+            $user->pointages()->delete();
+            $user->historiquePassages()->delete();
+            $user->inscriptions()->delete();
+            $user->evaluationsSession()->delete();
+            $user->assignationsMateriel()->delete();
+            $user->assignationsLicence()->delete();
+            $user->ticketsMaintenance()->delete();
+
+            // Delete the user
             $user->delete();
         });
 

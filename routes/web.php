@@ -24,6 +24,7 @@ use App\Http\Controllers\TacheController;
 use App\Http\Controllers\FeuilleTempsController;
 use App\Http\Controllers\LivrableController;
 use App\Http\Controllers\TechnologieController;
+use App\Http\Controllers\ProjetTacheController;
 
 // MODULE 4 : FORMATION
 use App\Http\Controllers\CatalogueFormationController;
@@ -103,13 +104,23 @@ Route::middleware('auth')->group(function () {
     Route::resource('departements', DepartementController::class);
     Route::resource('contrats', ContratController::class);
     Route::resource('zones', ZoneController::class);
-    Route::resource('historique-passages', HistoriquePassageController::class);
-    Route::resource('pointages', PointageController::class);
+Route::resource('historique-passages', HistoriquePassageController::class)->names('historique_passages');    Route::resource('pointages', PointageController::class);
 
     // --- MODULE 3 : PRODUCTION ---
     Route::resource('projets', ProjetController::class);
+    Route::resource('projets.taches', ProjetTacheController::class)->except(['index', 'show']);
+
+    // Feuilles de temps contextuelles au projet
+    Route::get('projets/{projet}/feuille_temps/create', [FeuilleTempsController::class, 'create'])->name('projets.feuille_temps.create');
+    Route::post('projets/{projet}/feuille_temps', [FeuilleTempsController::class, 'store'])->name('projets.feuille_temps.store');
+    Route::get('feuille_temps/select_project', [FeuilleTempsController::class, 'selectProject'])->name('feuille_temps.select_project');
+
+    // Livrables contextuels au projet
+    Route::get('projets/{projet}/livrables/create', [LivrableController::class, 'createForProject'])->name('projets.livrables.create');
+    Route::post('projets/{projet}/livrables', [LivrableController::class, 'storeForProject'])->name('projets.livrables.store');
+
     Route::resource('taches', TacheController::class);
-    Route::resource('feuille_temps', FeuilleTempsController::class);
+    Route::resource('feuille_temps', FeuilleTempsController::class)->except(['create', 'store']);
     Route::resource('livrables', LivrableController::class);
     Route::resource('technologies', TechnologieController::class);
     // Route Kanban : mise à jour du statut d'une tâche sur le pivot (asynchrone)
@@ -135,15 +146,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('assignation_materiels', AssignationMaterielController::class);
     Route::resource('assignation_licences', AssignationLicenceController::class);
 
-    // --- PARAMETRES ADMIN ---
-    Route::middleware('role:Admin')->group(function () {
-        Route::get('/admin/parametres', function () {
-            $technologies = \App\Models\Technologie::orderBy('nom_tech')->get();
-            $typeMaterialels = \App\Models\TypeMateriel::orderBy('libelle_type')->get();
-            $categoriesFlux = \App\Models\CategorieFlux::orderBy('libelle_categorie')->get();
-            return view('admin.parametres', compact('technologies', 'typeMaterialels', 'categoriesFlux'));
-        })->name('admin.parametres');
-    });
+
 
     // --- MODULE 6 : FINANCE ---
     Route::resource('categorie_flux', CategorieFluxController::class);
