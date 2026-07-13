@@ -11,7 +11,7 @@
         $soldeNet = $totalEntrees - $totalSorties;
     @endphp
 
-    <div class="py-12" x-data="{ tab: window.location.hash ? window.location.hash.substring(1) : 'dashboard' }" @hashchange.window="tab = window.location.hash.substring(1)">
+    <div class="py-12" x-data="{ tab: window.location.hash ? (['notes-frais','fiches-paie'].includes(window.location.hash.substring(1)) ? 'rh' : window.location.hash.substring(1)) : 'dashboard' }" @hashchange.window="tab = (['notes-frais','fiches-paie'].includes(window.location.hash.substring(1)) ? 'rh' : window.location.hash.substring(1))">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <!-- KPIs Master -->
@@ -37,7 +37,7 @@
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                     <a href="#dashboard" :class="tab === 'dashboard' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm transition">Grand Livre (Flux)</a>
                     <a href="#facturation" :class="tab === 'facturation' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm transition">Facturation Clients</a>
-                    <a href="#rh" :class="tab === 'rh' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm transition">Masse Salariale & Notes de Frais</a>
+                    <a href="#rh" :class="tab === 'rh' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm transition">Fiches de Paie & Notes de Frais</a>
                 </nav>
             </div>
 
@@ -69,9 +69,9 @@
                                             @if($f->facture)
                                                 <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-semibold">Facture #{{ $f->facture->num_facture }}</span>
                                             @elseif($f->fichePaie)
-                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-semibold">Paie {{ $f->fichePaie->mois_annee }} - {{ $f->fichePaie->employe->user->nom_complet }}</span>
+                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-semibold">Paie {{ $f->fichePaie->mois_annee }} - {{ $f->fichePaie->employe?->user?->nom_complet ?? 'N/A' }}</span>
                                             @elseif($f->noteDeFrais)
-                                                <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">NDF - {{ $f->noteDeFrais->employe->user->nom_complet }}</span>
+                                                <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">NDF - {{ $f->noteDeFrais->employe?->user?->nom_complet ?? 'N/A' }}</span>
                                             @else
                                                 <span class="text-gray-400 italic">Mouvement Manuel</span>
                                             @endif
@@ -121,7 +121,7 @@
                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
                                     <h4 class="text-xl font-black text-gray-900">#{{ $facture->num_facture }}</h4>
-                                    <p class="text-sm font-medium text-gray-600 mt-1">Client : {{ $facture->client->user->nom_complet }}</p>
+                                    <p class="text-sm font-medium text-gray-600 mt-1">Client : {{ $facture->client?->user?->nom_complet ?? 'N/A' }}</p>
                                     <p class="text-xs text-gray-400 mt-1">Émise le {{ $facture->date_emission->format('d/m/Y') }}</p>
                                 </div>
                                 <div class="text-right">
@@ -199,7 +199,7 @@
                             <tbody>
                                 @forelse($fiches as $fiche)
                                     <tr class="border-b last:border-0 hover:bg-gray-50" x-data="paieManager({{ $fiche->id }}, {{ $fiche->flux_tresorerie_id ? 'true' : 'false' }})">
-                                        <td class="px-6 py-4 font-medium text-gray-900">{{ $fiche->employe->user->nom_complet }}</td>
+                                        <td class="px-6 py-4 font-medium text-gray-900">{{ $fiche->employe?->user?->nom_complet ?? 'N/A' }}</td>
                                         <td class="px-6 py-4 font-bold">{{ $fiche->mois_annee }}</td>
                                         <td class="px-6 py-4 text-right font-mono font-bold text-red-600">{{ number_format($fiche->net_a_payer, 2, ',', ' ') }} DHS</td>
                                         <td class="px-6 py-4 text-center">
@@ -240,7 +240,7 @@
                 </div>
 
                 <!-- Sous-section : Notes de Frais -->
-                <div>
+                <div id="notes-frais">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Notes de Frais</h3>
                         @can('note-de-frais-create')
@@ -261,7 +261,7 @@
                                             <select name="employe_id" required class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 rounded-md shadow-sm text-sm">
                                                 <option value="">-- Sélectionner un employé --</option>
                                                 @foreach(\App\Models\Employe::with('user')->get() as $emp)
-                                                    <option value="{{ $emp->user_id }}">{{ $emp->user->nom_complet }}</option>
+                                                    <option value="{{ $emp->user_id }}">{{ $emp->user?->nom_complet ?? 'N/A' }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -294,7 +294,7 @@
                         @forelse($notes as $note)
                             <x-card class="flex justify-between items-center" x-data="noteManager({{ $note->id }}, '{{ $note->statut_remboursement }}')">
                                 <div class="flex-1">
-                                    <p class="text-sm text-gray-500 font-medium">{{ $note->employe->user->nom_complet }}</p>
+                                    <p class="text-sm text-gray-500 font-medium">{{ $note->employe?->user?->nom_complet ?? 'N/A' }}</p>
                                     <h4 class="text-lg font-bold text-gray-900">{{ $note->motif_depense }}</h4>
                                     <div class="mt-2 flex gap-3 items-center">
                                         <a href="{{ route('note_de_frais.download', $note->id) }}" class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline bg-indigo-50 px-2 py-1 rounded">

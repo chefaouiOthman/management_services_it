@@ -38,7 +38,7 @@
                 </x-card>
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Pannes Historiques</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $asset->ticketsMaintenance->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $tickets->count() }}</p>
                 </x-card>
             </div>
 
@@ -130,7 +130,7 @@
                                             <div class="flex justify-end items-center gap-3">
                                                 @if(!$userAssign->pivot->date_restitution)
                                                     @can('manage-assets')
-                                                    <button @click="restituer({{ $userAssign->pivot->id }})" class="text-sm font-medium text-red-600 hover:text-red-900 border border-red-200 px-3 py-1 rounded hover:bg-red-50 transition">
+                                                    <button data-restituer="{{ $userAssign->pivot->id }}" @click="restituer({{ $userAssign->pivot->id }})" class="text-sm font-medium text-red-600 hover:text-red-900 border border-red-200 px-3 py-1 rounded hover:bg-red-50 transition">
                                                         Restituer
                                                     </button>
                                                     @endcan
@@ -167,7 +167,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-4">
-                    @forelse($asset->ticketsMaintenance()->with('user')->orderByDesc('created_at')->get() as $ticket)
+                    @forelse($tickets as $ticket)
                         <x-card>
                             <div class="flex justify-between items-start">
                                 <div class="flex-1">
@@ -220,16 +220,24 @@
                             'Accept': 'application/json'
                         }
                     })
-                    .then(res => res.json())
-                    .then(data => {
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
                         if(data.success) {
-                            document.getElementById(`restit-date-${pivotId}`).innerText = data.date_restitution;
-                            alert(data.message);
+                            var dateCell = document.getElementById('restit-date-' + pivotId);
+                            if (dateCell) {
+                                dateCell.textContent = data.date_restitution;
+                            }
+
+                            var btn = document.querySelector('[data-restituer="' + pivotId + '"]');
+                            if (btn) {
+                                btn.outerHTML = '<span class="text-xs text-gray-400">Clôturé</span>';
+                            }
+
                             window.location.reload();
                         } else {
                             alert(data.message || 'Erreur lors de la restitution.');
                         }
-                    }).catch(err => {
+                    }).catch(function(err) {
                         alert('Erreur réseau.');
                     });
                 }

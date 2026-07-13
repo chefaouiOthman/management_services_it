@@ -9,11 +9,11 @@
             </div>
             <div class="flex gap-2">
                 @can('licence-edit')
-                <a href="{{ route('licence_logiciels.edit', $licence->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
+                <a href="{{ route('licences.edit', $licence->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
                     Modifier Licence
                 </a>
                 @endcan
-                <a href="{{ route('licence_logiciels.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                <a href="{{ route('licences.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                     ← Retour
                 </a>
             </div>
@@ -71,7 +71,7 @@
             </x-card>
 
             <!-- Active Assignments -->
-            <x-card>
+            <x-card x-data="licenceManager()">
                 <x-slot name="header">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-medium text-gray-900">Attributions Actives</h3>

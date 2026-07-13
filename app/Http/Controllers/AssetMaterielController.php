@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AssetMateriel;
+use App\Models\TicketMaintenance;
 use App\Models\TypeMateriel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -84,8 +85,9 @@ class AssetMaterielController extends Controller
      */
     public function show($id)
     {
-        $asset = AssetMateriel::with(['typeMateriel', 'ticketsMaintenance'])->findOrFail($id);
-        return view('assets.show', compact('asset'));
+        $asset = AssetMateriel::with('typeMateriel')->findOrFail($id);
+        $tickets = TicketMaintenance::where('asset_materiel_id', $id)->with('user')->latest()->get();
+        return view('assets.show', compact('asset', 'tickets'));
     }
 
     /**

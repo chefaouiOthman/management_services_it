@@ -112,6 +112,16 @@ class User extends Authenticatable
         return $this->hasMany(AssignationLicence::class, 'user_id');
     }
 
+    /**
+     * RELATION N,N : Licences logicielles assignées à cet utilisateur
+     */
+    public function licences(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(LicenceLogiciel::class, 'assignation_licences', 'user_id', 'licence_logiciel_id')
+            ->withPivot(['id', 'date_attribution', 'date_revocation'])
+            ->withTimestamps();
+    }
+
     /** Tickets de maintenance soumis par cet utilisateur */
     public function ticketsMaintenance(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

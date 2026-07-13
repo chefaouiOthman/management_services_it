@@ -102,7 +102,7 @@
                                         {{ $ticket->user->nom_complet }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        <a href="{{ route('asset_materiels.show', $ticket->asset_materiel_id) }}" class="text-indigo-600 hover:underline">
+                                        <a href="{{ route('assets.show', $ticket->asset_materiel_id) }}" class="text-indigo-600 hover:underline">
                                             {{ $ticket->assetMateriel->marque }} {{ $ticket->assetMateriel->modele }}
                                         </a><br>
                                         <span class="text-xs text-gray-500">SN: {{ $ticket->assetMateriel->num_serie }}</span>
@@ -127,7 +127,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('ticket_maintenances.show', $ticket->id) }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Voir</a>
+                                        <a href="{{ route('tickets.show', $ticket->id) }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Voir</a>
                                     </td>
                                 </tr>
                             @empty

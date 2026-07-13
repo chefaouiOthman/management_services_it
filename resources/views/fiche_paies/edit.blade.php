@@ -18,7 +18,7 @@
                                 <option value="">-- Sélectionner un employé --</option>
                                 @foreach($employes as $emp)
                                     <option value="{{ $emp->user_id }}" @selected(old('employe_id', $fiche->employe_id) == $emp->user_id)>
-                                        {{ $emp->user->nom_complet }}
+                                        {{ $emp->user?->nom_complet ?? 'Employé supprimé' }}
                                     </option>
                                 @endforeach
                             </select>

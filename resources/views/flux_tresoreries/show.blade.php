@@ -79,7 +79,7 @@
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Client</p>
-                                        <p class="font-semibold">{{ $flux->facture->client->user->nom_complet }}</p>
+                                        <p class="font-semibold">{{ $flux->facture->client?->user?->nom_complet ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Date Émission</p>
@@ -98,7 +98,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Employé</p>
-                                        <p class="font-semibold">{{ $flux->fichePaie->employe->user->nom_complet }}</p>
+                                        <p class="font-semibold">{{ $flux->fichePaie->employe?->user?->nom_complet ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Période</p>
@@ -121,7 +121,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Employé</p>
-                                        <p class="font-semibold">{{ $flux->noteDeFrais->employe->user->nom_complet }}</p>
+                                        <p class="font-semibold">{{ $flux->noteDeFrais->employe?->user?->nom_complet ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Motif</p>

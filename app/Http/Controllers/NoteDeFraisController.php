@@ -33,7 +33,7 @@ class NoteDeFraisController extends Controller
         }
 
         // Redirection vers le hub central financier
-        return redirect()->route('flux_tresoreries.index')->withFragment('#rh');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais');
     }
 
     /**
@@ -81,7 +81,7 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Note de frais créée avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais')->with('success', 'Note de frais créée avec succès.');
     }
 
     /**
@@ -163,7 +163,7 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Note de frais mise à jour avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais')->with('success', 'Note de frais mise à jour avec succès.');
     }
 
     /**
@@ -191,7 +191,7 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Note de frais supprimée avec succès.');
+        return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais')->with('success', 'Note de frais supprimée avec succès.');
     }
 
     /**

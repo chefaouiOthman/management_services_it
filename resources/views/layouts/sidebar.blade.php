@@ -116,7 +116,7 @@
 
             <!-- Module 6: Trésorerie -->
             @can('flux-tresorerie-view')
-            <div x-data="{ expanded: {{ request()->routeIs('flux_tresoreries.*') || request()->routeIs('note_de_frais.*') ? 'true' : 'false' }} }">
+            <div x-data="{ expanded: {{ request()->routeIs('flux_tresoreries.*') || request()->routeIs('categorie_flux.*') || request()->routeIs('factures.*') || request()->routeIs('fiche_paies.*') || request()->routeIs('note_de_frais.*') ? 'true' : 'false' }} }">
                 <button @click="expanded = !expanded" class="flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors rounded-xl hover:bg-gray-100">
                     <div class="flex items-center gap-x-3">
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -126,10 +126,10 @@
                 </button>
                 <div x-show="expanded" x-transition class="pl-11 pr-3 mt-1 space-y-1">
                     <a href="{{ route('flux_tresoreries.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('flux_tresoreries.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' }}">Flux de Trésorerie</a>
-                    <a href="#" class="block px-3 py-2 text-sm rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50">Catégories de Flux</a>
-                    <a href="#" class="block px-3 py-2 text-sm rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50">Factures</a>
-                    <a href="#" class="block px-3 py-2 text-sm rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50">Fiches de Paie</a>
-                    <a href="{{ route('note_de_frais.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('note_de_frais.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' }}">Notes de Frais</a>
+                    <a href="{{ route('categorie_flux.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('categorie_flux.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' }}">Catégories de Flux</a>
+                    <a href="{{ route('factures.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('factures.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' }}">Factures</a>
+                    <a href="{{ route('fiche_paies.index') }}" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('fiche_paies.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' }}">Fiches de Paie</a>
+                    <a href="{{ route('flux_tresoreries.index') }}#notes-frais" class="block px-3 py-2 text-sm rounded-lg {{ request()->routeIs('note_de_frais.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' }}">Notes de Frais</a>
                 </div>
             </div>
             @endcan

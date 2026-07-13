@@ -17,7 +17,7 @@
                                 <option value="">-- Sélectionner un client --</option>
                                 @foreach($clients as $client)
                                     <option value="{{ $client->user_id }}" @selected(old('client_id') == $client->user_id)>
-                                        {{ $client->user->nom_complet }}
+                                        {{ $client->user?->nom_complet ?? 'Client sans compte' }}
                                         @if($client->nom_societe) ({{ $client->nom_societe }}) @endif
                                     </option>
                                 @endforeach

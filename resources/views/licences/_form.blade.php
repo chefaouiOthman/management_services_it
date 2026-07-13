@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-card>
-                <form action="{{ isset($licence) ? route('licence_logiciels.update', $licence->id) : route('licence_logiciels.store') }}" method="POST" class="space-y-6">
+                <form action="{{ isset($licence) ? route('licences.update', $licence->id) : route('licences.store') }}" method="POST" class="space-y-6">
                     @csrf
                     @if(isset($licence))
                         @method('PUT')
@@ -35,7 +35,7 @@
                     </div>
 
                     <div class="flex justify-end gap-3 mt-6">
-                        <a href="{{ route('licence_logiciels.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 transition">Annuler</a>
+                        <a href="{{ route('licences.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 transition">Annuler</a>
                         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition">Enregistrer</button>
                     </div>
                 </form>

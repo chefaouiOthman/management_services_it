@@ -19,7 +19,7 @@
                                 <option value="">-- Sélectionner un employé --</option>
                                 @foreach($employes as $employe)
                                     <option value="{{ $employe->user_id }}" @selected(old('employe_id', $note->employe_id) == $employe->user_id)>
-                                        {{ $employe->user->nom_complet }}
+                                        {{ $employe->user?->nom_complet ?? 'Sans nom' }}
                                     </option>
                                 @endforeach
                             </select>

@@ -17,8 +17,10 @@ class AssignationLicenceController extends Controller
     /**
      * Assigner une licence à un utilisateur
      */
-    public function store(Request $request, LicenceLogiciel $licence)
+    public function store(Request $request, $licence_id)
     {
+        $licence = LicenceLogiciel::findOrFail($licence_id);
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'date_attribution' => 'required|date',
@@ -30,7 +32,7 @@ class AssignationLicenceController extends Controller
             ]);
         });
 
-        return redirect()->route('licence_logiciels.index')->with('success', 'Licence assignée avec succès.');
+        return redirect()->route('licences.index')->with('success', 'Licence assignée avec succès.');
     }
 
     /**

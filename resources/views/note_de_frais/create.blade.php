@@ -14,7 +14,7 @@
                         <x-input-label for="employe_id" value="Employé *" />
                         <select name="employe_id" required class="mt-1 block w-full border-gray-300 rounded-md">
                             @foreach($employes as $employe)
-                                <option value="{{ $employe->user_id }}">{{ $employe->user->nom_complet }}</option>
+                                <option value="{{ $employe->user_id }}">{{ $employe->user?->nom_complet ?? 'Sans nom' }}</option>
                             @endforeach
                         </select>
                     </div>

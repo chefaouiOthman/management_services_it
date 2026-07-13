@@ -96,7 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('assignations/{id}/restituer', [AssignationMaterielController::class, 'restituer'])->name('assignation_materiels.restituer');
     
     // Assignations et révocations (Licences)
-    Route::post('licences/{licence}/assigner', [AssignationLicenceController::class, 'store'])->name('assignation_licences.store');
+    Route::post('licences/{licence_id}/assigner', [AssignationLicenceController::class, 'store'])->name('assignation_licences.store');
     Route::patch('assignations-licences/{id}/revoquer', [AssignationLicenceController::class, 'revoquer'])->name('assignation_licences.revoquer');
 
 
@@ -144,7 +144,7 @@ Route::resource('historique-passages', HistoriquePassageController::class)->name
     // --- MODULE 5 : ACTIFS IT (tables de config) ---
     Route::resource('type_materiels', TypeMaterielController::class);
     Route::resource('assignation_materiels', AssignationMaterielController::class);
-    Route::resource('assignation_licences', AssignationLicenceController::class);
+
 
 
 
