@@ -1,16 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ isset($ticket) ? 'Éditer le Ticket #' . $ticket->id : 'Signaler un Incident' }}
+            {{ (isset($ticket) && $ticket->exists) ? 'Éditer le Ticket #' . $ticket->id : 'Signaler un Incident' }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-card>
-                <form action="{{ isset($ticket) ? route('tickets.update', $ticket->id) : route('tickets.store') }}" method="POST" class="space-y-6">
+                <form action="{{ (isset($ticket) && $ticket->exists) ? route('tickets.update', $ticket->id) : route('tickets.store') }}" method="POST" class="space-y-6">
                     @csrf
-                    @if(isset($ticket))
+                    @if(isset($ticket) && $ticket->exists)
                         @method('PUT')
                     @endif
 
@@ -33,7 +33,7 @@
                             <x-input-label for="asset_materiel_id" value="Matériel concerné *" />
                             @php
                                 $preselectedAssetId = request('asset_id');
-                                $isLocked = !isset($ticket) && $preselectedAssetId;
+                                $isLocked = (!isset($ticket) || !$ticket->exists) && $preselectedAssetId;
                             @endphp
                             <select name="{{ $isLocked ? '_ignore_asset' : 'asset_materiel_id' }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 {{ $isLocked ? 'bg-gray-100 opacity-75' : '' }}" {{ $isLocked ? 'disabled' : '' }}>
                                 <option value="">-- Sélectionner --</option>

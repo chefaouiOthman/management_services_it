@@ -35,10 +35,10 @@
                             <div>
                                 <x-input-label for="priorite" value="Priorité" />
                                 <select id="priorite" name="priorite" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" required>
-                                    <option value="basse" {{ old('priorite', $tachePivot->pivot->priorite) == 'basse' ? 'selected' : '' }}>Basse</option>
-                                    <option value="moyenne" {{ old('priorite', $tachePivot->pivot->priorite) == 'moyenne' ? 'selected' : '' }}>Moyenne</option>
-                                    <option value="haute" {{ old('priorite', $tachePivot->pivot->priorite) == 'haute' ? 'selected' : '' }}>Haute</option>
-                                    <option value="bloquante" {{ old('priorite', $tachePivot->pivot->priorite) == 'bloquante' ? 'selected' : '' }}>Bloquante</option>
+                                    <option value="basse" {{ old('priorite', $tachePivot->pivot?->priorite ?? 'N/A') == 'basse' ? 'selected' : '' }}>Basse</option>
+                                    <option value="moyenne" {{ old('priorite', $tachePivot->pivot?->priorite ?? 'N/A') == 'moyenne' ? 'selected' : '' }}>Moyenne</option>
+                                    <option value="haute" {{ old('priorite', $tachePivot->pivot?->priorite ?? 'N/A') == 'haute' ? 'selected' : '' }}>Haute</option>
+                                    <option value="bloquante" {{ old('priorite', $tachePivot->pivot?->priorite ?? 'N/A') == 'bloquante' ? 'selected' : '' }}>Bloquante</option>
                                 </select>
                                 <x-input-error :messages="$errors->get('priorite')" class="mt-2" />
                             </div>
@@ -47,10 +47,10 @@
                             <div>
                                 <x-input-label for="statut_tache" value="Statut" />
                                 <select id="statut_tache" name="statut_tache" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" required>
-                                    <option value="backlog" {{ old('statut_tache', $tachePivot->pivot->statut_tache) == 'backlog' ? 'selected' : '' }}>Backlog (À faire)</option>
-                                    <option value="en_cours" {{ old('statut_tache', $tachePivot->pivot->statut_tache) == 'en_cours' ? 'selected' : '' }}>En cours</option>
-                                    <option value="en_revue" {{ old('statut_tache', $tachePivot->pivot->statut_tache) == 'en_revue' ? 'selected' : '' }}>En revue</option>
-                                    <option value="termine" {{ old('statut_tache', $tachePivot->pivot->statut_tache) == 'termine' ? 'selected' : '' }}>Terminé</option>
+                                    <option value="backlog" {{ old('statut_tache', $tachePivot->pivot?->statut_tache ?? 'N/A') == 'backlog' ? 'selected' : '' }}>Backlog (À faire)</option>
+                                    <option value="en_cours" {{ old('statut_tache', $tachePivot->pivot?->statut_tache ?? 'N/A') == 'en_cours' ? 'selected' : '' }}>En cours</option>
+                                    <option value="en_revue" {{ old('statut_tache', $tachePivot->pivot?->statut_tache ?? 'N/A') == 'en_revue' ? 'selected' : '' }}>En revue</option>
+                                    <option value="termine" {{ old('statut_tache', $tachePivot->pivot?->statut_tache ?? 'N/A') == 'termine' ? 'selected' : '' }}>Terminé</option>
                                 </select>
                                 <x-input-error :messages="$errors->get('statut_tache')" class="mt-2" />
                             </div>

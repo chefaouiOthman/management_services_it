@@ -40,9 +40,9 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        {{ $projet->client->user->nom_complet ?? 'N/A' }}
+                                        {{ $projet->client?->user?->nom_complet ?? 'N/A' }}
                                         <br>
-                                        <span class="text-xs text-gray-400">{{ $projet->client->nom_societe ?? 'Client Physique' }}</span>
+                                        <span class="text-xs text-gray-400">{{ $projet->client?->nom_societe ?? 'Client Physique' }}</span>
                                     </td>
                                     <td class="px-6 py-4">
                                         @php

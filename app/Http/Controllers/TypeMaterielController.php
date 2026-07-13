@@ -11,7 +11,13 @@ class TypeMaterielController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:type-materiel-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:type-materiel-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:type-materiel-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:type-materiel-delete', ['only' => ['destroy']]);
@@ -31,6 +37,8 @@ class TypeMaterielController extends Controller
      */
     public function create()
     {
+        $this->denyInventaireMutation();
+
         return view('type_materiels.create');
     }
 
@@ -39,6 +47,8 @@ class TypeMaterielController extends Controller
      */
     public function store(Request $request)
     {
+        $this->denyInventaireMutation();
+
         $request->validate([
             'libelle_type'     => 'required|string|max:100|unique:type_materiels,libelle_type',
             'description_type' => 'nullable|string',
@@ -68,6 +78,8 @@ class TypeMaterielController extends Controller
      */
     public function edit($id)
     {
+        $this->denyInventaireMutation();
+
         $type = TypeMateriel::findOrFail($id);
         return view('type_materiels.edit', compact('type'));
     }
@@ -77,6 +89,8 @@ class TypeMaterielController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->denyInventaireMutation();
+
         $type = TypeMateriel::findOrFail($id);
 
         $request->validate([
@@ -99,6 +113,8 @@ class TypeMaterielController extends Controller
      */
     public function destroy($id)
     {
+        $this->denyInventaireMutation();
+
         $type = TypeMateriel::findOrFail($id);
 
         DB::transaction(function () use ($type) {

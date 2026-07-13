@@ -26,9 +26,14 @@ class ProjetController extends Controller
      */
     public function index()
     {
-        $projets = Projet::with(['client.user', 'technologies'])
-            ->withCount('taches')
-            ->get();
+        $query = Projet::with(['client.user', 'technologies'])
+            ->withCount('taches');
+
+        if (auth()->user()->hasRole('Client')) {
+            $query->where('client_id', auth()->id());
+        }
+
+        $projets = $query->get();
         return view('projets.index', compact('projets'));
     }
 
@@ -37,6 +42,7 @@ class ProjetController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $clients = Client::with('user')->get();
         $technologies = Technologie::all();
         return view('projets.create', compact('clients', 'technologies'));
@@ -47,6 +53,7 @@ class ProjetController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $request->validate([
             'client_id'        => 'required|exists:clients,user_id',
             'nom_projet'       => 'required|string|max:150',
@@ -101,9 +108,14 @@ class ProjetController extends Controller
             'client.user',
             'technologies',
             'livrables',
+            'taches',
+            'feuilleTemps' => function ($query) {
+                if (!auth()->user()->hasRole('Admin')) {
+                    $query->where('employe_id', auth()->id());
+                }
+            },
             'feuilleTemps.employe.user',
             'feuilleTemps.taches',
-            'taches', // inclut les attributs du pivot (priorite, statut_tache)
         ])->findOrFail($id);
 
         // Organiser les tâches par colonne Kanban pour Alpine.js
@@ -124,6 +136,7 @@ class ProjetController extends Controller
      */
     public function edit($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $projet = Projet::with('technologies')->findOrFail($id);
         $clients = Client::with('user')->get();
         $technologies = Technologie::all();
@@ -135,6 +148,7 @@ class ProjetController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $projet = Projet::findOrFail($id);
 
         $request->validate([
@@ -185,6 +199,7 @@ class ProjetController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $projet = Projet::findOrFail($id);
 
         DB::transaction(function () use ($projet) {
@@ -201,6 +216,7 @@ class ProjetController extends Controller
      */
     public function updateTacheStatut(Request $request, Projet $projet, Tache $tache)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $request->validate([
             'statut_tache' => 'required|in:backlog,en_cours,en_revue,termine',
         ]);

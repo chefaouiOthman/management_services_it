@@ -105,11 +105,11 @@
                                                 @if($user->employe)
                                                     <h4 class="font-bold text-lg text-indigo-600">Profil Employé</h4>
                                                     <div class="grid grid-cols-2 gap-3">
-                                                        <div><strong>Date d'embauche :</strong> {{ $user->employe->date_embauche ? \Carbon\Carbon::parse($user->employe->date_embauche)->format('d/m/Y') : '-' }}</div>
-                                                        <div><strong>Département :</strong> {{ $user->employe->departement->nom_departement ?? 'Non assigné' }}</div>
-                                                        <div><strong>CIN Employé :</strong> {{ $user->employe->CIN ?? '-' }}</div>
+                                                        <div><strong>Date d'embauche :</strong> {{ $user->employe?->date_embauche?->format('d/m/Y') ?? '-' }}</div>
+                                                        <div><strong>Département :</strong> {{ $user->employe?->departement?->nom_departement ?? 'Non assigné' }}</div>
+                                                        <div><strong>CIN Employé :</strong> {{ $user->employe?->CIN ?? '-' }}</div>
                                                     </div>
-                                                    @if($contratActuel = $user->employe->contratActuel)
+                                                    @if($contratActuel = $user->employe?->contratActuel)
                                                         <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
                                                             <p class="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wider">Contrat Actuel</p>
                                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -136,11 +136,7 @@
                                                                 <div class="flex flex-col">
                                                                     <span class="text-xs text-gray-400 uppercase tracking-wide">Date de fin</span>
                                                                     <span class="mt-1 text-gray-800 dark:text-gray-200">
-                                                                        @if($contratActuel->date_fin)
-                                                                            {{ $contratActuel->date_fin->format('d/m/Y') }}
-                                                                        @else
-                                                                            <span class="italic text-gray-400">Indéterminée</span>
-                                                                        @endif
+                                                                        {{ $contratActuel?->date_fin?->format('d/m/Y') ?? 'Non définie' }}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -151,16 +147,16 @@
                                                 @elseif($user->stagiaire)
                                                     <h4 class="font-bold text-lg text-yellow-600">Profil Stagiaire</h4>
                                                     <div class="space-y-2">
-                                                        <div><strong>École d'origine :</strong> {{ $user->stagiaire->ecole_origine ?? '-' }}</div>
-                                                        <div><strong>Sujet de stage :</strong> {{ $user->stagiaire->sujet_stage ?? '-' }}</div>
-                                                        <div><strong>Département :</strong> {{ $user->stagiaire->departement->nom_departement ?? 'Non assigné' }}</div>
+                                                        <div><strong>École d'origine :</strong> {{ $user->stagiaire?->ecole_origine ?? '-' }}</div>
+                                                        <div><strong>Sujet de stage :</strong> {{ $user->stagiaire?->sujet_stage ?? '-' }}</div>
+                                                        <div><strong>Département :</strong> {{ $user->stagiaire?->departement?->nom_departement ?? 'Non assigné' }}</div>
                                                     </div>
                                                 @elseif($user->client)
                                                     <h4 class="font-bold text-lg text-green-600">Profil Client</h4>
                                                     <div class="space-y-2">
-                                                        <div><strong>Type :</strong> <span class="capitalize">{{ $user->client->type_client ?? '-' }}</span></div>
-                                                        <div><strong>Société :</strong> {{ $user->client->nom_societe ?? '-' }}</div>
-                                                        <div><strong>ICE :</strong> {{ $user->client->ice ?? '-' }}</div>
+                                                        <div><strong>Type :</strong> <span class="capitalize">{{ $user->client?->type_client ?? '-' }}</span></div>
+                                                        <div><strong>Société :</strong> {{ $user->client?->nom_societe ?? '-' }}</div>
+                                                        <div><strong>ICE :</strong> {{ $user->client?->ice ?? '-' }}</div>
                                                     </div>
                                                 @else
                                                     <p class="text-gray-500 italic">Cet utilisateur n'est lié à aucune entité métier (ni Employé, ni Stagiaire, ni Client).</p>
@@ -175,7 +171,7 @@
 
                                     <!-- Modale Historique des Contrats -->
                                     @if($user->employe && $user->hasRole('Employe_Standard'))
-                                    @php $contratActuelHistorique = $user->employe->contratActuel; @endphp
+                                    @php $contratActuelHistorique = $user->employe?->contratActuel; @endphp
                                     <td x-show="historyOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" @click.self="historyOpen = false">
                                         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-auto text-left max-h-[90vh] overflow-y-auto">
                                             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -187,7 +183,7 @@
                                                 </h3>
                                                 <button @click="historyOpen = false" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
                                             </div>
-                                            @forelse($user->employe->contrats as $contrat)
+                                            @forelse(($user->employe?->contrats ?? collect()) as $contrat)
                                                 <div class="mb-4 p-4 rounded-lg border {{ $contratActuelHistorique && $contrat->id === $contratActuelHistorique->id ? 'border-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-700' : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700' }}">
                                                     @if($contratActuelHistorique && $contrat->id === $contratActuelHistorique->id)
                                                         <span class="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-2 block">Contrat actuel</span>
@@ -199,11 +195,7 @@
                                                         <div><strong>Heures/sem. :</strong> {{ $contrat->heures_hebdo }}h</div>
                                                         <div><strong>Début :</strong> {{ $contrat->date_debut?->format('d/m/Y') ?? '-' }}</div>
                                                         <div><strong>Fin :</strong>
-                                                            @if($contrat->date_fin)
-                                                                {{ $contrat->date_fin->format('d/m/Y') }}
-                                                            @else
-                                                                <span class="italic text-gray-400">Indéterminée</span>
-                                                            @endif
+                                                            {{ $contrat?->date_fin?->format('d/m/Y') ?? 'N/A' }}
                                                         </div>
                                                     </div>
                                                 </div>

@@ -50,7 +50,7 @@ use App\Http\Controllers\FichePaieController;
 use App\Http\Controllers\NoteDeFraisController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 // ROUTAGE STANDARD (Laravel Breeze)

@@ -24,7 +24,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Date Comptable</p>
-                                <p class="text-lg font-semibold">{{ $flux->date_comptable->format('d/m/Y H:i') }}</p>
+                                <p class="text-lg font-semibold">{{ $flux->date_comptable?->format('d/m/Y H:i') ?? 'N/A' }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Type de Mouvement</p>
@@ -42,7 +42,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Date de Création</p>
-                                <p class="text-lg font-semibold">{{ $flux->created_at->format('d/m/Y H:i') }}</p>
+                                <p class="text-lg font-semibold">{{ $flux->created_at?->format('d/m/Y H:i') ?? 'N/A' }}</p>
                             </div>
                         </div>
                     </div>
@@ -54,12 +54,12 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Libellé Catégorie</p>
-                                    <p class="text-lg font-semibold">{{ $flux->categorieFlux->libelle_categorie }}</p>
+                                    <p class="text-lg font-semibold">{{ $flux->categorieFlux?->libelle_categorie ?? 'N/A' }}</p>
                                 </div>
-                                @if($flux->categorieFlux->code_comptable)
+                                @if($flux->categorieFlux?->code_comptable)
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Code Comptable</p>
-                                    <p class="text-lg font-semibold font-mono">{{ $flux->categorieFlux->code_comptable }}</p>
+                                    <p class="text-lg font-semibold font-mono">{{ $flux->categorieFlux?->code_comptable ?? 'N/A' }}</p>
                                 </div>
                                 @endif
                             </div>
@@ -75,19 +75,19 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Numéro Facture</p>
-                                        <p class="font-semibold">{{ $flux->facture->num_facture }}</p>
+                                        <p class="font-semibold">{{ $flux->facture?->num_facture ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Client</p>
-                                        <p class="font-semibold">{{ $flux->facture->client?->user?->nom_complet ?? 'N/A' }}</p>
+                                        <p class="font-semibold">{{ $flux->facture?->client?->user?->nom_complet ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Date Émission</p>
-                                        <p class="font-semibold">{{ $flux->facture->date_emission->format('d/m/Y') }}</p>
+                                        <p class="font-semibold">{{ $flux->facture?->date_emission?->format('d/m/Y') ?? 'N/A' }}</p>
                                     </div>
                                 </div>
                                 <div class="mt-4">
-                                    <a href="{{ route('factures.show', $flux->facture->id) }}" class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition">
+                                    <a href="{{ route('factures.show', $flux->facture?->id ?? 'N/A') }}" class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition">
                                         Voir la Facture
                                     </a>
                                 </div>
@@ -98,19 +98,19 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Employé</p>
-                                        <p class="font-semibold">{{ $flux->fichePaie->employe?->user?->nom_complet ?? 'N/A' }}</p>
+                                        <p class="font-semibold">{{ $flux->fichePaie?->employe?->user?->nom_complet ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Période</p>
-                                        <p class="font-semibold">{{ $flux->fichePaie->mois_annee }}</p>
+                                        <p class="font-semibold">{{ $flux->fichePaie?->mois_annee ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Net à Payer</p>
-                                        <p class="font-semibold font-mono">{{ number_format($flux->fichePaie->net_a_payer, 2, ',', ' ') }} DHS</p>
+                                        <p class="font-semibold font-mono">{{ number_format($flux->fichePaie?->net_a_payer ?? 0, 2, ',', ' ') }} DHS</p>
                                     </div>
                                 </div>
                                 <div class="mt-4">
-                                    <a href="{{ route('fiche_paies.show', $flux->fichePaie->id) }}" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition">
+                                    <a href="{{ route('fiche_paies.show', $flux->fichePaie?->id ?? 'N/A') }}" class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition">
                                         Voir la Fiche de Paie
                                     </a>
                                 </div>
@@ -121,19 +121,19 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Employé</p>
-                                        <p class="font-semibold">{{ $flux->noteDeFrais->employe?->user?->nom_complet ?? 'N/A' }}</p>
+                                        <p class="font-semibold">{{ $flux->noteDeFrais?->employe?->user?->nom_complet ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Motif</p>
-                                        <p class="font-semibold">{{ $flux->noteDeFrais->motif_depense }}</p>
+                                        <p class="font-semibold">{{ $flux->noteDeFrais?->motif_depense ?? 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Montant TTC</p>
-                                        <p class="font-semibold font-mono">{{ number_format($flux->noteDeFrais->montant_ttc, 2, ',', ' ') }} DHS</p>
+                                        <p class="font-semibold font-mono">{{ number_format($flux->noteDeFrais?->montant_ttc ?? 0, 2, ',', ' ') }} DHS</p>
                                     </div>
                                 </div>
                                 <div class="mt-4">
-                                    <a href="{{ route('note_de_frais.show', $flux->noteDeFrais->id) }}" class="inline-flex items-center px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded hover:bg-purple-700 transition">
+                                    <a href="{{ route('note_de_frais.show', $flux->noteDeFrais?->id ?? 'N/A') }}" class="inline-flex items-center px-3 py-1 bg-purple-600 text-white text-sm font-medium rounded hover:bg-purple-700 transition">
                                         Voir la Note de Frais
                                     </a>
                                 </div>

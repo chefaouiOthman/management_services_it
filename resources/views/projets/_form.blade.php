@@ -1,5 +1,5 @@
 @php
-    $isEdit = isset($projet);
+    $isEdit = isset($projet) && $projet->exists;
     $actionUrl = $isEdit ? route('projets.update', $projet->id) : route('projets.store');
 @endphp
 
@@ -68,7 +68,7 @@
                 <x-input-label value="Stack Technologique" />
                 <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     @php
-                        $selectedTechs = old('technologies', isset($projet) ? $projet->technologies->pluck('id')->toArray() : []);
+                        $selectedTechs = old('technologies', $isEdit ? $projet->technologies?->pluck('id')->toArray() ?? [] : []);
                     @endphp
                     @foreach($technologies as $tech)
                         <label class="inline-flex items-center">

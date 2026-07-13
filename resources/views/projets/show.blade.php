@@ -5,7 +5,7 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     Projet : {{ $projet->nom_projet }}
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Client : {{ $projet->client->nom_societe ?? $projet->client->user->nom_complet }}</p>
+                <p class="text-sm text-gray-500 mt-1">Client : {{ $projet->client?->nom_societe ?? $projet->client?->user?->nom_complet ?? 'Inconnu' }}</p>
             </div>
             <div class="flex gap-2">
                 @can('projet-edit')
@@ -42,12 +42,12 @@
                 </x-card>
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Livrables</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $projet->livrables->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $projet->livrables?->count() ?? 0 }}</p>
                 </x-card>
             </div>
 
             <!-- Liste des Technologies -->
-            @if($projet->technologies->isNotEmpty())
+            @if($projet->technologies?->isNotEmpty() ?? false)
             <div class="flex flex-wrap gap-2 mt-4">
                 <span class="text-sm text-gray-500 font-medium self-center mr-2">Technologies :</span>
                 @foreach($projet->technologies as $tech)
@@ -63,7 +63,9 @@
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                     <a href="#kanban" :class="tab === 'kanban' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Kanban des Tâches</a>
                     <a href="#livrables" :class="tab === 'livrables' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Livrables & Jalons</a>
+                    @unless(auth()->user()->hasRole('Client'))
                     <a href="#timesheets" :class="tab === 'timesheets' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Feuilles de Temps</a>
+                    @endunless
                 </nav>
             </div>
 
@@ -103,7 +105,7 @@
                                     <p class="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">{{ $tache->titre_tache }}</p>
                                     <div class="flex justify-between items-center mt-2">
                                         @php
-                                            $prioColor = match($tache->pivot->priorite) {
+                                            $prioColor = match($tache->pivot?->priorite ?? 'moyenne') {
                                                 'basse' => 'gray',
                                                 'moyenne' => 'info',
                                                 'haute' => 'warning',
@@ -111,7 +113,7 @@
                                                 default => 'gray'
                                             };
                                         @endphp
-                                        <x-badge :type="$prioColor" class="text-[10px] uppercase">{{ $tache->pivot->priorite }}</x-badge>
+                                        <x-badge :type="$prioColor" class="text-[10px] uppercase">{{ $tache->pivot?->priorite ?? 'N/A' }}</x-badge>
                                         <div class="text-xs text-gray-400 flex gap-1">
                                             @can('tache-edit')
                                             <a href="{{ route('projets.taches.edit', [$projet->id, $tache->id]) }}" class="hover:text-indigo-500" title="Éditer">✎</a>
@@ -152,7 +154,7 @@
                                 @endphp
                                 <x-badge :type="$lColor">{{ str_replace('_', ' ', $livrable->statut_client) }}</x-badge>
                             </div>
-                            <p class="text-sm text-gray-500 mt-2">Limite : {{ $livrable->date_limite_soumission->format('d/m/Y') }}</p>
+                            <p class="text-sm text-gray-500 mt-2">Limite : {{ $livrable->date_limite_soumission?->format('d/m/Y') ?? 'N/A' }}</p>
                             
                             <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
                                 @if($livrable->fichier_path)
@@ -175,6 +177,7 @@
                 </div>
             </div>
 
+            @unless(auth()->user()->hasRole('Client'))
             <!-- TAB: TIMESHEETS -->
             <div x-show="tab === 'timesheets'" x-cloak class="space-y-4">
                 <div class="flex justify-between items-center mb-4">
@@ -202,7 +205,7 @@
                                 @forelse($projet->feuilleTemps as $ft)
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                            {{ $ft->employe->user->nom_complet }}
+                                            {{ $ft->employe?->user?->nom_complet ?? 'Inconnu' }}
                                         </td>
                                         <td class="px-6 py-4">
                                             {{ \Carbon\Carbon::parse($ft->date_effort)->format('d/m/Y') }}
@@ -227,6 +230,7 @@
                     </div>
                 </x-card>
             </div>
+            @endunless
 
         </div>
     </div>

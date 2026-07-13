@@ -33,6 +33,8 @@ class AssignationMaterielController extends Controller
      */
     public function store(Request $request, AssetMateriel $asset)
     {
+        $this->denyInventaireMutation();
+
         // 1. Sécurité maximale pour récupérer l'ID du matériel
         // On cherche dans l'URL ($assetId), ou dans le formulaire via 'asset_materiel_id' ou 'asset_id'
         $finalAssetId = $assetId 
@@ -89,6 +91,7 @@ class AssignationMaterielController extends Controller
      */
     public function restituer(Request $request, $id)
     {
+        $this->denyInventaireMutation();
         $this->authorizeAction();
 
         try {
@@ -132,6 +135,7 @@ class AssignationMaterielController extends Controller
      */
     public function destroy($id)
     {
+        $this->denyInventaireMutation();
         $this->authorizeAction();
 
         DB::transaction(function () use ($id) {

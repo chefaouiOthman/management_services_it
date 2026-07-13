@@ -36,7 +36,7 @@ class SessionFormation extends Model
     /** Catalogue de formation sur lequel est basée cette session */
     public function catalogueFormation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(CatalogueFormation::class, 'catalogue_formation_id');
+        return $this->belongsTo(CatalogueFormation::class, 'catalogue_formation_id')->withDefault();
     }
 
     /**

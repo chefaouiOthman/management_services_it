@@ -39,7 +39,7 @@
                             <!-- Date de l'effort -->
                             <div>
                                 <x-input-label for="date_effort" value="Date de la saisie" />
-                                <x-text-input id="date_effort" name="date_effort" type="date" class="mt-1 block w-full" value="{{ old('date_effort', $feuille->date_effort->format('Y-m-d')) }}" required />
+                                <x-text-input id="date_effort" name="date_effort" type="date" class="mt-1 block w-full" value="{{ old('date_effort', $feuille->date_effort?->format('Y-m-d') ?? '') }}" required />
                                 <x-input-error :messages="$errors->get('date_effort')" class="mt-2" />
                             </div>
 
@@ -61,7 +61,7 @@
                                         @foreach($taches as $tache)
                                             <label class="flex items-start space-x-3 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                                                 <input type="checkbox" name="taches[]" value="{{ $tache->id }}" class="mt-1 form-checkbox text-indigo-600 border-gray-300 rounded shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                    {{ is_array(old('taches', $feuille->taches->pluck('id')->toArray())) && in_array($tache->id, old('taches', $feuille->taches->pluck('id')->toArray())) ? 'checked' : '' }}>
+                                                    {{ is_array(old('taches', $feuille->taches?->pluck('id')->toArray() ?? [])) && in_array($tache->id, old('taches', $feuille->taches?->pluck('id')->toArray() ?? [])) ? 'checked' : '' }}>
                                                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ $tache->titre_tache }}</span>
                                             </label>
                                         @endforeach

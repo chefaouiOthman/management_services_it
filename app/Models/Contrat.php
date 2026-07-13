@@ -48,6 +48,6 @@ class Contrat extends Model
      */
     public function employe(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id')->withDefault();
     }
 }

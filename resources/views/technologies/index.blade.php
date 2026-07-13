@@ -4,9 +4,11 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Technologies
             </h2>
+            @if(auth()->user()->hasRole('Admin'))
             <a href="{{ route('technologies.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-bold">
                 + Ajouter
             </a>
+            @endif
         </div>
     </x-slot>
 

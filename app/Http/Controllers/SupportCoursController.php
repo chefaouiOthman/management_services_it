@@ -11,7 +11,7 @@ class SupportCoursController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:support-cours-view', ['only' => ['index', 'show', 'download']]);
+        $this->middleware('role:Admin|Employe_Standard|Stagiaire|Client', ['only' => ['index', 'show', 'download']]);
         $this->middleware('permission:support-cours-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:support-cours-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:support-cours-delete', ['only' => ['destroy']]);

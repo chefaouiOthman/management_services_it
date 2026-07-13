@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserCredentialsMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rule;
 
@@ -13,7 +16,7 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:user-view', ['only' => ['index', 'show']]);
+        $this->middleware('permission:user-view', ['only' => ['index']]);
         $this->middleware('permission:user-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:user-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:user-delete', ['only' => ['destroy']]);
@@ -24,6 +27,10 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        if (!auth()->user()->hasRole('Admin')) {
+            return redirect()->route('users.show', auth()->id());
+        }
+
         $query = User::with([
             'roles',
             'employe.departement',
@@ -32,12 +39,16 @@ class UserController extends Controller
             'client',
         ]);
 
-        // Filter by role if query parameter is present
+        // Filter by profile type if query parameter is present
         if ($request->has('role') && !empty($request->role)) {
             $role = $request->role;
-            $query->whereHas('roles', function ($q) use ($role) {
-                $q->where('name', 'like', "%{$role}%");
-            });
+            if ($role === 'employe') {
+                $query->whereHas('employe');
+            } elseif ($role === 'stagiaire') {
+                $query->whereHas('stagiaire');
+            } elseif ($role === 'client') {
+                $query->whereHas('client');
+            }
         }
 
         $users = $query->paginate(25);
@@ -51,7 +62,8 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        return view('users.create', compact('roles'));
+        $user = new User();
+        return view('users.create', compact('roles', 'user'));
     }
 
     /**
@@ -63,7 +75,6 @@ class UserController extends Controller
             'nom_complet'    => 'required|string|max:150',
             'email'          => 'required|string|email|max:255|unique:users',
             'cin'            => 'nullable|string|max:50|unique:users,cin|unique:employes,CIN',
-            'password'       => 'required|string|min:8',
             'est_actif'      => 'boolean',
             'roles'          => 'nullable|array',
             'roles.*'        => 'exists:roles,name',
@@ -82,12 +93,14 @@ class UserController extends Controller
             'statut'         => 'nullable|in:actif,suspendu,termine',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $plainPassword = Str::password(12);
+
+        DB::transaction(function () use ($request, &$user, $plainPassword) {
             $user = User::create([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
                 'cin'         => $request->cin,
-                'password'    => Hash::make($request->password),
+                'password'    => Hash::make($plainPassword),
                 'est_actif'   => $request->input('est_actif', true),
             ]);
 
@@ -95,7 +108,7 @@ class UserController extends Controller
                 $user->syncRoles($request->roles);
                 
                 // Create child entity based on role
-                if (in_array('Employe_Standard', $request->roles)) {
+                if (in_array('Employe_Standard', $request->roles) || in_array('Admin', $request->roles)) {
                     $employe = $user->employe()->create([
                         'cin'            => $request->cin ?: 'TEMP-' . uniqid(),
                         'departement_id' => $request->departement_id,
@@ -129,6 +142,8 @@ class UserController extends Controller
             }
         });
 
+        Mail::to($user->email)->send(new UserCredentialsMail($user, $plainPassword));
+
         return redirect()->route('users.index')->with('success', 'Utilisateur créé avec succès.');
     }
 
@@ -137,6 +152,10 @@ class UserController extends Controller
      */
     public function show($id)
     {
+        if (!auth()->user()->hasRole('Admin') && auth()->id() != $id) {
+            abort(403);
+        }
+
         $user = User::with([
             'roles',
             'employe.departement',
@@ -152,6 +171,10 @@ class UserController extends Controller
      */
     public function edit($id)
     {
+        if (!auth()->user()->hasRole('Admin')) {
+            abort(403);
+        }
+
         $user = User::with([
             'roles',
             'employe.departement',
@@ -168,13 +191,16 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->hasRole('Admin')) {
+            abort(403);
+        }
+
         $user = User::with(['employe', 'stagiaire', 'client'])->findOrFail($id);
 
         $request->validate([
             'nom_complet'    => 'required|string|max:150',
             'email'          => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'cin'            => ['nullable', 'string', 'max:50', Rule::unique('users', 'cin')->ignore($user->id)],
-            'password'       => 'nullable|string|min:8',
             'est_actif'      => 'boolean',
             'roles'          => 'nullable|array',
             'roles.*'        => 'exists:roles,name',
@@ -195,10 +221,6 @@ class UserController extends Controller
                 'cin'         => $request->cin,
                 'est_actif'   => $request->has('est_actif') ? (bool)$request->est_actif : $user->est_actif,
             ]);
-
-            if ($request->filled('password')) {
-                $user->update(['password' => Hash::make($request->password)]);
-            }
 
             if ($request->has('roles')) {
                 $user->syncRoles($request->roles);
@@ -230,7 +252,7 @@ class UserController extends Controller
 
             // Handle role changes - create new entity if role changed to employee/stagiaire/client
             if ($request->has('roles')) {
-                if (in_array('Employe_Standard', $request->roles) && !$user->employe) {
+                if ((in_array('Employe_Standard', $request->roles) || in_array('Admin', $request->roles)) && !$user->employe) {
                     $user->employe()->create([
                         'CIN'            => $request->input('cin') ?: 'TEMP-' . uniqid(),
                         'departement_id' => $request->input('departement_id') ?: null,
@@ -260,6 +282,10 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->hasRole('Admin')) {
+            abort(403);
+        }
+
         $user = User::with([
             'employe',
             'stagiaire', 

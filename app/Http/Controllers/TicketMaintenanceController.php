@@ -40,6 +40,8 @@ class TicketMaintenanceController extends Controller
      */
     public function create()
     {
+        $this->denyInventaireMutation();
+
         $assets = AssetMateriel::all();
         $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
         return view('tickets.create', compact('assets', 'users'));
@@ -50,6 +52,8 @@ class TicketMaintenanceController extends Controller
      */
     public function store(Request $request)
     {
+        $this->denyInventaireMutation();
+
         $request->validate([
             'asset_materiel_id' => 'required|exists:asset_materiels,id',
             'user_id'           => 'required|exists:users,id',
@@ -99,6 +103,8 @@ class TicketMaintenanceController extends Controller
      */
     public function edit($id)
     {
+        $this->denyInventaireMutation();
+
         $ticket = TicketMaintenance::findOrFail($id);
 
         if (!Auth::user()->hasRole('Admin') && $ticket->user_id != Auth::id()) {
@@ -115,6 +121,8 @@ class TicketMaintenanceController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->denyInventaireMutation();
+
         $ticket = TicketMaintenance::findOrFail($id);
 
         if (!Auth::user()->hasRole('Admin') && $ticket->user_id != Auth::id()) {
@@ -156,6 +164,8 @@ class TicketMaintenanceController extends Controller
      */
     public function destroy($id)
     {
+        $this->denyInventaireMutation();
+
         $ticket = TicketMaintenance::findOrFail($id);
 
         if (!Auth::user()->hasRole('Admin')) {
@@ -174,6 +184,8 @@ class TicketMaintenanceController extends Controller
      */
     public function updateStatut(Request $request, TicketMaintenance $ticket)
     {
+        $this->denyInventaireMutation();
+
         $request->validate([
             'statut_ticket' => 'required|in:signale,en_atelier,resolu',
         ]);

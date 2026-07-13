@@ -50,7 +50,7 @@
                                 <tr class="bg-white border-b hover:bg-gray-50 transition">
                                     <td class="px-6 py-3 font-medium text-gray-900">
                                         {{ $asset->marque }} {{ $asset->modele }}<br>
-                                        <span class="text-xs text-gray-500">{{ $asset->typeMateriel->libelle_type ?? 'N/A' }}</span>
+                                        <span class="text-xs text-gray-500">{{ $asset->typeMateriel?->libelle_type ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-6 py-3">{{ $asset->num_serie }}</td>
                                     <td class="px-6 py-3">
@@ -96,16 +96,16 @@
                                 <tr class="bg-white border-b hover:bg-gray-50 transition" x-data="ticketManager({{ $ticket->id }}, '{{ $ticket->statut_ticket }}')">
                                     <td class="px-6 py-4">
                                         <span class="font-bold text-gray-900">#{{ $ticket->id }}</span><br>
-                                        <span class="text-xs text-gray-400">{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
+                                        <span class="text-xs text-gray-400">{{ $ticket->created_at?->format('d/m/Y H:i') ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-6 py-4 font-medium text-gray-900">
-                                        {{ $ticket->user->nom_complet }}
+                                        {{ $ticket->user?->nom_complet ?? 'Inconnu' }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <a href="{{ route('assets.show', $ticket->asset_materiel_id) }}" class="text-indigo-600 hover:underline">
-                                            {{ $ticket->assetMateriel->marque }} {{ $ticket->assetMateriel->modele }}
+                                            {{ $ticket->assetMateriel?->marque ?? 'N/A' }} {{ $ticket->assetMateriel?->modele ?? 'N/A' }}
                                         </a><br>
-                                        <span class="text-xs text-gray-500">SN: {{ $ticket->assetMateriel->num_serie }}</span>
+                                        <span class="text-xs text-gray-500">SN: {{ $ticket->assetMateriel?->num_serie ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-2">

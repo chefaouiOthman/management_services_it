@@ -34,13 +34,13 @@ class FeuilleTemps extends Model
      */
     public function employe(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id')->withDefault();
     }
 
     /** Projet sur lequel est imputé cet effort */
     public function projet(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Projet::class, 'projet_id');
+        return $this->belongsTo(Projet::class, 'projet_id')->withDefault();
     }
 
     /**

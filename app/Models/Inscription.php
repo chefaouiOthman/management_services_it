@@ -26,12 +26,16 @@ class Inscription extends Model
     /** Apprenant inscrit à cette session */
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withDefault([
+            'nom_complet' => 'Utilisateur inconnu',
+            'name'        => 'Inconnu',
+            'email'       => 'N/A',
+        ]);
     }
 
     /** Session de formation concernée */
     public function sessionFormation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(SessionFormation::class, 'session_formation_id');
+        return $this->belongsTo(SessionFormation::class, 'session_formation_id')->withDefault();
     }
 }

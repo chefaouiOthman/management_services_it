@@ -47,8 +47,8 @@ class PointageController extends Controller
      */
     public function create()
     {
-        // Seul l'admin peut créer un pointage pour quelqu'un d'autre manuellement.
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        $users = User::all();
         return view('pointages.create', compact('users'));
     }
 
@@ -57,27 +57,26 @@ class PointageController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+
         $request->validate([
             'user_id'         => 'required|exists:users,id',
             'date_jour'       => 'required|date',
-            'heure_arrivee'   => 'required|date_format:Y-m-d H:i:s',
-            'heure_depart'    => 'nullable|date_format:Y-m-d H:i:s|after:heure_arrivee',
+            'heure_arrivee'   => 'required|date',
+            'heure_depart'    => 'nullable|date|after:heure_arrivee',
             'statut_presence' => 'required|in:a_l_heure,en_retard,depart_anticipe',
         ]);
 
-        // Vérification de sécurité : un non-admin ne peut pointer que pour lui-même
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
-            abort(403, 'Vous ne pouvez pas pointer pour un autre utilisateur.');
+        $data = $request->only(['user_id', 'date_jour', 'heure_arrivee', 'heure_depart', 'statut_presence']);
+        if (!empty($data['heure_arrivee'])) {
+            $data['heure_arrivee'] = \Carbon\Carbon::parse($data['heure_arrivee'])->format('Y-m-d H:i:s');
+        }
+        if (!empty($data['heure_depart'])) {
+            $data['heure_depart'] = \Carbon\Carbon::parse($data['heure_depart'])->format('Y-m-d H:i:s');
         }
 
-        DB::transaction(function () use ($request) {
-            Pointage::create([
-                'user_id'         => $request->user_id,
-                'date_jour'       => $request->date_jour,
-                'heure_arrivee'   => $request->heure_arrivee,
-                'heure_depart'    => $request->heure_depart,
-                'statut_presence' => $request->statut_presence,
-            ]);
+        DB::transaction(function () use ($data) {
+            Pointage::create($data);
         });
 
         return redirect()->route('pointages.index')->with('success', 'Pointage enregistré avec succès.');
@@ -102,13 +101,10 @@ class PointageController extends Controller
      */
     public function edit($id)
     {
-        $pointage = Pointage::with('user')->findOrFail($id);
-        
-        if (!Auth::user()->hasRole('Admin') && $pointage->user_id != Auth::id()) {
-            abort(403);
-        }
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
 
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        $pointage = Pointage::with('user')->findOrFail($id);
+        $users = User::all();
         return view('pointages.edit', compact('pointage', 'users'));
     }
 
@@ -117,26 +113,27 @@ class PointageController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $pointage = Pointage::findOrFail($id);
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
 
-        if (!Auth::user()->hasRole('Admin') && $pointage->user_id != Auth::id()) {
-            abort(403);
-        }
+        $pointage = Pointage::findOrFail($id);
 
         $request->validate([
             'date_jour'       => 'required|date',
-            'heure_arrivee'   => 'required|date_format:Y-m-d H:i:s',
-            'heure_depart'    => 'nullable|date_format:Y-m-d H:i:s|after:heure_arrivee',
+            'heure_arrivee'   => 'required|date',
+            'heure_depart'    => 'nullable|date|after:heure_arrivee',
             'statut_presence' => 'required|in:a_l_heure,en_retard,depart_anticipe',
         ]);
 
-        DB::transaction(function () use ($request, $pointage) {
-            $pointage->update([
-                'date_jour'       => $request->date_jour,
-                'heure_arrivee'   => $request->heure_arrivee,
-                'heure_depart'    => $request->heure_depart,
-                'statut_presence' => $request->statut_presence,
-            ]);
+        $data = $request->only(['date_jour', 'heure_arrivee', 'heure_depart', 'statut_presence']);
+        if (!empty($data['heure_arrivee'])) {
+            $data['heure_arrivee'] = \Carbon\Carbon::parse($data['heure_arrivee'])->format('Y-m-d H:i:s');
+        }
+        if (!empty($data['heure_depart'])) {
+            $data['heure_depart'] = \Carbon\Carbon::parse($data['heure_depart'])->format('Y-m-d H:i:s');
+        }
+
+        DB::transaction(function () use ($data, $pointage) {
+            $pointage->update($data);
         });
 
         return redirect()->route('pointages.index')->with('success', 'Pointage mis à jour avec succès.');
@@ -147,11 +144,9 @@ class PointageController extends Controller
      */
     public function destroy($id)
     {
-        $pointage = Pointage::findOrFail($id);
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
 
-        if (!Auth::user()->hasRole('Admin')) {
-            abort(403, 'Seul un administrateur peut supprimer un pointage.');
-        }
+        $pointage = Pointage::findOrFail($id);
 
         DB::transaction(function () use ($pointage) {
             $pointage->delete();

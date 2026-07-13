@@ -21,7 +21,7 @@
                     <div>
                         <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">FACTURE</h3>
                         <p class="text-sm font-medium text-gray-500">N° {{ $facture->num_facture }}</p>
-                        <p class="text-sm font-medium text-gray-500">Date d'émission : {{ $facture->date_emission->format('d/m/Y') }}</p>
+                        <p class="text-sm font-medium text-gray-500">Date d'émission : {{ $facture->date_emission?->format('d/m/Y') ?? 'N/A' }}</p>
                     </div>
                     <div class="text-right">
                         @php
@@ -41,12 +41,12 @@
                 <!-- Informations Client -->
                 <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                     <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Facturé à</h4>
-                    <p class="font-bold text-gray-900 dark:text-white text-lg">{{ $facture->client->user->nom_complet }}</p>
-                    @if($facture->client->type_client === 'morale')
-                        <p class="text-gray-600 dark:text-gray-400 text-sm">Société : {{ $facture->client->nom_societe }}</p>
-                        <p class="text-gray-600 dark:text-gray-400 text-sm">ICE : {{ $facture->client->ice }}</p>
+                    <p class="font-bold text-gray-900 dark:text-white text-lg">{{ $facture->client?->user?->nom_complet ?? 'Inconnu' }}</p>
+                    @if($facture->client?->type_client === 'morale')
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Société : {{ $facture->client?->nom_societe ?? 'N/A' }}</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">ICE : {{ $facture->client?->ice ?? 'N/A' }}</p>
                     @endif
-                    <p class="text-gray-600 dark:text-gray-400 text-sm">{{ $facture->client->user->email }}</p>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">{{ $facture->client?->user?->email ?? 'N/A' }}</p>
                 </div>
 
                 <!-- Lignes de Facture -->
@@ -120,10 +120,10 @@
                 <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 flex items-center justify-between">
                     <div>
                         <p class="text-sm font-bold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Paiement Encaissé</p>
-                        <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-1">Le flux de trésorerie a été généré le {{ $facture->fluxTresorerie->date_comptable->format('d/m/Y à H:i') }}.</p>
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 mt-1">Le flux de trésorerie a été généré le {{ $facture->fluxTresorerie?->date_comptable?->format('d/m/Y à H:i') ?? 'N/A' }}.</p>
                     </div>
                     <div class="text-indigo-700 dark:text-indigo-400 text-2xl font-black font-mono">
-                        + {{ number_format($facture->fluxTresorerie->montant_operation, 2, ',', ' ') }} DHS
+                        + {{ number_format($facture->fluxTresorerie?->montant_operation ?? 0, 2, ',', ' ') }} DHS
                     </div>
                 </div>
             @endif

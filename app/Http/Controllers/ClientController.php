@@ -33,7 +33,8 @@ class ClientController extends Controller
      */
     public function create()
     {
-        return view('clients.create');
+        $client = new Client();
+        return view('clients.create', compact('client'));
     }
 
     /**
@@ -135,7 +136,7 @@ class ClientController extends Controller
     public function destroy($id)
     {
         $client = Client::findOrFail($id);
-        $client->user->delete();
+        if ($client->user) { $client->user?->delete(); }
 
         return redirect()->route('clients.index')->with('success', 'Client supprimé avec succès.');
     }

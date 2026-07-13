@@ -36,7 +36,8 @@ class EmployeController extends Controller
     public function create()
     {
         $roles = Role::whereIn('name', ['Admin', 'Employe_Standard'])->get();
-        return view('employes.create', compact('roles'));
+        $employe = new Employe();
+        return view('employes.create', compact('roles', 'employe'));
     }
 
     /**
@@ -187,7 +188,7 @@ class EmployeController extends Controller
     {
         $employe = Employe::findOrFail($id);
         // Cascade removes Employe and Contrat
-        $employe->user->delete();
+        if ($employe->user) { $employe->user?->delete(); }
 
         return redirect()->route('employes.index')->with('success', 'Employé supprimé avec succès.');
     }

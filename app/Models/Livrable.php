@@ -31,6 +31,6 @@ class Livrable extends Model
     /** Projet auquel appartient ce livrable/jalon */
     public function projet(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Projet::class, 'projet_id');
+        return $this->belongsTo(Projet::class, 'projet_id')->withDefault();
     }
 }

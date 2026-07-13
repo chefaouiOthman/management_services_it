@@ -14,6 +14,13 @@ class FactureController extends Controller
 {
     public function __construct()
     {
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Employe_Standard')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:facture-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:facture-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:facture-edit', ['only' => ['edit', 'update']]);
@@ -25,7 +32,13 @@ class FactureController extends Controller
      */
     public function index()
     {
-        $factures = Facture::with(['client.user', 'fluxTresorerie', 'ligneFactures'])->get();
+        $query = Facture::with(['client.user', 'fluxTresorerie', 'ligneFactures']);
+
+        if (auth()->user()->hasRole('Client')) {
+            $query->where('client_id', auth()->id());
+        }
+
+        $factures = $query->get();
         return view('factures.index', compact('factures'));
     }
 
@@ -34,6 +47,7 @@ class FactureController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $clients = Client::with('user')->get();
         return view('factures.create', compact('clients'));
     }
@@ -43,6 +57,7 @@ class FactureController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $request->validate([
             'client_id'       => 'required|exists:clients,user_id',
             'num_facture'     => 'required|string|max:50|unique:factures,num_facture',
@@ -101,6 +116,7 @@ class FactureController extends Controller
      */
     public function edit($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $facture = Facture::findOrFail($id);
         $clients = Client::with('user')->get();
         return view('factures.edit', compact('facture', 'clients'));
@@ -111,6 +127,7 @@ class FactureController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $facture = Facture::findOrFail($id);
 
         $request->validate([
@@ -149,6 +166,7 @@ class FactureController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $facture = Facture::findOrFail($id);
 
         DB::transaction(function () use ($facture) {

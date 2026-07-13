@@ -40,13 +40,17 @@ class Employe extends Model
     /** Remonte vers le compte utilisateur (table users) */
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withDefault([
+            'nom_complet' => 'Utilisateur inconnu',
+            'name'        => 'Inconnu',
+            'email'       => 'N/A',
+        ]);
     }
 
     /** Relation vers le Departement */
     public function departement(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Departement::class);
+        return $this->belongsTo(Departement::class)->withDefault(['nom' => 'Département inconnu']);
     }
 
     // =========================================================

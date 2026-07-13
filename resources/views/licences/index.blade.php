@@ -5,9 +5,11 @@
                 Gestion des Licences Logicielles
             </h2>
             @can('licence-create')
+            @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
             <a href="{{ route('licences.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                 + Nouvelle Licence
             </a>
+            @endunless
             @endcan
         </div>
     </x-slot>
@@ -53,7 +55,9 @@
                                 <h4 class="font-semibold text-gray-700 mb-4 flex justify-between items-center">
                                     Attributions Actives
                                     @can('manage-assets')
+                                    @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                                     <button @click="openAssignForm = !openAssignForm" class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-100 transition">+ Attribuer</button>
+                                    @endunless
                                     @endcan
                                 </h4>
                                 
@@ -81,12 +85,14 @@
                                         <div class="flex justify-between items-center p-3 bg-blue-50 border border-blue-100 rounded-lg">
                                             <div>
                                                 <p class="font-medium text-gray-900 text-sm">{{ $actif->nom_complet }}</p>
-                                                <p class="text-xs text-gray-500">Depuis le {{ \Carbon\Carbon::parse($actif->pivot->date_attribution)->format('d/m/Y') }}</p>
+                                                <p class="text-xs text-gray-500">Depuis le {{ \Carbon\Carbon::parse($actif->pivot?->date_attribution)->format('d/m/Y') }}</p>
                                             </div>
                                             @can('manage-assets')
-                                            <button @click="revoquer({{ $actif->pivot->id }})" class="text-xs text-red-600 hover:text-red-900 bg-white border border-red-200 px-2 py-1 rounded shadow-sm hover:bg-red-50">
+                                            @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
+                                            <button @click="revoquer({{ $actif->pivot?->id }})" class="text-xs text-red-600 hover:text-red-900 bg-white border border-red-200 px-2 py-1 rounded shadow-sm hover:bg-red-50">
                                                 Révoquer
                                             </button>
+                                            @endunless
                                             @endcan
                                         </div>
                                     @empty
@@ -105,7 +111,7 @@
                                     @forelse($historique as $hist)
                                         <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
                                             <span class="text-sm font-medium text-gray-700">{{ $hist->nom_complet }}</span>
-                                            <span class="text-xs text-gray-500">Fin : {{ \Carbon\Carbon::parse($hist->pivot->date_revocation)->format('d/m/Y') }}</span>
+                                            <span class="text-xs text-gray-500">Fin : {{ \Carbon\Carbon::parse($hist->pivot?->date_revocation)->format('d/m/Y') }}</span>
                                         </div>
                                     @empty
                                         <p class="text-sm text-gray-500 italic">Aucun historique disponible.</p>
@@ -117,14 +123,18 @@
                         
                         <div class="absolute top-4 right-4 flex items-center gap-3">
                             @can('licence-edit')
+                            @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                             <a href="{{ route('licences.edit', $licence->id) }}" class="text-xs text-indigo-600 hover:text-indigo-900 font-medium">Modifier</a>
+                            @endunless
                             @endcan
                             @can('licence-delete')
+                            @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                             <form action="{{ route('licences.destroy', $licence->id) }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette licence ?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-xs text-red-600 hover:text-red-900 font-medium">Supprimer</button>
                             </form>
+                            @endunless
                             @endcan
                         </div>
                     </x-card>

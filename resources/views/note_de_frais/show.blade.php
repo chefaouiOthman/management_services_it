@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 Détails Note de Frais
             </h2>
-            <a href="{{ route('flux_tresoreries.index') }}#rh" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+            <a href="{{ route('note_de_frais.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                 ← Retour
             </a>
         </div>
@@ -16,7 +16,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <p class="text-sm font-bold text-gray-500 uppercase">Employé</p>
-                        <p class="mt-1 text-lg text-gray-900 dark:text-white font-medium">{{ $note->employe->user->nom_complet }}</p>
+                        <p class="mt-1 text-lg text-gray-900 dark:text-white font-medium">{{ $note->employe?->user?->nom_complet ?? 'Inconnu' }}</p>
                     </div>
                     <div>
                         <p class="text-sm font-bold text-gray-500 uppercase">Motif de la dépense</p>
@@ -53,6 +53,7 @@
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                    @if(auth()->user()->hasRole('Admin'))
                     @can('note-de-frais-edit')
                         <a href="{{ route('note_de_frais.edit', $note->id) }}" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold text-xs rounded transition shadow-sm uppercase">
                             Modifier
@@ -67,6 +68,7 @@
                             </button>
                         </form>
                     @endcan
+                    @endif
                 </div>
             </x-card>
         </div>

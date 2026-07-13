@@ -25,11 +25,15 @@ class AssignationMateriel extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withDefault([
+            'nom_complet' => 'Utilisateur inconnu',
+            'name'        => 'Inconnu',
+            'email'       => 'N/A',
+        ]);
     }
 
     public function assetMateriel()
     {
-        return $this->belongsTo(AssetMateriel::class, 'asset_materiel_id');
+        return $this->belongsTo(AssetMateriel::class, 'asset_materiel_id')->withDefault();
     }
 }

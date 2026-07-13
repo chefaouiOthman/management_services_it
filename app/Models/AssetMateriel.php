@@ -34,7 +34,7 @@ class AssetMateriel extends Model
      */
     public function typeMateriel()
     {
-        return $this->belongsTo(TypeMateriel::class, 'type_materiel_id');
+        return $this->belongsTo(TypeMateriel::class, 'type_materiel_id')->withDefault();
     }
 
     /**

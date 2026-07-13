@@ -1,16 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ isset($licence) ? 'Éditer Licence : ' . $licence->nom_logiciel : 'Nouvelle Licence' }}
+            {{ (isset($licence) && $licence->exists) ? 'Éditer Licence : ' . $licence->nom_logiciel : 'Nouvelle Licence' }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-card>
-                <form action="{{ isset($licence) ? route('licences.update', $licence->id) : route('licences.store') }}" method="POST" class="space-y-6">
+                <form action="{{ (isset($licence) && $licence->exists) ? route('licences.update', $licence->id) : route('licences.store') }}" method="POST" class="space-y-6">
                     @csrf
-                    @if(isset($licence))
+                    @if(isset($licence) && $licence->exists)
                         @method('PUT')
                     @endif
 
@@ -29,7 +29,7 @@
 
                         <div>
                             <x-input-label for="date_expiration" value="Date d'Expiration *" />
-                            <x-text-input id="date_expiration" name="date_expiration" type="date" class="mt-1 block w-full" :value="old('date_expiration', isset($licence) ? $licence->date_expiration->format('Y-m-d') : '')" required />
+                            <x-text-input id="date_expiration" name="date_expiration" type="date" class="mt-1 block w-full" :value="old('date_expiration', (isset($licence) && $licence->exists) ? $licence->date_expiration?->format('Y-m-d') ?? '' : '')" required />
                             <x-input-error class="mt-2" :messages="$errors->get('date_expiration')" />
                         </div>
                     </div>

@@ -25,7 +25,7 @@ class Facture extends Model
 
     public function client()
     {
-        return $this->belongsTo(Client::class, 'client_id', 'user_id');
+        return $this->belongsTo(Client::class, 'client_id', 'user_id')->withDefault();
     }
 
     public function ligneFactures()
@@ -35,7 +35,7 @@ class Facture extends Model
 
     public function fluxTresorerie()
     {
-        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id');
+        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id')->withDefault();
     }
 
     /**

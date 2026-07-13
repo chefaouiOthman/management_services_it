@@ -54,7 +54,7 @@
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                             <a href="{{ route('sessions.show', $session->id) }}" class="text-indigo-600 hover:underline">
-                                                {{ $session->catalogueFormation->titre_formation }}
+                                                {{ $session->catalogueFormation?->titre_formation ?? 'N/A' }}
                                             </a>
                                         </td>
                                         <td class="px-6 py-4">
@@ -65,7 +65,7 @@
                                             <div class="flex flex-wrap gap-1">
                                                 @foreach($session->formateurs as $formateur)
                                                     <span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600">
-                                                        {{ $formateur->user->nom_complet }}
+                                                        {{ $formateur->user?->nom_complet ?? 'Inconnu' }}
                                                     </span>
                                                 @endforeach
                                             </div>
@@ -135,7 +135,7 @@
                             </p>
 
                             <!-- Supports de Cours -->
-                            @if($catalogue->supportCours->isNotEmpty())
+                            @if($catalogue->supportCours?->isNotEmpty() ?? false)
                                 <div class="mb-4 border border-gray-100 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/50">
                                     <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Supports de cours</p>
                                     <ul class="space-y-1">
@@ -156,7 +156,7 @@
                             <div class="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-700">
                                 <div class="flex items-center gap-1 text-sm text-gray-500">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                                    {{ $catalogue->supportCours->count() }} Support(s)
+                                    {{ $catalogue->supportCours?->count() ?? 0 }} Support(s)
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <a href="{{ route('catalogue.show', $catalogue->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 font-medium text-sm">Ouvrir</a>

@@ -44,7 +44,7 @@
 
                             <div>
                                 <x-input-label for="date_limite_soumission" value="Date Limite de Soumission" />
-                                <x-text-input id="date_limite_soumission" name="date_limite_soumission" type="date" class="mt-1 block w-full" value="{{ old('date_limite_soumission', $livrable->date_limite_soumission ? $livrable->date_limite_soumission->format('Y-m-d') : '') }}" required />
+                                <x-text-input id="date_limite_soumission" name="date_limite_soumission" type="date" class="mt-1 block w-full" value="{{ old('date_limite_soumission', $livrable->date_limite_soumission?->format('Y-m-d') ?? '') }}" required />
                                 <x-input-error :messages="$errors->get('date_limite_soumission')" class="mt-2" />
                             </div>
 

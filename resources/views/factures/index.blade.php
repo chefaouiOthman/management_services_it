@@ -26,7 +26,7 @@
                             <div>
                                 <h4 class="text-xl font-black text-gray-900">#{{ $facture->num_facture }}</h4>
                                 <p class="text-sm font-medium text-gray-600 mt-1">Client : {{ $facture->client?->user?->nom_complet ?? 'N/A' }}</p>
-                                <p class="text-xs text-gray-400 mt-1">Émise le {{ $facture->date_emission->format('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-400 mt-1">Émise le {{ $facture->date_emission?->format('d/m/Y') ?? 'N/A' }}</p>
                             </div>
                             <div class="text-right">
                                 <p class="text-2xl font-bold font-mono text-gray-900">{{ number_format($facture->total_ttc, 2, ',', ' ') }} DHS</p>

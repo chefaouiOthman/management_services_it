@@ -71,8 +71,8 @@
 
                             <!-- Commentaire -->
                             <div class="col-span-full">
-                                <x-input-label for="commentaire" value="Commentaire / Description de l'activité" />
-                                <textarea id="commentaire" name="commentaire" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm">{{ old('commentaire') }}</textarea>
+                                <x-input-label for="commentaire" value="Commentaire / Description de l'activité *" />
+                                <textarea id="commentaire" name="commentaire" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" required>{{ old('commentaire') }}</textarea>
                                 <x-input-error :messages="$errors->get('commentaire')" class="mt-2" />
                             </div>
                         </div>

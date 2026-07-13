@@ -11,10 +11,23 @@ class DepartementController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:departement-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:departement-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:departement-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:departement-delete', ['only' => ['destroy']]);
+
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit aux clients.');
+            }
+            return $next($request);
+        });
     }
 
     /**
@@ -22,7 +35,16 @@ class DepartementController extends Controller
      */
     public function index()
     {
-        $departements = Departement::all();
+        if (!auth()->user()->hasRole('Admin')) {
+            $departement = auth()->user()->employe?->departement
+                ?? auth()->user()->stagiaire?->departement;
+            abort_unless($departement, 404, 'Aucun département associé à votre profil.');
+
+            $departement->load(['employes.user', 'stagiaires.user']);
+            return view('departements.index', compact('departement'));
+        }
+
+        $departements = Departement::with(['employes.user', 'stagiaires.user'])->get();
         return view('departements.index', compact('departements'));
     }
 

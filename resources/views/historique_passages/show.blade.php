@@ -21,11 +21,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <p class="text-sm text-gray-500">Utilisateur</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $historique->user->nom_complet ?? 'Inconnu' }}</p>
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $historique->user?->nom_complet ?? 'Inconnu' }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Zone</p>
-                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $historique->zone->nom_salle ?? 'Zone inconnue' }} ({{ $historique->zone->code_zone ?? 'N/A' }})</p>
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $historique->zone?->nom_salle ?? 'Zone inconnue' }} ({{ $historique->zone?->code_zone ?? 'N/A' }})</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Horodatage</p>

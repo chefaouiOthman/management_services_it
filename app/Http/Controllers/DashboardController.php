@@ -15,6 +15,10 @@ class DashboardController extends Controller
 
     public function index()
     {
+        if (auth()->user()->hasRole('Client')) {
+            return redirect()->route('users.show', auth()->id());
+        }
+
         $today = Carbon::today()->toDateString();
         $userId = Auth::id();
 

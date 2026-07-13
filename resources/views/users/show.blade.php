@@ -10,9 +10,19 @@
                     Modifier
                 </a>
                 @endcan
+                @if(auth()->user()->hasRole('Admin'))
                 <a href="{{ route('users.index') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     Retour à l'annuaire
                 </a>
+                @elseif(auth()->user()->hasRole('Client'))
+                <a href="{{ route('projets.index') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Retour à mes projets
+                </a>
+                @else
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Retour au Dashboard
+                </a>
+                @endif
             </div>
         </div>
     </x-slot>
@@ -66,16 +76,16 @@
                         <div class="space-y-4">
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">CIN</p>
-                                <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe->CIN }}</p>
+                                <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe?->CIN ?? 'N/A' }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Date d'embauche</p>
-                                <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe->date_embauche ? $user->employe->date_embauche->format('d/m/Y') : 'Non définie' }}</p>
+                                <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe?->date_embauche?->format('d/m/Y') ?? 'Non définie' }}</p>
                             </div>
                         </div>
                     </x-card>
 
-                    @if($contratActuel = $user->employe->contratActuel)
+                    @if($contratActuel = $user->employe?->contratActuel)
                         <x-card>
                             <x-slot name="header">
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Contrat Actuel</h3>
@@ -104,11 +114,7 @@
                                 <div>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Date de fin</p>
                                     <p class="text-base font-medium text-gray-900 dark:text-gray-100">
-                                        @if($contratActuel->date_fin)
-                                            {{ $contratActuel->date_fin->format('d/m/Y') }}
-                                        @else
-                                            <span class="italic text-gray-400">Indéterminée</span>
-                                        @endif
+                                        {{ $contratActuel?->date_fin?->format('d/m/Y') ?? 'Non définie' }}
                                     </p>
                                 </div>
                                 <div>
@@ -134,11 +140,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">École d'origine</p>
-                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->stagiaire->ecole_origine }}</p>
+                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->stagiaire?->ecole_origine ?? 'N/A' }}</p>
                         </div>
                         <div class="col-span-full">
                             <p class="text-sm text-gray-500 dark:text-gray-400">Sujet de stage</p>
-                            <p class="text-base font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ $user->stagiaire->sujet_stage }}</p>
+                            <p class="text-base font-medium text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ $user->stagiaire?->sujet_stage ?? 'N/A' }}</p>
                         </div>
                     </div>
                 </x-card>
@@ -153,15 +159,15 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Type de client</p>
-                            <p class="text-base font-medium text-gray-900 dark:text-gray-100 capitalize">{{ $user->client->type_client }}</p>
+                            <p class="text-base font-medium text-gray-900 dark:text-gray-100 capitalize">{{ $user->client?->type_client }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Nom Société</p>
-                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->client->nom_societe ?? '-' }}</p>
+                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->client?->nom_societe ?? '-' }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">ICE</p>
-                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->client->ice ?? '-' }}</p>
+                            <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->client?->ice ?? '-' }}</p>
                         </div>
                     </div>
                 </x-card>

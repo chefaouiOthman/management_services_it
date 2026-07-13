@@ -10,7 +10,13 @@ class LicenceLogicielController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:licence-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:licence-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:licence-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:licence-delete', ['only' => ['destroy']]);
@@ -30,6 +36,8 @@ class LicenceLogicielController extends Controller
      */
     public function create()
     {
+        $this->denyInventaireMutation();
+
         return view('licences.create');
     }
 
@@ -38,6 +46,8 @@ class LicenceLogicielController extends Controller
      */
     public function store(Request $request)
     {
+        $this->denyInventaireMutation();
+
         $request->validate([
             'nom_logiciel'    => 'required|string|max:100',
             'cle_licence'     => 'required|string|max:255',
@@ -69,6 +79,8 @@ class LicenceLogicielController extends Controller
      */
     public function edit($id)
     {
+        $this->denyInventaireMutation();
+
         $licence = LicenceLogiciel::findOrFail($id);
         return view('licences.edit', compact('licence'));
     }
@@ -78,6 +90,8 @@ class LicenceLogicielController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->denyInventaireMutation();
+
         $licence = LicenceLogiciel::findOrFail($id);
 
         $request->validate([
@@ -102,6 +116,8 @@ class LicenceLogicielController extends Controller
      */
     public function destroy($id)
     {
+        $this->denyInventaireMutation();
+
         $licence = LicenceLogiciel::findOrFail($id);
 
         DB::transaction(function () use ($licence) {

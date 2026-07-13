@@ -31,7 +31,7 @@ class Projet extends Model
     /** Client qui a commandé ce projet */
     public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Client::class, 'client_id', 'user_id');
+        return $this->belongsTo(Client::class, 'client_id', 'user_id')->withDefault();
     }
 
     // =========================================================

@@ -25,7 +25,7 @@ class FluxTresorerie extends Model
 
     public function categorieFlux()
     {
-        return $this->belongsTo(CategorieFlux::class, 'categorie_flux_id');
+        return $this->belongsTo(CategorieFlux::class, 'categorie_flux_id')->withDefault();
     }
 
     public function facture()

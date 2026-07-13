@@ -63,15 +63,15 @@
                             <tbody>
                                 @forelse($flux as $f)
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50">
-                                        <td class="px-6 py-4 font-medium text-gray-900">{{ $f->date_comptable->format('d/m/Y H:i') }}</td>
-                                        <td class="px-6 py-4">{{ $f->categorieFlux->libelle_categorie }}</td>
+                                        <td class="px-6 py-4 font-medium text-gray-900">{{ $f->date_comptable?->format('d/m/Y H:i') ?? 'N/A' }}</td>
+                                        <td class="px-6 py-4">{{ $f->categorieFlux?->libelle_categorie ?? 'N/A' }}</td>
                                         <td class="px-6 py-4">
                                             @if($f->facture)
-                                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-semibold">Facture #{{ $f->facture->num_facture }}</span>
+                                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-semibold">Facture #{{ $f->facture?->num_facture ?? 'N/A' }}</span>
                                             @elseif($f->fichePaie)
-                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-semibold">Paie {{ $f->fichePaie->mois_annee }} - {{ $f->fichePaie->employe?->user?->nom_complet ?? 'N/A' }}</span>
+                                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-semibold">Paie {{ $f->fichePaie?->mois_annee ?? 'N/A' }} - {{ $f->fichePaie?->employe?->user?->nom_complet ?? 'N/A' }}</span>
                                             @elseif($f->noteDeFrais)
-                                                <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">NDF - {{ $f->noteDeFrais->employe?->user?->nom_complet ?? 'N/A' }}</span>
+                                                <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-semibold">NDF - {{ $f->noteDeFrais?->employe?->user?->nom_complet ?? 'N/A' }}</span>
                                             @else
                                                 <span class="text-gray-400 italic">Mouvement Manuel</span>
                                             @endif
@@ -84,7 +84,11 @@
                                             <a href="{{ route('flux_tresoreries.show', $f->id) }}" class="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded transition shadow-sm">Voir</a>
                                             @endcan
                                             @can('flux-tresorerie-edit')
+                                            @if($f->facture || $f->fichePaie || $f->noteDeFrais)
                                             <a href="{{ route('flux_tresoreries.edit', $f->id) }}" class="px-3 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-bold rounded transition shadow-sm">Modifier</a>
+                                            @else
+                                            <span class="px-3 py-1 text-xs text-gray-400 italic" title="Flux manuel : aucune entité source modifiable">Source</span>
+                                            @endif
                                             @endcan
                                             @can('flux-tresorerie-delete')
                                             <form action="{{ route('flux_tresoreries.destroy', $f->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmez-vous la suppression de ce flux de trésorerie ?');">
@@ -122,7 +126,7 @@
                                 <div>
                                     <h4 class="text-xl font-black text-gray-900">#{{ $facture->num_facture }}</h4>
                                     <p class="text-sm font-medium text-gray-600 mt-1">Client : {{ $facture->client?->user?->nom_complet ?? 'N/A' }}</p>
-                                    <p class="text-xs text-gray-400 mt-1">Émise le {{ $facture->date_emission->format('d/m/Y') }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">Émise le {{ $facture->date_emission?->format('d/m/Y') ?? 'N/A' }}</p>
                                 </div>
                                 <div class="text-right">
                                     <p class="text-2xl font-bold font-mono text-gray-900">{{ number_format($facture->total_ttc, 2, ',', ' ') }} DHS</p>
@@ -301,7 +305,7 @@
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                                             Pièce Jointe Privée
                                         </a>
-                                        <span class="text-xs text-gray-400">{{ $note->created_at->format('d/m/Y') }}</span>
+                                        <span class="text-xs text-gray-400">{{ $note->created_at?->format('d/m/Y') ?? 'N/A' }}</span>
                                     </div>
                                 </div>
                                 <div class="text-right flex flex-col items-end gap-2">

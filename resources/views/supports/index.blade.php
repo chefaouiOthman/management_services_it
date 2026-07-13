@@ -37,7 +37,7 @@
                                         {{ $support->nom_fichier }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if($support->catalogueFormations->isNotEmpty())
+                                        @if($support->catalogueFormations?->isNotEmpty() ?? false)
                                             @foreach($support->catalogueFormations as $catalogue)
                                                 <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded mb-1 border border-gray-200 dark:border-gray-600 text-xs">
                                                     {{ $catalogue->titre_formation }}
@@ -48,10 +48,8 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-right space-x-2">
-                                        @can('support-cours-view')
-                                            <a href="{{ route('supports.show', $support->id) }}" class="text-blue-600 dark:text-blue-500 hover:underline font-medium text-xs">Voir</a>
-                                            <a href="{{ route('supports.download', $support->id) }}" class="text-green-600 dark:text-green-500 hover:underline font-medium text-xs">Télécharger</a>
-                                        @endcan
+                                        <a href="{{ route('supports.show', $support->id) }}" class="text-blue-600 dark:text-blue-500 hover:underline font-medium text-xs">Voir</a>
+                                        <a href="{{ route('supports.download', $support->id) }}" class="text-green-600 dark:text-green-500 hover:underline font-medium text-xs">Télécharger</a>
                                         @can('support-cours-edit')
                                             <a href="{{ route('supports.edit', $support->id) }}" class="text-indigo-600 dark:text-indigo-500 hover:underline font-medium text-xs">Modifier</a>
                                         @endcan

@@ -13,7 +13,13 @@ class FichePaieController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:fiche-paie-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:fiche-paie-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:fiche-paie-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:fiche-paie-delete', ['only' => ['destroy']]);
@@ -24,8 +30,16 @@ class FichePaieController extends Controller
      */
     public function index()
     {
-        // Redirection vers le hub central financier
-        return redirect()->route('flux_tresoreries.index')->withFragment('#rh');
+        if (Auth::user()->hasRole('Admin')) {
+            return redirect()->route('flux_tresoreries.index')->withFragment('#rh');
+        }
+
+        $fiches = FichePaie::with('employe.user')
+            ->where('employe_id', Auth::id())
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('fiche_paies.index', compact('fiches'));
     }
 
     /**
@@ -33,6 +47,7 @@ class FichePaieController extends Controller
      */
     public function create()
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $employes = Employe::with('user')->get();
         return view('fiche_paies.create', compact('employes'));
     }
@@ -42,6 +57,7 @@ class FichePaieController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $request->validate([
             'employe_id'  => 'required|exists:employes,user_id',
             'mois_annee'  => 'required|string|max:7',
@@ -70,6 +86,11 @@ class FichePaieController extends Controller
     public function show($id)
     {
         $fiche = FichePaie::with(['employe.user', 'fluxTresorerie'])->findOrFail($id);
+
+        if (!Auth::user()->hasRole('Admin') && $fiche->employe_id != Auth::id()) {
+            abort(403);
+        }
+
         return view('fiche_paies.show', compact('fiche'));
     }
 
@@ -78,6 +99,7 @@ class FichePaieController extends Controller
      */
     public function edit($id)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $fiche = FichePaie::findOrFail($id);
         $employes = Employe::with('user')->get();
         return view('fiche_paies.edit', compact('fiche', 'employes'));
@@ -88,6 +110,7 @@ class FichePaieController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $fiche = FichePaie::findOrFail($id);
 
         $request->validate([
@@ -117,6 +140,7 @@ class FichePaieController extends Controller
      */
     public function destroy($id)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $fiche = FichePaie::findOrFail($id);
 
         DB::transaction(function () use ($fiche) {
@@ -183,7 +207,7 @@ class FichePaieController extends Controller
      */
     public function payer(Request $request, FichePaie $fiche)
     {
-        if (!auth()->user()->hasPermissionTo('fiche-paie-edit')) {
+        if (!auth()->user()->hasRole('Admin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 

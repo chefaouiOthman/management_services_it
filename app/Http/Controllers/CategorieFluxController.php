@@ -11,7 +11,13 @@ class CategorieFluxController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:categorie-flux-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index']]);
+
         $this->middleware('permission:categorie-flux-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:categorie-flux-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:categorie-flux-delete', ['only' => ['destroy']]);
@@ -22,6 +28,9 @@ class CategorieFluxController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->hasRole('Admin')) {
+            return redirect()->route('flux_tresoreries.index');
+        }
         $categories = CategorieFlux::all();
         return view('categorie_flux.index', compact('categories'));
     }
@@ -31,6 +40,7 @@ class CategorieFluxController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         return view('categorie_flux.create');
     }
 
@@ -39,6 +49,7 @@ class CategorieFluxController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $request->validate([
             'libelle_categorie' => 'required|string|max:100|unique:categorie_flux,libelle_categorie',
             'code_comptable'    => 'nullable|string|max:50',
@@ -59,6 +70,7 @@ class CategorieFluxController extends Controller
      */
     public function show($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
         return view('categorie_flux.show', compact('categorie'));
     }
@@ -68,6 +80,7 @@ class CategorieFluxController extends Controller
      */
     public function edit($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
         return view('categorie_flux.edit', compact('categorie'));
     }
@@ -77,6 +90,7 @@ class CategorieFluxController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
 
         $request->validate([
@@ -99,6 +113,7 @@ class CategorieFluxController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
 
         DB::transaction(function () use ($categorie) {

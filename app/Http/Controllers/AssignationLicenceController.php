@@ -19,6 +19,8 @@ class AssignationLicenceController extends Controller
      */
     public function store(Request $request, $licence_id)
     {
+        $this->denyInventaireMutation();
+
         $licence = LicenceLogiciel::findOrFail($licence_id);
 
         $request->validate([
@@ -40,6 +42,8 @@ class AssignationLicenceController extends Controller
      */
     public function revoquer(Request $request, $id)
     {
+        $this->denyInventaireMutation();
+
         try {
             DB::transaction(function () use ($id) {
                 $assignation = DB::table('assignation_licences')->where('id', $id)->first();

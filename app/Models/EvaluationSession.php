@@ -36,13 +36,17 @@ class EvaluationSession extends Model
     /** Session de formation concernée par cette évaluation */
     public function sessionFormation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(SessionFormation::class, 'session_formation_id');
+        return $this->belongsTo(SessionFormation::class, 'session_formation_id')->withDefault();
     }
 
     /** Apprenant (Student) qui a soumis cette évaluation */
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withDefault([
+            'nom_complet' => 'Utilisateur inconnu',
+            'name'        => 'Inconnu',
+            'email'       => 'N/A',
+        ]);
     }
 
     /**
@@ -51,6 +55,6 @@ class EvaluationSession extends Model
      */
     public function formateur(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id')->withDefault();
     }
 }

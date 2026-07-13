@@ -39,7 +39,7 @@
                                 <div>
                                     @if($session)
                                         <h3 class="font-semibold text-gray-900 dark:text-white">
-                                            {{ $session->catalogueFormation->titre_formation ?? 'Formation inconnue' }}
+                                            {{ $session->catalogueFormation?->titre_formation ?? 'Formation inconnue' }}
                                         </h3>
                                         <p class="text-sm text-gray-500 dark:text-gray-400">
                                             Du {{ optional($session->date_debut)->format('d/m/Y') ?? 'N/A' }} 
@@ -72,8 +72,8 @@
                                         @foreach($sessionInscriptions as $inscription)
                                             <tr class="hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                                                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                                                    {{ optional($inscription->user)->nom_complet ?? 'Utilisateur Inconnu' }}
-                                                    <br><span class="text-xs text-gray-500 dark:text-gray-400">{{ optional($inscription->user)->email ?? 'N/A' }}</span>
+                                                    {{ $inscription->user?->nom_complet ?? 'Utilisateur Inconnu' }}
+                                                    <br><span class="text-xs text-gray-500 dark:text-gray-400">{{ $inscription->user?->email ?? 'N/A' }}</span>
                                                 </td>
                                                 <td class="px-4 py-3">
                                                     @switch($inscription->statut_inscription)

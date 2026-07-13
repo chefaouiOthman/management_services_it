@@ -22,9 +22,9 @@
             <x-card>
                 <div class="flex justify-between items-start border-b border-gray-200 pb-4 mb-4">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900">Incident sur {{ $ticket->assetMateriel->marque }} {{ $ticket->assetMateriel->modele }}</h3>
-                        <p class="text-sm text-gray-500">S/N: {{ $ticket->assetMateriel->num_serie }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Signalé par <span class="font-medium text-gray-700">{{ $ticket->user->nom_complet }}</span> le {{ $ticket->created_at->format('d/m/Y H:i') }}</p>
+                        <h3 class="text-lg font-bold text-gray-900">Incident sur {{ $ticket->assetMateriel?->marque ?? 'N/A' }} {{ $ticket->assetMateriel?->modele ?? 'N/A' }}</h3>
+                        <p class="text-sm text-gray-500">S/N: {{ $ticket->assetMateriel?->num_serie ?? 'N/A' }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Signalé par <span class="font-medium text-gray-700">{{ $ticket->user?->nom_complet ?? 'Inconnu' }}</span> le {{ $ticket->created_at?->format('d/m/Y H:i') ?? 'N/A' }}</p>
                     </div>
                     <div class="text-right">
                         <x-badge type="{{ $ticket->statut_ticket === 'resolu' ? 'success' : ($ticket->statut_ticket === 'en_atelier' ? 'warning' : 'danger') }}">

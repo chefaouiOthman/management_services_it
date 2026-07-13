@@ -25,11 +25,15 @@ class AssignationLicence extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withDefault([
+            'nom_complet' => 'Utilisateur inconnu',
+            'name'        => 'Inconnu',
+            'email'       => 'N/A',
+        ]);
     }
 
     public function licenceLogiciel()
     {
-        return $this->belongsTo(LicenceLogiciel::class, 'licence_logiciel_id');
+        return $this->belongsTo(LicenceLogiciel::class, 'licence_logiciel_id')->withDefault();
     }
 }

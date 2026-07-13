@@ -11,7 +11,13 @@ class TechnologieController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:technologie-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:technologie-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:technologie-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:technologie-delete', ['only' => ['destroy']]);
@@ -31,6 +37,7 @@ class TechnologieController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         return view('technologies.create');
     }
 
@@ -39,6 +46,8 @@ class TechnologieController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+
         $request->validate([
             'nom_tech' => 'required|string|max:50|unique:technologies,nom_tech',
             'version'  => 'required|string|max:20',
@@ -68,6 +77,7 @@ class TechnologieController extends Controller
      */
     public function edit($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $technologie = Technologie::findOrFail($id);
         return view('technologies.edit', compact('technologie'));
     }
@@ -77,6 +87,7 @@ class TechnologieController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $technologie = Technologie::findOrFail($id);
 
         $request->validate([
@@ -99,10 +110,10 @@ class TechnologieController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->hasRole('Admin')) { abort(403); }
         $technologie = Technologie::findOrFail($id);
 
         DB::transaction(function () use ($technologie) {
-            // Nettoyage de la table pivot projet_technologie
             $technologie->projets()->detach();
             $technologie->delete();
         });

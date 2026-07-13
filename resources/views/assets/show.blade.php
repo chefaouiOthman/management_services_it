@@ -9,9 +9,11 @@
             </div>
             <div class="flex gap-2">
                 @can('asset-edit')
+                @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                 <a href="{{ route('assets.edit', $asset->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
                     Modifier Matériel
                 </a>
+                @endunless
                 @endcan
                 <a href="{{ route('assets.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                     ← Retour
@@ -30,7 +32,7 @@
                 </x-card>
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Type</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $asset->typeMateriel->libelle_type }}</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ $asset->typeMateriel?->libelle_type ?? 'N/A' }}</p>
                 </x-card>
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Valeur d'Achat</p>
@@ -57,7 +59,7 @@
                         <div><p class="text-sm text-gray-500">Marque</p><p class="font-medium text-gray-900">{{ $asset->marque }}</p></div>
                         <div><p class="text-sm text-gray-500">Modèle</p><p class="font-medium text-gray-900">{{ $asset->modele }}</p></div>
                         <div><p class="text-sm text-gray-500">N° de Série</p><p class="font-medium text-gray-900 font-mono">{{ $asset->num_serie }}</p></div>
-                        <div><p class="text-sm text-gray-500">Date d'achat</p><p class="font-medium text-gray-900">{{ $asset->date_achat_actif ? $asset->date_achat_actif->format('d/m/Y') : 'Inconnue' }}</p></div>
+                        <div><p class="text-sm text-gray-500">Date d'achat</p><p class="font-medium text-gray-900">{{ $asset->date_achat_actif?->format('d/m/Y') ?? 'Inconnue' }}</p></div>
                     </div>
                 </x-card>
             </div>
@@ -65,6 +67,7 @@
             <div x-show="tab === 'assignations'" x-cloak class="space-y-4" x-data="assignationManager()">
 
                 @can('manage-assets')
+                @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                 <x-card class="bg-indigo-50/50 border-indigo-100">
                     <div class="flex justify-between items-center mb-3">
                         <h4 class="font-semibold text-gray-800">Ajouter une assignation</h4>
@@ -101,6 +104,7 @@
                     @endif
                     @endif
                 </x-card>
+                @endunless
                 @endcan
 
                 <x-card>
@@ -116,33 +120,37 @@
                             </table>
                             <tbody>
                                 @forelse($asset->users()->orderByPivot('created_at', 'desc')->get() as $userAssign)
-                                    <tr class="bg-white border-b hover:bg-gray-50" id="row-assign-{{ $userAssign->pivot->id }}">
+                                    <tr class="bg-white border-b hover:bg-gray-50" id="row-assign-{{ $userAssign->pivot?->id }}">
                                         <td class="px-6 py-4 font-medium text-gray-900">{{ $userAssign->nom_complet }}</td>
-                                        <td class="px-6 py-4">{{ \Carbon\Carbon::parse($userAssign->pivot->date_remise)->format('d/m/Y') }}</td>
-                                        <td class="px-6 py-4" id="restit-date-{{ $userAssign->pivot->id }}">
-                                            @if($userAssign->pivot->date_restitution)
-                                                {{ \Carbon\Carbon::parse($userAssign->pivot->date_restitution)->format('d/m/Y') }}
+                                        <td class="px-6 py-4">{{ \Carbon\Carbon::parse($userAssign->pivot?->date_remise)->format('d/m/Y') }}</td>
+                                        <td class="px-6 py-4" id="restit-date-{{ $userAssign->pivot?->id }}">
+                                            @if($userAssign->pivot?->date_restitution)
+                                                {{ \Carbon\Carbon::parse($userAssign->pivot?->date_restitution)->format('d/m/Y') }}
                                             @else
                                                 <span class="text-indigo-600 font-medium">En cours d'utilisation</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <div class="flex justify-end items-center gap-3">
-                                                @if(!$userAssign->pivot->date_restitution)
+                                                @if(!$userAssign->pivot?->date_restitution)
                                                     @can('manage-assets')
-                                                    <button data-restituer="{{ $userAssign->pivot->id }}" @click="restituer({{ $userAssign->pivot->id }})" class="text-sm font-medium text-red-600 hover:text-red-900 border border-red-200 px-3 py-1 rounded hover:bg-red-50 transition">
+                                                    @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
+                                                    <button data-restituer="{{ $userAssign->pivot?->id }}" @click="restituer({{ $userAssign->pivot?->id }})" class="text-sm font-medium text-red-600 hover:text-red-900 border border-red-200 px-3 py-1 rounded hover:bg-red-50 transition">
                                                         Restituer
                                                     </button>
+                                                    @endunless
                                                     @endcan
                                                 @else
                                                     <span class="text-xs text-gray-400">Clôturé</span>
                                                 @endif
                                                 @can('manage-assets')
-                                                <form action="{{ route('assignation_materiels.destroy', $userAssign->pivot->id) }}" method="POST" onsubmit="return confirm('Supprimer définitivement cette assignation ?');">
+                                                @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
+                                                <form action="{{ route('assignation_materiels.destroy', $userAssign->pivot?->id) }}" method="POST" onsubmit="return confirm('Supprimer définitivement cette assignation ?');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-xs text-red-500 hover:text-red-800">Supprimer</button>
                                                 </form>
+                                                @endunless
                                                 @endcan
                                             </div>
                                         </td>
@@ -160,9 +168,11 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-gray-900">Registre des Pannes & Incidents</h3>
                     @can('ticket-create')
+                    @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                     <a href="{{ route('tickets.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-red-700 transition">
                         + Signaler un incident
                     </a>
+                    @endunless
                     @endcan
                 </div>
 
@@ -179,20 +189,24 @@
                                     </div>
                                     <p class="text-sm text-gray-700 italic">"{{ $ticket->description_panne }}"</p>
                                     <div class="mt-3 flex justify-between items-center text-xs text-gray-500 border-t border-gray-100 pt-2">
-                                        <span>Signalé par <strong>{{ optional($ticket->user)->nom_complet ?? 'N/A' }}</strong> le {{ $ticket->created_at->format('d/m/Y') }}</span>
+                                        <span>Signalé par <strong>{{ $ticket->user?->nom_complet ?? 'N/A' }}</strong> le {{ $ticket->created_at?->format('d/m/Y') ?? 'N/A' }}</span>
                                         <span class="font-mono text-gray-900 font-bold">Coût: {{ number_format($ticket->cout_reparation, 2, ',', ' ') }} DHS</span>
                                     </div>
                                 </div>
                                 <div class="flex flex-col items-end gap-2 ml-4">
                                     @can('ticket-edit')
+                                    @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                                     <a href="{{ route('tickets.edit', $ticket->id) }}" class="text-xs font-medium text-indigo-600 hover:text-indigo-900 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-50 transition">Modifier</a>
+                                    @endunless
                                     @endcan
                                     @can('ticket-delete')
+                                    @unless(auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))
                                     <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" onsubmit="return confirm('Supprimer ce ticket de maintenance ?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-xs font-medium text-red-600 hover:text-red-900 border border-red-200 px-2 py-1 rounded hover:bg-red-50 transition">Supprimer</button>
                                     </form>
+                                    @endunless
                                     @endcan
                                 </div>
                             </div>

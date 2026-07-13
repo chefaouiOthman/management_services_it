@@ -11,6 +11,13 @@ class FluxTresorerieController extends Controller
 {
     public function __construct()
     {
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Employe_Standard')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:flux-tresorerie-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:flux-tresorerie-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:flux-tresorerie-edit', ['only' => ['edit', 'update']]);
@@ -82,9 +89,19 @@ class FluxTresorerieController extends Controller
      */
     public function edit($id)
     {
-        $flux = FluxTresorerie::findOrFail($id);
-        $categories = CategorieFlux::all();
-        return view('flux_tresoreries.edit', compact('flux', 'categories'));
+        $flux = FluxTresorerie::with(['facture', 'fichePaie', 'noteDeFrais'])->findOrFail($id);
+
+        if ($flux->facture) {
+            return redirect()->route('factures.edit', $flux->facture->id);
+        } elseif ($flux->fichePaie) {
+            return redirect()->route('fiche_paies.edit', $flux->fichePaie->id);
+        } elseif ($flux->noteDeFrais) {
+            return redirect()->route('note_de_frais.edit', $flux->noteDeFrais->id);
+        }
+
+        // Flux manuel sans entité source liée — redirection informative
+        return redirect()->route('flux_tresoreries.index')
+            ->with('info', 'Ce flux n\'est lié à aucune facture, fiche de paie ou note de frais modifiable.');
     }
 
     /**

@@ -49,7 +49,7 @@
                                 Date d'ajout
                             </dt>
                             <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                                {{ $support->created_at->format('d/m/Y H:i') }}
+                                {{ $support->created_at?->format('d/m/Y H:i') ?? 'N/A' }}
                             </dd>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-900 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -57,7 +57,7 @@
                                 Formations utilisant ce support
                             </dt>
                             <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                                @if($support->catalogueFormations->isNotEmpty())
+                                @if($support->catalogueFormations?->isNotEmpty() ?? false)
                                     <ul class="border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700">
                                         @foreach($support->catalogueFormations as $formation)
                                             <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">

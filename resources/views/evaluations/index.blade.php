@@ -4,14 +4,14 @@
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     @if($session)
-                        Évaluations — {{ $session->catalogueFormation->titre_formation }}
+                        Évaluations — {{ $session->catalogueFormation?->titre_formation ?? 'N/A' }}
                     @else
                         Toutes les Évaluations
                     @endif
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">
                     @if($session)
-                        Session du {{ $session->date_debut->format('d/m/Y') }} au {{ $session->date_fin->format('d/m/Y') }}
+                        Session du {{ $session->date_debut?->format('d/m/Y') ?? 'N/A' }} au {{ $session->date_fin?->format('d/m/Y') ?? 'N/A' }}
                     @else
                         Vue globale de toutes les évaluations des sessions de formation.
                     @endif
@@ -75,19 +75,19 @@
                                 @if(!$session)
                                     <div class="mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
                                         <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Session de Formation</p>
-                                        <p class="font-bold text-gray-900 dark:text-white">{{ $evaluation->sessionFormation->catalogueFormation->titre_formation ?? 'Session supprimée' }}</p>
+                                        <p class="font-bold text-gray-900 dark:text-white">{{ $evaluation->sessionFormation?->catalogueFormation?->titre_formation ?? 'Session supprimée' }}</p>
                                     </div>
                                 @endif
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Soumis par</p>
-                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $evaluation->user->nom_complet }}</p>
-                                        <p class="text-xs text-gray-500">{{ $evaluation->user->email }}</p>
+                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $evaluation->user?->nom_complet ?? 'Utilisateur inconnu' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $evaluation->user?->email ?? 'N/A' }}</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Formateur noté</p>
-                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $evaluation->formateur->user->nom_complet }}</p>
-                                        <p class="text-xs text-gray-500">{{ $evaluation->formateur->user->email }}</p>
+                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $evaluation->formateur?->user?->nom_complet ?? 'Formateur inconnu' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $evaluation->formateur?->user?->email ?? 'N/A' }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -117,7 +117,7 @@
                             @endif
 
                             <div class="px-6 pb-4 flex justify-between items-center">
-                                <span class="text-xs text-gray-400">{{ $evaluation->created_at->format('d/m/Y') }}</span>
+                                <span class="text-xs text-gray-400">{{ $evaluation->created_at?->format('d/m/Y') ?? 'N/A' }}</span>
                                 <div class="flex gap-2">
                                     @can('evaluation-edit')
                                     <a href="{{ route('evaluations.edit', $evaluation->id) }}" class="text-xs text-indigo-600 hover:text-indigo-900 font-medium">Modifier</a>

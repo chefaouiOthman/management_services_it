@@ -33,7 +33,8 @@ class StagiaireController extends Controller
      */
     public function create()
     {
-        return view('stagiaires.create');
+        $stagiaire = new Stagiaire();
+        return view('stagiaires.create', compact('stagiaire'));
     }
 
     /**
@@ -132,7 +133,7 @@ class StagiaireController extends Controller
     {
         DB::transaction(function () use ($id) {
             $stagiaire = Stagiaire::findOrFail($id);
-            $stagiaire->user->delete(); // Supprime l'User et cascade sur Stagiaire
+            if ($stagiaire->user) { $stagiaire->user?->delete(); } // Supprime l'User et cascade sur Stagiaire
         });
 
         return redirect()->route('stagiaires.index')->with('success', 'Stagiaire supprimé avec succès.');

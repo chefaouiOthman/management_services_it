@@ -32,7 +32,7 @@
                         </div>
                         <div>
                             <x-input-label for="date_emission" value="Date d'Émission *" />
-                            <x-text-input id="date_emission" type="date" name="date_emission" required class="mt-1 block w-full" :value="old('date_emission', $facture->date_emission->format('Y-m-d'))" />
+                            <x-text-input id="date_emission" type="date" name="date_emission" required class="mt-1 block w-full" :value="old('date_emission', $facture->date_emission?->format('Y-m-d') ?? '')" />
                             <x-input-error class="mt-2" :messages="$errors->get('date_emission')" />
                         </div>
                         <div>

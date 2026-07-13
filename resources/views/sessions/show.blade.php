@@ -3,7 +3,7 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Session : {{ $session->catalogueFormation->titre_formation }}
+                    Session : {{ $session->catalogueFormation?->titre_formation ?? 'N/A' }}
                 </h2>
                 <p class="text-sm text-gray-500 mt-1">Du {{ \Carbon\Carbon::parse($session->date_debut)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($session->date_fin)->format('d/m/Y') }}</p>
             </div>
@@ -27,15 +27,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Inscrits</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $session->inscriptions->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $session->inscriptions?->count() ?? 0 }}</p>
                 </x-card>
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Formateurs</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $session->formateurs->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $session->formateurs?->count() ?? 0 }}</p>
                 </x-card>
                 <x-card>
                     <p class="text-sm text-gray-500 font-medium">Évaluations</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $session->evaluations->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ $session->evaluations?->count() ?? 0 }}</p>
                 </x-card>
             </div>
 
@@ -43,7 +43,9 @@
             <div class="border-b border-gray-200 dark:border-gray-700">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                     <a href="#details" :class="tab === 'details' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Détails & Formateurs</a>
+                    @if(auth()->user()->hasRole('Admin'))
                     <a href="#inscriptions" :class="tab === 'inscriptions' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Inscriptions (Apprenants)</a>
+                    @endif
                     <a href="#evaluations" :class="tab === 'evaluations' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Évaluations</a>
                 </nav>
             </div>
@@ -75,11 +77,11 @@
                     @forelse($session->formateurs as $formateur)
                         <x-card class="flex items-center gap-4">
                             <div class="h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl uppercase">
-                                {{ substr($formateur->user->nom_complet, 0, 1) }}
+                                {{ substr($formateur->user?->nom_complet ?? '?', 0, 1) }}
                             </div>
                             <div>
-                                <p class="font-semibold text-gray-900 dark:text-white">{{ $formateur->user->nom_complet }}</p>
-                                <p class="text-xs text-gray-500">{{ $formateur->user->email }}</p>
+                                <p class="font-semibold text-gray-900 dark:text-white">{{ $formateur->user?->nom_complet ?? 'Inconnu' }}</p>
+                                <p class="text-xs text-gray-500">{{ $formateur->user?->email ?? 'N/A' }}</p>
                             </div>
                         </x-card>
                     @empty
@@ -88,6 +90,7 @@
                 </div>
             </div>
 
+            @if(auth()->user()->hasRole('Admin'))
             <!-- TAB: INSCRIPTIONS -->
             <div x-show="tab === 'inscriptions'" x-cloak class="space-y-4">
                 <div class="flex justify-between items-center mb-4">
@@ -151,16 +154,16 @@
                                         // Déterminer le type d'utilisateur (Employé, Stagiaire, Client) basé sur les relations si nécessaires,
                                         // ou on affiche simplement l'email ou un attribut générique ici.
                                         $typeStr = 'Utilisateur';
-                                        if(optional($inscription->user)->employe) $typeStr = 'Employé';
-                                        elseif(optional($inscription->user)->stagiaire) $typeStr = 'Stagiaire';
-                                        elseif(optional($inscription->user)->client) $typeStr = 'Client';
+                                        if($inscription->user?->employe) $typeStr = 'Employé';
+                                        elseif($inscription->user?->stagiaire) $typeStr = 'Stagiaire';
+                                        elseif($inscription->user?->client) $typeStr = 'Client';
                                     @endphp
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700" 
                                         x-data="inscriptionStatus({{ $inscription->id }}, '{{ $inscription->statut_inscription }}')">
                                         
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                            {{ optional($inscription->user)->nom_complet ?? 'Inconnu' }}
-                                            <br><span class="text-xs text-gray-500 font-normal">{{ optional($inscription->user)->email ?? 'N/A' }}</span>
+                                            {{ $inscription->user?->nom_complet ?? 'Inconnu' }}
+                                            <br><span class="text-xs text-gray-500 font-normal">{{ $inscription->user?->email ?? 'N/A' }}</span>
                                         </td>
                                         <td class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">
                                             {{ $typeStr }}
@@ -198,6 +201,7 @@
                     </div>
                 </x-card>
             </div>
+            @endif
 
             <!-- TAB: EVALUATIONS -->
             <div x-show="tab === 'evaluations'" x-cloak class="space-y-4">
@@ -222,9 +226,9 @@
                                 </div>
                             </div>
                             
-                            <h4 class="font-bold text-gray-900 dark:text-white">{{ $evaluation->user->nom_complet }}</h4>
+                            <h4 class="font-bold text-gray-900 dark:text-white">{{ $evaluation->user?->nom_complet ?? 'Inconnu' }}</h4>
                             <p class="text-xs text-gray-500 mt-1">
-                                A évalué le formateur : <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $evaluation->formateur->user->nom_complet }}</span>
+                                A évalué le formateur : <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $evaluation->formateur?->user?->nom_complet ?? 'Inconnu' }}</span>
                             </p>
                             
                             <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300 italic flex-1 border border-gray-100 dark:border-gray-700">

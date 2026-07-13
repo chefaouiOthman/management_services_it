@@ -54,10 +54,10 @@
                                             #{{ $feuille->id }}
                                         </td>
                                         <td class="px-6 py-4 font-semibold text-indigo-600 dark:text-indigo-400">
-                                            {{ $feuille->employe->user->nom_complet ?? 'N/A' }}
+                                            {{ $feuille->employe?->user?->nom_complet ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 text-gray-900 dark:text-white">
-                                            {{ $feuille->projet->nom_projet ?? 'N/A' }}
+                                            {{ $feuille->projet?->nom_projet ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4">
                                             {{ \Carbon\Carbon::parse($feuille->date_effort)->format('d/m/Y') }}
@@ -78,9 +78,9 @@
                                             @can('feuille-temps-view')
                                                 <a href="{{ route('feuille_temps.show', $feuille->id) }}" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Voir</a>
                                             @endcan
-                                            @can('feuille-temps-edit')
+                                            @if(auth()->user()->hasRole('Admin'))
                                                 <a href="{{ route('feuille_temps.edit', $feuille->id) }}" class="font-medium text-indigo-600 dark:text-indigo-500 hover:underline">Modifier</a>
-                                            @endcan
+                                            @endif
                                             @can('feuille-temps-delete')
                                                 <form action="{{ route('feuille_temps.destroy', $feuille->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmez-vous la suppression de cette feuille de temps ?');">
                                                     @csrf

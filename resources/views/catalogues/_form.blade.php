@@ -1,5 +1,5 @@
 @php
-    $isEdit = isset($catalogue);
+    $isEdit = isset($catalogue) && $catalogue->exists;
     $actionUrl = $isEdit ? route('catalogue.update', $catalogue->id) : route('catalogue.store');
 @endphp
 
@@ -42,7 +42,7 @@
                 <p class="text-sm text-gray-500 mb-2">Sélectionnez les documents pédagogiques liés à ce programme.</p>
                 <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
                     @php
-                        $selectedSupports = old('supports', isset($catalogue) ? $catalogue->supportCours->pluck('id')->toArray() : []);
+                        $selectedSupports = old('supports', $isEdit ? $catalogue->supportCours?->pluck('id')->toArray() ?? [] : []);
                     @endphp
                     @forelse($supports as $support)
                         <label class="inline-flex items-center p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition">

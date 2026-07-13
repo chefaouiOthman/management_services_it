@@ -15,7 +15,7 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <x-card>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Employés ({{ $departement->employes->count() }})</h3>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Employés ({{ $departement->employes?->count() ?? 0 }})</h3>
                     <ul class="space-y-3">
                         @forelse($departement->employes as $employe)
                             <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded shadow-sm border border-gray-100 dark:border-gray-600">
@@ -32,7 +32,7 @@
                 </x-card>
 
                 <x-card>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Stagiaires ({{ $departement->stagiaires->count() }})</h3>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Stagiaires ({{ $departement->stagiaires?->count() ?? 0 }})</h3>
                     <ul class="space-y-3">
                         @forelse($departement->stagiaires as $stagiaire)
                             <li class="flex justify-between items-center bg-gray-50 dark:bg-gray-700 p-3 rounded shadow-sm border border-gray-100 dark:border-gray-600">

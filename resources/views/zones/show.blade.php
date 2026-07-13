@@ -51,7 +51,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Créée le</p>
-                        <p class="text-gray-900 dark:text-white">{{ $zone->created_at->format('d/m/Y') }}</p>
+                        <p class="text-gray-900 dark:text-white">{{ $zone->created_at?->format('d/m/Y') ?? 'N/A' }}</p>
                     </div>
                 </div>
             </x-card>
@@ -76,7 +76,7 @@
                             <div class="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700">
                                 <div class="h-2 w-2 rounded-full bg-green-500"></div>
                                 <div>
-                                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $presence->user->nom_complet }}</p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $presence->user?->nom_complet ?? 'Inconnu' }}</p>
                                     <p class="text-xs text-gray-500">Depuis {{ \Carbon\Carbon::parse($presence->heure_arrivee)->format('H:i') }}</p>
                                 </div>
                             </div>
@@ -106,7 +106,7 @@
                             @forelse($historiquesPagines as $passage)
                                 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                        {{ $passage->user->nom_complet ?? 'Utilisateur inconnu' }}
+                                        {{ $passage->user?->nom_complet ?? 'Utilisateur inconnu' }}
                                     </td>
                                     <td class="px-6 py-4 font-mono text-xs">
                                         {{ \Carbon\Carbon::parse($passage->horodatage)->format('d/m/Y à H:i:s') }}

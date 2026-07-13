@@ -26,11 +26,11 @@ class NoteDeFrais extends Model
 
     public function employe()
     {
-        return $this->belongsTo(Employe::class, 'employe_id', 'user_id');
+        return $this->belongsTo(Employe::class, 'employe_id', 'user_id')->withDefault();
     }
 
     public function fluxTresorerie()
     {
-        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id');
+        return $this->belongsTo(FluxTresorerie::class, 'flux_tresorerie_id')->withDefault();
     }
 }

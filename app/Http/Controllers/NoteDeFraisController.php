@@ -15,7 +15,13 @@ class NoteDeFraisController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:note-de-frais-view', ['only' => ['index', 'show', 'download']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show', 'download']]);
+
         $this->middleware('permission:note-de-frais-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:note-de-frais-edit', ['only' => ['edit', 'update', 'updateStatut']]);
         $this->middleware('permission:note-de-frais-delete', ['only' => ['destroy']]);
@@ -26,14 +32,16 @@ class NoteDeFraisController extends Controller
      */
     public function index()
     {
-        $query = NoteDeFrais::with(['employe.user', 'fluxTresorerie']);
-        
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view')) {
-            $query->where('employe_id', Auth::id());
+        if (Auth::user()->hasRole('Admin')) {
+            return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais');
         }
 
-        // Redirection vers le hub central financier
-        return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais');
+        $notes = NoteDeFrais::with('employe.user')
+            ->where('employe_id', Auth::id())
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('note_de_frais.index', compact('notes'));
     }
 
     /**
@@ -81,7 +89,11 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais')->with('success', 'Note de frais créée avec succès.');
+        if (Auth::user()->hasRole('Admin')) {
+            return redirect()->route('flux_tresoreries.index')->with('success', 'Note de frais créée avec succès.');
+        }
+
+        return redirect()->route('note_de_frais.index')->with('success', 'Votre note de frais a été enregistrée avec succès.');
     }
 
     /**
@@ -103,13 +115,9 @@ class NoteDeFraisController extends Controller
      */
     public function edit($id)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $note = NoteDeFrais::findOrFail($id);
-
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
-            abort(403);
-        }
-
-        $employes = (Auth::user()->hasRole('Admin') || Auth::user()->hasPermissionTo('flux-tresorerie-view')) ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $employes = Employe::with('user')->get();
         return view('note_de_frais.edit', compact('note', 'employes'));
     }
 
@@ -118,11 +126,8 @@ class NoteDeFraisController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $note = NoteDeFrais::findOrFail($id);
-
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
-            abort(403);
-        }
 
         $request->validate([
             'employe_id'           => 'required|exists:employes,user_id',
@@ -171,11 +176,8 @@ class NoteDeFraisController extends Controller
      */
     public function destroy($id)
     {
+        if (!Auth::user()->hasRole('Admin')) { abort(403); }
         $note = NoteDeFrais::findOrFail($id);
-
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
-            abort(403);
-        }
 
         DB::transaction(function () use ($note) {
             $flux_id = $note->flux_tresorerie_id;
@@ -215,13 +217,13 @@ class NoteDeFraisController extends Controller
      */
     public function updateStatut(Request $request, NoteDeFrais $note)
     {
+        if (!Auth::user()->hasRole('Admin')) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
         $request->validate([
             'statut_remboursement' => 'required|in:soumis,approuve_manager,rejete,rembourse',
         ]);
-
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('note-de-frais-edit')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
-        }
 
         DB::transaction(function () use ($request, $note) {
             $note->update([

@@ -17,6 +17,13 @@ class HistoriquePassageController extends Controller
         $this->middleware('permission:historique-passage-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:historique-passage-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:historique-passage-delete', ['only' => ['destroy']]);
+
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit aux clients.');
+            }
+            return $next($request);
+        });
     }
 
     /**

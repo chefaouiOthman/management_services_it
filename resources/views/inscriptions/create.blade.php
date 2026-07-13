@@ -44,7 +44,7 @@
                                     <option value="">-- Sélectionner une session --</option>
                                     @foreach($sessions as $session)
                                         <option value="{{ $session->id }}" {{ old('session_formation_id') == $session->id ? 'selected' : '' }}>
-                                            {{ $session->catalogueFormation->titre_formation ?? 'Sans titre' }} 
+                                            {{ $session->catalogueFormation?->titre_formation ?? 'Sans titre' }} 
                                             (Du {{ \Carbon\Carbon::parse($session->date_debut)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($session->date_fin)->format('d/m/Y') }})
                                         </option>
                                     @endforeach

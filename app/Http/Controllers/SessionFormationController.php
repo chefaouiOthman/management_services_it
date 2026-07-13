@@ -12,7 +12,7 @@ class SessionFormationController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:session-formation-view', ['only' => ['index', 'show']]);
+        $this->middleware('role:Admin|Employe_Standard|Stagiaire|Client', ['only' => ['index', 'show']]);
         $this->middleware('permission:session-formation-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:session-formation-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:session-formation-delete', ['only' => ['destroy']]);
@@ -34,7 +34,7 @@ class SessionFormationController extends Controller
     public function create()
     {
         $catalogues = CatalogueFormation::all();
-        $employes = Employe::with('user')->get();
+        $employes = Employe::with('user')->has('user')->get();
         return view('sessions.create', compact('catalogues', 'employes'));
     }
 
@@ -87,7 +87,7 @@ class SessionFormationController extends Controller
     {
         $session = SessionFormation::with('formateurs')->findOrFail($id);
         $catalogues = CatalogueFormation::all();
-        $employes = Employe::with('user')->get();
+        $employes = Employe::with('user')->has('user')->get();
         return view('sessions.edit', compact('session', 'catalogues', 'employes'));
     }
 

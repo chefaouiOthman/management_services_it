@@ -69,7 +69,7 @@ class FeuilleTempsController extends Controller
             'employe_id'   => 'required|exists:employes,user_id',
             'date_effort'  => 'required|date',
             'duree_heures' => 'required|numeric|min:0.5|max:24',
-            'commentaire'  => 'nullable|string',
+            'commentaire'  => 'required|string|min:5',
             'taches'       => 'nullable|array',
             'taches.*'     => 'exists:taches,id',
         ]);
@@ -116,11 +116,11 @@ class FeuilleTempsController extends Controller
     {
         $feuille = FeuilleTemps::with('taches')->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
-            abort(403);
+        if (!Auth::user()->hasRole('Admin')) {
+            abort(403, "Seul l'administrateur peut modifier une feuille de temps émise.");
         }
 
-        $employes = Auth::user()->hasRole('Admin') ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $employes = Employe::with('user')->get();
         $projets = Projet::all();
         $taches = Tache::all();
         
@@ -134,8 +134,8 @@ class FeuilleTempsController extends Controller
     {
         $feuille = FeuilleTemps::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
-            abort(403);
+        if (!Auth::user()->hasRole('Admin')) {
+            abort(403, "Seul l'administrateur peut modifier une feuille de temps émise.");
         }
 
         $request->validate([
@@ -143,14 +143,10 @@ class FeuilleTempsController extends Controller
             'projet_id'    => 'required|exists:projets,id',
             'date_effort'  => 'required|date',
             'duree_heures' => 'required|numeric|min:0.5|max:24',
-            'commentaire'  => 'nullable|string',
+            'commentaire'  => 'required|string|min:5',
             'taches'       => 'nullable|array',
             'taches.*'     => 'exists:taches,id',
         ]);
-
-        if (!Auth::user()->hasRole('Admin') && $request->employe_id != Auth::id()) {
-            abort(403);
-        }
 
         DB::transaction(function () use ($request, $feuille) {
             $feuille->update([

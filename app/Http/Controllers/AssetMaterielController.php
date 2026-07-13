@@ -13,7 +13,13 @@ class AssetMaterielController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:asset-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:asset-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:asset-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:asset-delete', ['only' => ['destroy']]);
@@ -33,8 +39,11 @@ class AssetMaterielController extends Controller
      */
     public function create()
     {
+        $this->denyInventaireMutation();
+
         $types = TypeMateriel::all();
-        return view('assets.create', compact('types'));
+        $asset = new \App\Models\AssetMateriel();
+        return view('assets.create', compact('types', 'asset'));
     }
 
     /**
@@ -42,6 +51,8 @@ class AssetMaterielController extends Controller
      */
     public function store(Request $request)
     {
+        $this->denyInventaireMutation();
+
         $request->validate([
             'type_materiel_id'  => 'required',
             'new_type_materiel' => 'required_if:type_materiel_id,autre|string|max:100',
@@ -95,6 +106,8 @@ class AssetMaterielController extends Controller
      */
     public function edit($id)
     {
+        $this->denyInventaireMutation();
+
         $asset = AssetMateriel::findOrFail($id);
         $types = TypeMateriel::all();
         return view('assets.edit', compact('asset', 'types'));
@@ -105,6 +118,8 @@ class AssetMaterielController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->denyInventaireMutation();
+
         $asset = AssetMateriel::findOrFail($id);
 
         $request->validate([
@@ -149,6 +164,8 @@ class AssetMaterielController extends Controller
      */
     public function destroy($id)
     {
+        $this->denyInventaireMutation();
+
         $asset = AssetMateriel::findOrFail($id);
 
         DB::transaction(function () use ($asset) {

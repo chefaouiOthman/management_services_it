@@ -1,5 +1,5 @@
-@php
-    $isEdit = isset($session);
+﻿@php
+    $isEdit = isset($session) && $session->exists;
     $actionUrl = $isEdit ? route('sessions.update', $session->id) : route('sessions.store');
 @endphp
 
@@ -11,7 +11,7 @@
 
     <x-card>
         <x-slot name="header">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Détails de la Session</h3>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">DÃ©tails de la Session</h3>
         </x-slot>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -31,14 +31,14 @@
 
             <!-- Dates -->
             <div>
-                <x-input-label for="date_debut" value="Date de Début *" />
-                <x-text-input id="date_debut" name="date_debut" type="date" class="mt-1 block w-full" :value="old('date_debut', isset($session) ? $session->date_debut->format('Y-m-d') : '')" required />
+                <x-input-label for="date_debut" value="Date de DÃ©but *" />
+                <x-text-input id="date_debut" name="date_debut" type="date" class="mt-1 block w-full" :value="old('date_debut', ($isEdit ? $session->date_debut?->format('Y-m-d') : ''))" required />
                 <x-input-error class="mt-2" :messages="$errors->get('date_debut')" />
             </div>
             
             <div>
                 <x-input-label for="date_fin" value="Date de Fin *" />
-                <x-text-input id="date_fin" name="date_fin" type="date" class="mt-1 block w-full" :value="old('date_fin', isset($session) ? $session->date_fin->format('Y-m-d') : '')" required />
+                <x-text-input id="date_fin" name="date_fin" type="date" class="mt-1 block w-full" :value="old('date_fin', ($isEdit ? $session->date_fin?->format('Y-m-d') : ''))" required />
                 <x-input-error class="mt-2" :messages="$errors->get('date_fin')" />
             </div>
 
@@ -57,18 +57,18 @@
 
             <!-- Formateurs (Pivot) -->
             <div class="md:col-span-2">
-                <x-input-label value="Formateurs Assignés (Employés)" />
-                <p class="text-sm text-gray-500 mb-2">Cochez les employés qui animeront cette session.</p>
+                <x-input-label value="Formateurs AssignÃ©s (EmployÃ©s)" />
+                <p class="text-sm text-gray-500 mb-2">Cochez les employÃ©s qui animeront cette session.</p>
                 <div class="max-h-60 overflow-y-auto border border-gray-300 rounded p-2 bg-white">
                     @php
-                        $selectedFormateurs = old('formateurs', isset($session) ? $session->formateurs->pluck('user_id')->toArray() : []);
+                        $selectedFormateurs = old('formateurs', $isEdit ? $session->formateurs?->pluck('user_id')->toArray() ?? [] : []);
                     @endphp
                     @foreach($employes as $employe)
                         <label class="flex items-center space-x-2 p-1 hover:bg-gray-50">
                             <input type="checkbox" name="formateurs[]" value="{{ $employe->user_id }}" 
                                    @checked(in_array($employe->user_id, $selectedFormateurs))
                                    class="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
-                            <span class="text-sm text-gray-700">{{ $employe->user->nom_complet }} ({{ $employe->user->email }})</span>
+                            <span class="text-sm text-gray-700">{{ $employe->user?->nom_complet ?? 'EmployÃ© sans compte' }} ({{ $employe->user?->email ?? 'N/A' }})</span>
                         </label>
                     @endforeach
                 </div>
@@ -81,7 +81,7 @@
                 Annuler
             </a>
             <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                {{ $isEdit ? 'Mettre à jour' : 'Planifier' }}
+                {{ $isEdit ? 'Mettre Ã  jour' : 'Planifier' }}
             </button>
         </div>
     </x-card>

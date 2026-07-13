@@ -11,10 +11,23 @@ class ZoneController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:zone-view', ['only' => ['index', 'show']]);
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit.');
+            }
+            return $next($request);
+        }, ['only' => ['index', 'show']]);
+
         $this->middleware('permission:zone-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:zone-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:zone-delete', ['only' => ['destroy']]);
+
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->hasRole('Client')) {
+                abort(403, 'Accès interdit aux clients.');
+            }
+            return $next($request);
+        });
     }
 
     /**
@@ -23,7 +36,19 @@ class ZoneController extends Controller
     public function index()
     {
         $zones = Zone::all();
-        return view('zones.index', compact('zones'));
+
+        if (!auth()->user()->hasRole('Admin')) {
+            $logs = \App\Models\HistoriquePassage::with(['user', 'zone'])
+                ->where('user_id', auth()->id())
+                ->orderBy('horodatage', 'desc')
+                ->paginate(25);
+        } else {
+            $logs = \App\Models\HistoriquePassage::with(['user', 'zone'])
+                ->orderBy('horodatage', 'desc')
+                ->paginate(25);
+        }
+
+        return view('zones.index', compact('zones', 'logs'));
     }
 
     /**

@@ -1,6 +1,6 @@
 @props(['zone' => null])
 
-@php $isEdit = isset($zone) && $zone !== null; @endphp
+@php $isEdit = isset($zone) && ($zone?->exists ?? false); @endphp
 
 <form method="POST" action="{{ $isEdit ? route('zones.update', $zone->id) : route('zones.store') }}">
     @csrf

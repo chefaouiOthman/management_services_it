@@ -27,7 +27,7 @@
             <div class="border-b border-gray-200 dark:border-gray-700">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                     <a href="#programme" :class="tab === 'programme' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Détails du Programme</a>
-                    <a href="#supports" :class="tab === 'supports' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Supports de Cours ({{ $catalogue->supportCours->count() }})</a>
+                    <a href="#supports" :class="tab === 'supports' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Supports de Cours ({{ $catalogue->supportCours?->count() ?? 0 }})</a>
                     <a href="#sessions" :class="tab === 'sessions' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">Sessions Planifiées ({{ optional($catalogue->sessionFormations)->count() ?? 0 }})</a>
                 </nav>
             </div>
@@ -67,7 +67,7 @@
                                         <p class="text-sm font-semibold text-gray-900 dark:text-white truncate" title="{{ $support->nom_fichier }}">
                                             {{ $support->nom_fichier }}
                                         </p>
-                                        <p class="text-xs text-gray-500 mt-1">Ajouté le {{ $support->created_at->format('d/m/Y') }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Ajouté le {{ $support->created_at?->format('d/m/Y') ?? 'N/A' }}</p>
                                     </div>
                                 </div>
                                 <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
