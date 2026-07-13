@@ -17,7 +17,7 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $request->user()->load(['employe.user', 'stagiaire.user', 'client.user']),
         ]);
     }
 
@@ -26,6 +26,10 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        if (!Auth::user()->hasRole('Admin')) {
+            abort(403, 'Seul l\'administrateur peut modifier son profil.');
+        }
+
         $request->user()->fill($request->validated());
 
         if ($request->user()->isDirty('email')) {
@@ -42,6 +46,10 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        if (!Auth::user()->hasRole('Admin')) {
+            abort(403, 'Seul l\'administrateur peut supprimer son compte.');
+        }
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
