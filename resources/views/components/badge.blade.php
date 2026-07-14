@@ -2,14 +2,14 @@
 
 @php
     $classes = [
-        'success' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-        'danger' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-        'warning' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-        'info' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-        'gray' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    ][$type] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        'success' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20',
+        'danger' => 'bg-red-50 text-red-700 ring-1 ring-red-600/20',
+        'warning' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20',
+        'info' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-600/20',
+        'gray' => 'bg-gray-50 text-gray-700 ring-1 ring-gray-600/20',
+    ][$type] ?? 'bg-gray-50 text-gray-700 ring-1 ring-gray-600/20';
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium $classes"]) }}>
+<span {{ $attributes->merge(['class' => "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold $classes"]) }}>
     {{ $slot }}
 </span>

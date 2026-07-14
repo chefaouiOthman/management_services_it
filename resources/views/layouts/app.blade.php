@@ -14,8 +14,8 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased text-gray-900 bg-gray-50">
-        <div class="flex h-screen overflow-hidden bg-gray-50" x-data="{ sidebarOpen: false }">
+    <body class="font-sans antialiased text-gray-900 bg-[#F8FAFC]">
+        <div class="flex h-screen overflow-hidden bg-[#F8FAFC]" x-data="{ sidebarOpen: false }">
             
             <!-- Sidebar -->
             @include('layouts.sidebar')
@@ -28,7 +28,7 @@
 
                 <!-- Page Heading -->
                 @if (isset($header))
-                    <header class="bg-white shadow-sm z-20">
+                    <header class="bg-white/80 backdrop-blur-sm border-b border-gray-100 z-20">
                         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
                             {{ $header }}
                         </div>
@@ -36,7 +36,7 @@
                 @endif
 
                 <!-- Page Content -->
-                <main class="w-full grow p-6">
+                <main class="w-full grow p-4 sm:p-6 lg:p-8">
                     <div class="max-w-7xl mx-auto">
                         {{ $slot }}
                     </div>
