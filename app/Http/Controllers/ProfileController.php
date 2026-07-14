@@ -17,7 +17,12 @@ class ProfileController extends Controller
     public function edit(Request $request): View
     {
         return view('profile.edit', [
-            'user' => $request->user()->load(['employe.user', 'stagiaire.user', 'client.user']),
+            'user' => $request->user()->load([
+                'employe.departement',
+                'employe.contrats',
+                'stagiaire.departement',
+                'client',
+            ]),
         ]);
     }
 

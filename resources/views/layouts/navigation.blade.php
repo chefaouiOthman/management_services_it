@@ -17,9 +17,9 @@
                         <button class="inline-flex items-center px-3 py-2 border border-gray-100 text-sm leading-4 font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-200 focus:outline-none transition-all duration-200 shadow-sm">
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                                    {{ substr(Auth::user()->name, 0, 1) }}
+                                    {{ substr(Auth::user()->nom_complet ?? Auth::user()->name ?? '?', 0, 1) }}
                                 </div>
-                                <span class="hidden sm:inline-block text-[#1E293B] font-medium">{{ Auth::user()->name }}</span>
+                                <span class="hidden sm:inline-block text-[#1E293B] font-medium">{{ Auth::user()->nom_complet ?? Auth::user()->name }}</span>
                             </div>
 
                             <div class="ms-1">
@@ -34,7 +34,7 @@
 
                         
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            {{ Auth::user()->nom_complet ?? Auth::user()->name }}
                         </x-dropdown-link>
 
                         <div class="border-t border-gray-100"></div>

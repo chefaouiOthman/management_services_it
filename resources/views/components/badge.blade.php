@@ -7,6 +7,7 @@
         'warning' => 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20',
         'info' => 'bg-sky-50 text-sky-700 ring-1 ring-sky-600/20',
         'gray' => 'bg-gray-50 text-gray-700 ring-1 ring-gray-600/20',
+        'indigo' => 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600/20',
     ][$type] ?? 'bg-gray-50 text-gray-700 ring-1 ring-gray-600/20';
 @endphp
 
