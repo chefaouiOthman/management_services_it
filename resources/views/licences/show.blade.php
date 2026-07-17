@@ -92,7 +92,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">Utilisateur</label>
                             <select name="user_id" required class="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500">
                                 <option value="">SÃ©lectionner un utilisateur...</option>
-                                @foreach(\App\Models\User::all() as $u)
+                                @foreach(\App\Models\User::when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->whereDoesntHave('roles', fn($r) => $r->where('name', 'Super Admin')))->get() as $u)
                                     <option value="{{ $u->id }}">{{ $u->nom_complet }}</option>
                                 @endforeach
                             </select>

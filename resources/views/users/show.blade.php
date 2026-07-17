@@ -76,7 +76,7 @@
                         <div class="space-y-4">
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">CIN</p>
-                                <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->employe?->CIN ?? 'N/A' }}</p>
+                                <p class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $user->cin ?? 'N/A' }}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Date d'embauche</p>

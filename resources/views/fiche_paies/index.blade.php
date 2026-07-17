@@ -20,6 +20,11 @@
                 </div>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par employé, mois..."
+    :filters="[
+        'mois' => ['label' => 'Mois', 'options' => ['01' => 'Janvier', '02' => 'Février', '03' => 'Mars', '04' => 'Avril', '05' => 'Mai', '06' => 'Juin', '07' => 'Juillet', '08' => 'Août', '09' => 'Septembre', '10' => 'Octobre', '11' => 'Novembre', '12' => 'Décembre']],
+    ]" />
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -67,6 +72,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $fiches->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

@@ -11,29 +11,16 @@ class DepartementController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
-            return $next($request);
-        }, ['only' => ['index', 'show']]);
-
+        $this->middleware('permission:departement-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:departement-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:departement-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:departement-delete', ['only' => ['destroy']]);
-
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit aux clients.');
-            }
-            return $next($request);
-        });
     }
 
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->hasRole('Admin')) {
             $departement = auth()->user()->employe?->departement
@@ -44,7 +31,16 @@ class DepartementController extends Controller
             return view('departements.index', compact('departement'));
         }
 
-        $departements = Departement::with(['employes.user', 'stagiaires.user'])->get();
+        $query = Departement::with(['employes.user', 'stagiaires.user']);
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('nom_departement', 'like', "%{$s}%");
+            });
+        }
+
+        $departements = $query->paginate(25)->appends($request->query());
         return view('departements.index', compact('departements'));
     }
 

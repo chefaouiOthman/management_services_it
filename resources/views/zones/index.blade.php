@@ -16,6 +16,8 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <x-search-filters :search="request('search')" searchPlaceholder="Rechercher par nom de zone..." :filters="[]" />
+
             @if($zones->isEmpty())
                 <x-card>
                     <p class="text-center text-gray-500 py-4">Aucune zone configurée.</p>
@@ -99,7 +101,7 @@
                                             class="mt-1 w-full border-gray-300 rounded-md"
                                             @if(!auth()->user()->hasRole('Admin')) disabled @endif>
                                             @if(auth()->user()->hasRole('Admin'))
-                                                @foreach(\App\Models\User::all() as $u)
+                                                @foreach(\App\Models\User::when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->whereDoesntHave('roles', fn($r) => $r->where('name', 'Super Admin')))->get() as $u)
                                                     <option value="{{ $u->id }}">{{ $u->nom_complet }}</option>
                                                 @endforeach
                                             @else

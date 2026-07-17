@@ -6,11 +6,13 @@
             </h2>
             <div class="flex gap-2">
                 @can('ticket-edit')
-                <a href="{{ route('ticket_maintenances.edit', $ticket->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
+                @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
+                <a href="{{ route('tickets.edit', $ticket->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
                     Modifier Ticket
                 </a>
+                @endif
                 @endcan
-                <a href="{{ route('ticket_maintenances.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
+                <a href="{{ route('tickets.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                     ← Retour au Helpdesk
                 </a>
             </div>

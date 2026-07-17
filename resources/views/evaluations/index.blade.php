@@ -57,6 +57,11 @@
                 @endif
             </div>
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par stagiaire, note..."
+    :filters="[
+        'note_min' => ['label' => 'Note technique min', 'options' => ['1' => '1', '2' => '2', '3' => '3', '4' => '4', '5' => '5']],
+    ]" />
+
             <!-- Liste des évaluations -->
             @if($evaluations->isEmpty())
                 <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-12 text-center">

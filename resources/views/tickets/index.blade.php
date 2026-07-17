@@ -78,6 +78,12 @@
                 </div>
             </x-card>
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par titre, statut, priorité, matériel..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['signale' => 'Signalé', 'en_atelier' => 'En atelier', 'resolu' => 'Résolu', 'ferme' => 'Fermé']],
+        'priorite' => ['label' => 'Priorité', 'options' => ['basse' => 'Basse', 'moyenne' => 'Moyenne', 'haute' => 'Haute', 'critique' => 'Critique']],
+    ]" />
+
             <h3 class="font-bold text-lg text-gray-800 mb-2 mt-8">Historique des Tickets</h3>
             <x-card>
                 <div class="overflow-x-auto">

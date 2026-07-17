@@ -8,9 +8,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class InscriptionController extends Controller
 {
+    use FilterSuperAdmin;
     public function __construct()
     {
         $this->middleware('permission:inscription-view', ['only' => ['index']]);
@@ -22,12 +24,27 @@ class InscriptionController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = Inscription::with(['user', 'sessionFormation.catalogueFormation']);
         
         if (!Auth::user()->hasRole('Admin')) {
             $query->where('user_id', Auth::id());
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhereHas('sessionFormation.catalogueFormation', fn ($c) => $c->where('titre_formation', 'like', "%{$s}%"))
+                  ->orWhere('statut_inscription', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut_inscription')) {
+            $query->where('statut_inscription', $request->statut_inscription);
+        }
+        if ($request->filled('session_id')) {
+            $query->where('session_formation_id', $request->session_id);
         }
 
         $inscriptions = $query->get();
@@ -40,7 +57,7 @@ class InscriptionController extends Controller
     public function create()
     {
         $sessions = SessionFormation::with('catalogueFormation')->get();
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         return view('inscriptions.create', compact('sessions', 'users'));
     }
 
@@ -58,6 +75,8 @@ class InscriptionController extends Controller
         if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
             abort(403, 'Vous ne pouvez pas inscrire un autre utilisateur.');
         }
+
+        $this->validateNotSuperAdminTarget($request);
 
         $exists = Inscription::where('user_id', $request->user_id)
             ->where('session_formation_id', $request->session_formation_id)
@@ -90,7 +109,7 @@ class InscriptionController extends Controller
         }
 
         $sessions = SessionFormation::with('catalogueFormation')->get();
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         
         return view('inscriptions.edit', compact('inscription', 'sessions', 'users'));
     }
@@ -115,6 +134,8 @@ class InscriptionController extends Controller
         if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
             abort(403);
         }
+
+        $this->validateNotSuperAdminTarget($request);
 
         $exists = Inscription::where('user_id', $request->user_id)
             ->where('session_formation_id', $request->session_formation_id)

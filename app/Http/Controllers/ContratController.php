@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class ContratController extends Controller
 {
+    use \App\Http\Controllers\Traits\FilterSuperAdmin;
+
     public function __construct()
     {
         $this->middleware('permission:contrat-view', ['only' => ['index', 'show']]);
@@ -20,9 +22,26 @@ class ContratController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $contrats = Contrat::with('employe.user')->get();
+        $query = Contrat::with('employe.user');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('type_contrat', 'like', "%{$s}%")
+                  ->orWhere('salaire_base', 'like', "%{$s}%")
+                  ->orWhereHas('employe.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('type_contrat')) {
+            $query->where('type_contrat', $request->type_contrat);
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+
+        $contrats = $query->paginate(25)->appends($request->query());
         return view('contrats.index', compact('contrats'));
     }
 
@@ -31,7 +50,7 @@ class ContratController extends Controller
      */
     public function create()
     {
-        $employes = Employe::with('user')->get();
+        $employes = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         return view('contrats.create', compact('employes'));
     }
 
@@ -44,7 +63,7 @@ class ContratController extends Controller
             'employe_id'   => 'required|exists:employes,user_id',
             'type_contrat' => 'required|in:CDI,CDD,Freelance',
             'date_debut'   => 'required|date',
-            'date_fin'     => 'nullable|date|after_or_equal:date_debut',
+            'date_fin'     => 'nullable|date|after_or_equal:date_debut|required_if:type_contrat,CDD,Freelance',
             'salaire_base' => 'required|numeric|min:0',
             'heures_hebdo' => 'required|integer|min:0',
             'statut'       => 'required|in:actif,suspendu,termine',
@@ -80,7 +99,7 @@ class ContratController extends Controller
     public function edit($id)
     {
         $contrat = Contrat::findOrFail($id);
-        $employes = Employe::with('user')->get();
+        $employes = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         return view('contrats.edit', compact('contrat', 'employes'));
     }
 
@@ -95,7 +114,7 @@ class ContratController extends Controller
             'employe_id'   => 'required|exists:employes,user_id',
             'type_contrat' => 'required|in:CDI,CDD,Freelance',
             'date_debut'   => 'required|date',
-            'date_fin'     => 'nullable|date|after_or_equal:date_debut',
+            'date_fin'     => 'nullable|date|after_or_equal:date_debut|required_if:type_contrat,CDD,Freelance',
             'salaire_base' => 'required|numeric|min:0',
             'heures_hebdo' => 'required|integer|min:0',
             'statut'       => 'required|in:actif,suspendu,termine',

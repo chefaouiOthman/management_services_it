@@ -37,6 +37,8 @@
                     </div>
                 </div>
 
+                <x-search-filters :search="request('search')" searchPlaceholder="Rechercher par formation, lieu..." />
+
                 <x-card>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -108,6 +110,8 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{ $sessions->appends(request()->query())->links() }}
                 </x-card>
             </div>
 

@@ -11,13 +11,7 @@ class TypeMaterielController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
-            return $next($request);
-        }, ['only' => ['index', 'show']]);
-
+        $this->middleware('permission:type-materiel-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:type-materiel-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:type-materiel-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:type-materiel-delete', ['only' => ['destroy']]);
@@ -26,9 +20,19 @@ class TypeMaterielController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $types = TypeMateriel::all();
+        $query = TypeMateriel::query();
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('libelle_type', 'like', "%{$s}%")
+                  ->orWhere('description_type', 'like', "%{$s}%");
+            });
+        }
+
+        $types = $query->paginate(25)->appends($request->query());
         return view('type_materiels.index', compact('types'));
     }
 

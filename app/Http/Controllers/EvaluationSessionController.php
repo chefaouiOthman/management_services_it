@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 
 class EvaluationSessionController extends Controller
 {
+    use \App\Http\Controllers\Traits\FilterSuperAdmin;
+
     public function __construct()
     {
         $this->middleware('permission:evaluation-view', ['only' => ['index', 'show']]);
@@ -26,9 +28,7 @@ class EvaluationSessionController extends Controller
     public function index(Request $request)
     {
         $session    = null;
-        $evaluations = collect();
 
-        // Filtre par session si fourni (depuis le bouton "Voir Évaluations" du Kanban)
         if ($request->filled('session')) {
             $session = SessionFormation::with(['catalogueFormation'])->findOrFail($request->session);
             $query = EvaluationSession::with(['user', 'formateur.user'])
@@ -41,6 +41,18 @@ class EvaluationSessionController extends Controller
             }
         }
 
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhere(function($q) use ($s) { if (is_numeric($s)) $q->where('note_technique', $s); })
+                  ->orWhereHas('formateur.user', fn ($f) => $f->where('nom_complet', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('note_min')) {
+            $query->where('note_technique', '>=', $request->note_min);
+        }
+
         $evaluations = $query->get();
         return view('evaluations.index', compact('evaluations', 'session'));
     }
@@ -51,8 +63,8 @@ class EvaluationSessionController extends Controller
     public function create()
     {
         $sessions = SessionFormation::all();
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
-        $formateurs = Employe::with('user')->get();
+        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $formateurs = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         return view('evaluations.create', compact('sessions', 'users', 'formateurs'));
     }
 
@@ -114,8 +126,8 @@ class EvaluationSessionController extends Controller
         }
 
         $sessions = SessionFormation::all();
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
-        $formateurs = Employe::with('user')->get();
+        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $formateurs = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         return view('evaluations.edit', compact('evaluation', 'sessions', 'users', 'formateurs'));
     }
 

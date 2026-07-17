@@ -20,6 +20,11 @@
                 </div>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par titre, type de fichier..."
+    :filters="[
+        'type' => ['label' => 'Type', 'options' => ['pdf' => 'PDF', 'video' => 'Vidéo', 'document' => 'Document', 'presentation' => 'Présentation', 'image' => 'Image']],
+    ]" />
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -70,6 +75,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $supports->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

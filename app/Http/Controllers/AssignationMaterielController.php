@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class AssignationMaterielController extends Controller
 {
+    use FilterSuperAdmin;
     /**
      * Auth guard: Admin or any user with the manage-assets permission.
      * We intentionally do NOT use the Spatie middleware in __construct() to
@@ -34,11 +36,10 @@ class AssignationMaterielController extends Controller
     public function store(Request $request, AssetMateriel $asset)
     {
         $this->denyInventaireMutation();
+        $this->authorizeAction();
 
-        // 1. Sécurité maximale pour récupérer l'ID du matériel
-        // On cherche dans l'URL ($assetId), ou dans le formulaire via 'asset_materiel_id' ou 'asset_id'
-        $finalAssetId = $assetId 
-            ?? $request->input('asset_materiel_id') 
+        $finalAssetId = $asset->id
+            ?? $request->input('asset_materiel_id')
             ?? $request->input('asset_id');
 
         // Si vraiment introuvable, on renvoie une erreur propre sans crasher
@@ -51,6 +52,8 @@ class AssignationMaterielController extends Controller
             'user_id' => 'required|exists:users,id',
             'date_remise' => 'required|date',
         ]);
+
+        $this->validateNotSuperAdminTarget($request);
 
         DB::beginTransaction();
         try {

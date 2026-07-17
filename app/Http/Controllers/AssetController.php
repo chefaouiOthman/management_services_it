@@ -7,16 +7,34 @@ use App\Models\TypeMateriel;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class AssetController extends Controller
 {
+    use FilterSuperAdmin;
     /**
      * LISTE DE L'INVENTAIRE
      */
-    public function index()
+    public function index(Request $request)
     {
-        // On récupère les matériels avec leurs relations (Eager Loading)
-        $assets = AssetMateriel::with(['typeMateriel', 'users'])->get();
+        $query = AssetMateriel::with(['typeMateriel', 'users']);
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('num_serie', 'like', "%{$s}%")
+                  ->orWhere('marque', 'like', "%{$s}%")
+                  ->orWhere('modele', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut_materiel', $request->statut);
+        }
+        if ($request->filled('type_id')) {
+            $query->where('type_materiel_id', $request->type_id);
+        }
+
+        $assets = $query->paginate(25)->appends($request->query());
         return view('assets.index', compact('assets'));
     }
 
@@ -27,7 +45,7 @@ class AssetController extends Controller
     {
         // On récupère les données nécessaires pour alimenter les listes déroulantes du formulaire
         $types = TypeMateriel::all();
-        $users = User::all();
+        $users = $this->excludeSuperAdminsFromUsers(User::query())->get();
         return view('assets.create', compact('types', 'users'));
     }
 
@@ -45,6 +63,8 @@ class AssetController extends Controller
             'type_materiel_id' => 'required|exists:type_materiels,id',
             'user_id'          => 'nullable|exists:users,id',
         ]);
+
+        $this->validateNotSuperAdminTarget($request);
 
         // Utilisation de la transaction pour garantir le "Tout ou Rien"
         DB::transaction(function () use ($request) {

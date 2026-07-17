@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pointage;
+use App\Services\FinanceService;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -19,15 +20,36 @@ class DashboardController extends Controller
             return redirect()->route('users.show', auth()->id());
         }
 
+        $user = Auth::user();
+        $isAdminOrSuperAdmin = $user->hasAnyRole(['Admin', 'Super Admin']);
+
+        if ($isAdminOrSuperAdmin) {
+            $pointageJour = null;
+            $derniersPointages = collect();
+            $tousLesPointagesRecents = Pointage::with('user')
+                ->orderByDesc('date_jour')
+                ->orderByDesc('heure_arrivee')
+                ->take(10)
+                ->get();
+
+            $kpis = FinanceService::getKpis();
+            $evolution = FinanceService::getEvolutionMensuelle();
+            $depenses = FinanceService::getRepartitionDepenses();
+            $facturation = FinanceService::getFacturationMensuelle();
+
+            return view('dashboard', compact(
+                'pointageJour', 'derniersPointages', 'tousLesPointagesRecents',
+                'kpis', 'evolution', 'depenses', 'facturation'
+            ));
+        }
+
         $today = Carbon::today()->toDateString();
         $userId = Auth::id();
 
-        // Pointage du jour de l'utilisateur connecté
         $pointageJour = Pointage::where('user_id', $userId)
             ->where('date_jour', $today)
             ->first();
 
-        // 5 derniers pointages de l'utilisateur
         $derniersPointages = Pointage::where('user_id', $userId)
             ->orderByDesc('date_jour')
             ->orderByDesc('heure_arrivee')

@@ -9,9 +9,11 @@ use App\Models\Tache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class FeuilleTempsController extends Controller
 {
+    use FilterSuperAdmin;
     public function __construct()
     {
         $this->middleware('permission:feuille-temps-view', ['only' => ['index', 'show']]);
@@ -23,7 +25,7 @@ class FeuilleTempsController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = FeuilleTemps::with(['employe.user', 'projet', 'taches']);
 
@@ -31,7 +33,28 @@ class FeuilleTempsController extends Controller
             $query->where('employe_id', Auth::id());
         }
 
-        $feuilles = $query->get();
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('employe.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhereHas('projet', fn ($p) => $p->where('nom_projet', 'like', "%{$s}%"))
+                  ->orWhere('commentaire', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+        if ($request->filled('projet_id')) {
+            $query->where('projet_id', $request->projet_id);
+        }
+        if ($request->filled('date_debut')) {
+            $query->whereDate('date', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('date', '<=', $request->date_fin);
+        }
+
+        $feuilles = $query->paginate(25)->appends($request->query());
         $projets = Projet::all();
         return view('feuille_temps.index', compact('feuilles', 'projets'));
     }
@@ -53,7 +76,7 @@ class FeuilleTempsController extends Controller
      */
     public function create(Projet $projet)
     {
-        $employes = Auth::user()->hasRole('Admin') ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        $employes = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get() : Employe::where('user_id', Auth::id())->get();
         // Les tâches affichées seront uniquement celles de ce projet
         $taches = $projet->taches;
         
@@ -78,6 +101,8 @@ class FeuilleTempsController extends Controller
             abort(403, 'Vous ne pouvez pas créer de feuille de temps pour un autre employé.');
         }
 
+        $this->validateNotSuperAdminTarget($request, 'employe_id');
+
         DB::transaction(function () use ($request, $projet) {
             $feuille = FeuilleTemps::create([
                 'employe_id'   => $request->employe_id,
@@ -85,6 +110,7 @@ class FeuilleTempsController extends Controller
                 'date_effort'  => $request->date_effort,
                 'duree_heures' => $request->duree_heures,
                 'commentaire'  => $request->commentaire,
+                'created_by'   => Auth::id(),
             ]);
 
             if ($request->has('taches')) {
@@ -116,11 +142,17 @@ class FeuilleTempsController extends Controller
     {
         $feuille = FeuilleTemps::with('taches')->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin')) {
-            abort(403, "Seul l'administrateur peut modifier une feuille de temps émise.");
+        if (Auth::user()->hasRole('Super Admin')) {
+            // Accès total
+        } elseif (Auth::user()->hasRole('Admin')) {
+            if ($feuille->created_by !== Auth::id()) {
+                abort(403, 'Vous ne pouvez modifier que les feuilles de temps que vous avez créées.');
+            }
+        } else {
+            abort(403);
         }
 
-        $employes = Employe::with('user')->get();
+        $employes = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         $projets = Projet::all();
         $taches = Tache::all();
         
@@ -134,8 +166,14 @@ class FeuilleTempsController extends Controller
     {
         $feuille = FeuilleTemps::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin')) {
-            abort(403, "Seul l'administrateur peut modifier une feuille de temps émise.");
+        if (Auth::user()->hasRole('Super Admin')) {
+            // Accès total
+        } elseif (Auth::user()->hasRole('Admin')) {
+            if ($feuille->created_by !== Auth::id()) {
+                abort(403, 'Vous ne pouvez modifier que les feuilles de temps que vous avez créées.');
+            }
+        } else {
+            abort(403);
         }
 
         $request->validate([
@@ -147,6 +185,8 @@ class FeuilleTempsController extends Controller
             'taches'       => 'nullable|array',
             'taches.*'     => 'exists:taches,id',
         ]);
+
+        $this->validateNotSuperAdminTarget($request, 'employe_id');
 
         DB::transaction(function () use ($request, $feuille) {
             $feuille->update([
@@ -174,8 +214,16 @@ class FeuilleTempsController extends Controller
     {
         $feuille = FeuilleTemps::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
-            abort(403);
+        if (Auth::user()->hasRole('Super Admin')) {
+            // Accès total
+        } elseif (Auth::user()->hasRole('Admin')) {
+            if ($feuille->created_by !== Auth::id()) {
+                abort(403, 'Vous ne pouvez supprimer que les feuilles de temps que vous avez créées.');
+            }
+        } else {
+            if ($feuille->created_by !== Auth::id()) {
+                abort(403);
+            }
         }
 
         DB::transaction(function () use ($feuille) {

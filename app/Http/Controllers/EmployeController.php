@@ -13,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 class EmployeController extends Controller
 {
+    use \App\Http\Controllers\Traits\FilterSuperAdmin;
+
     public function __construct()
     {
         $this->middleware('permission:employe-view', ['only' => ['index', 'show']]);
@@ -24,9 +26,23 @@ class EmployeController extends Controller
     /**
      * 1. INDEX : LISTE DES EMPLOYES
      */
-    public function index()
+    public function index(Request $request)
     {
-        $employes = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')])->paginate(50);
+        $query = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')]);
+        $this->excludeSuperAdminsFromEmployes($query);
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhere('date_embauche', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('departement_id')) {
+            $query->where('departement_id', $request->departement_id);
+        }
+
+        $employes = $query->paginate(50)->appends($request->query());
         return view('employes.index', compact('employes'));
     }
 
@@ -50,12 +66,12 @@ class EmployeController extends Controller
             'email'           => 'required|string|email|max:255|unique:users',
             'password'        => 'required|string|min:8',
             'est_actif'       => 'boolean',
-            'CIN'             => 'required|string|max:50|unique:employes,CIN',
+            'cin'             => 'nullable|string|max:50|unique:users,cin',
             'date_embauche'   => 'required|date',
             'departement_id'  => 'nullable|exists:departements,id',
             'type_contrat'    => 'required|in:CDI,CDD,Freelance',
             'date_debut'      => 'required|date',
-            'date_fin'        => 'nullable|date|after_or_equal:date_debut',
+            'date_fin'        => 'nullable|date|after_or_equal:date_debut|required_if:type_contrat,CDD,Freelance',
             'salaire_base'    => 'required|numeric|min:0',
             'heures_hebdo'    => 'required|integer|min:0',
             'statut'          => 'required|in:actif,suspendu,termine',
@@ -69,12 +85,11 @@ class EmployeController extends Controller
                 'email'       => $request->email,
                 'password'    => Hash::make($request->password),
                 'est_actif'   => $request->input('est_actif', true),
-                'cin'         => $request->CIN, // Sync with users table as well if it exists
+                'cin'         => $request->cin,
             ]);
 
             $employe = Employe::create([
                 'user_id'        => $user->id,
-                'CIN'            => $request->CIN,
                 'date_embauche'  => $request->date_embauche,
                 'departement_id' => $request->departement_id,
             ]);
@@ -101,6 +116,7 @@ class EmployeController extends Controller
     public function show($id)
     {
         $employe = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')])->findOrFail($id);
+        $this->abortIfTargetIsSuperAdmin($employe->user);
         return view('employes.show', compact('employe'));
     }
 
@@ -110,6 +126,7 @@ class EmployeController extends Controller
     public function edit($id)
     {
         $employe = Employe::with(['user', 'contrats' => fn ($q) => $q->orderByDesc('id')])->findOrFail($id);
+        $this->abortIfTargetIsSuperAdmin($employe->user);
         $roles = Role::whereIn('name', ['Admin', 'Employe_Standard'])->get();
         return view('employes.edit', compact('employe', 'roles'));
     }
@@ -121,17 +138,18 @@ class EmployeController extends Controller
     {
         $employe = Employe::findOrFail($id);
         $user = $employe->user;
+        $this->abortIfTargetIsSuperAdmin($user);
 
         $request->validate([
             'nom_complet'     => 'required|string|max:150',
             'email'           => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password'        => 'nullable|string|min:8',
             'est_actif'       => 'boolean',
-            'CIN'             => ['required', 'string', 'max:50', Rule::unique('employes')->ignore($employe->user_id, 'user_id')],
+            'cin'             => ['nullable', 'string', 'max:50', Rule::unique('users', 'cin')->ignore($user->id)],
             'date_embauche'   => 'required|date',
             'type_contrat'    => 'required|in:CDI,CDD,Freelance',
             'date_debut'      => 'required|date',
-            'date_fin'        => 'nullable|date|after_or_equal:date_debut',
+            'date_fin'        => 'nullable|date|after_or_equal:date_debut|required_if:type_contrat,CDD,Freelance',
             'salaire_base'    => 'required|numeric|min:0',
             'heures_hebdo'    => 'required|integer|min:0',
             'statut'          => 'required|in:actif,suspendu,termine',
@@ -142,6 +160,7 @@ class EmployeController extends Controller
             $user->update([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
+                'cin'         => $request->input('cin', $user->cin),
                 'est_actif'   => $request->has('est_actif') ? $request->est_actif : $user->est_actif,
             ]);
 
@@ -150,7 +169,6 @@ class EmployeController extends Controller
             }
 
             $employe->update([
-                'CIN'           => $request->CIN,
                 'date_embauche' => $request->date_embauche,
             ]);
 
@@ -187,6 +205,7 @@ class EmployeController extends Controller
     public function destroy($id)
     {
         $employe = Employe::findOrFail($id);
+        $this->abortIfTargetIsSuperAdmin($employe->user);
         // Cascade removes Employe and Contrat
         if ($employe->user) { $employe->user?->delete(); }
 

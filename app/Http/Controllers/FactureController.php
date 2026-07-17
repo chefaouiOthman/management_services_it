@@ -30,7 +30,7 @@ class FactureController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = Facture::with(['client.user', 'fluxTresorerie', 'ligneFactures']);
 
@@ -38,7 +38,25 @@ class FactureController extends Controller
             $query->where('client_id', auth()->id());
         }
 
-        $factures = $query->get();
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('num_facture', 'like', "%{$s}%")
+                  ->orWhereHas('client.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhere('statut_paiement', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut_paiement')) {
+            $query->where('statut_paiement', $request->statut_paiement);
+        }
+        if ($request->filled('date_debut')) {
+            $query->whereDate('date_emission', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('date_emission', '<=', $request->date_fin);
+        }
+
+        $factures = $query->paginate(25)->appends($request->query());
         return view('factures.index', compact('factures'));
     }
 

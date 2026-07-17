@@ -20,9 +20,28 @@ class TacheController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $taches = Tache::with('projets')->get();
+        $query = Tache::with('projets');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('titre_tache', 'like', "%{$s}%")
+                  ->orWhereHas('projets', fn ($p) => $p->where('statut_tache', 'like', "%{$s}%")->orWhere('priorite', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('statut_tache')) {
+            $query->whereHas('projets', fn ($p) => $p->where('statut_tache', $request->statut_tache));
+        }
+        if ($request->filled('priorite')) {
+            $query->whereHas('projets', fn ($p) => $p->where('priorite', $request->priorite));
+        }
+        if ($request->filled('projet_id')) {
+            $query->whereHas('projets', fn ($p) => $p->where('projets.id', $request->projet_id));
+        }
+
+        $taches = $query->paginate(25)->appends($request->query());
         return view('taches.index', compact('taches'));
     }
 

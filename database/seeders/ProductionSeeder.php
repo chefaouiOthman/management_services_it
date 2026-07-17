@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Client;
 use App\Models\Employe;
+use App\Models\User;
 use App\Models\Projet;
 use App\Models\Technologie;
 use App\Models\Livrable;
@@ -82,12 +83,14 @@ class ProductionSeeder extends Seeder
                     foreach ($assignedEmployes as $emp) {
                         // 2 feuilles de temps par employé sur cette tâche
                         for ($l = 0; $l < 2; $l++) {
-                            $ft = FeuilleTemps::create([
+                            $adminId = User::whereHas('roles', fn ($q) => $q->where('name', 'Admin'))->inRandomOrder()->first()?->id ?? $emp->user_id;
+                        $ft = FeuilleTemps::create([
                                 'employe_id' => $emp->user_id,
                                 'projet_id' => $projet->id,
                                 'date_effort' => Carbon::parse($projet->created_at)->addDays(rand(1, 60)),
                                 'duree_heures' => $faker->randomFloat(2, 1, 8),
                                 'commentaire' => "Travail sur " . $tache->titre_tache,
+                                'created_by' => $adminId,
                             ]);
 
                             // Pivot feuille_temps_tache

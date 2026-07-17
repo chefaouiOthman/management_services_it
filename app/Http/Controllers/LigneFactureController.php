@@ -21,9 +21,22 @@ class LigneFactureController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $lignes = LigneFacture::with('facture')->get();
+        $query = LigneFacture::with('facture');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('designation', 'like', "%{$s}%")
+                  ->orWhereHas('facture', fn ($f) => $f->where('numero_facture', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('facture_id')) {
+            $query->where('facture_id', $request->facture_id);
+        }
+
+        $lignes = $query->paginate(25)->appends($request->query());
         return view('ligne_factures.index', compact('lignes'));
     }
 

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
 class Employe extends Model
 {
     use HasFactory;
@@ -25,7 +24,6 @@ class Employe extends Model
     protected $fillable = [
         'user_id',
         'date_embauche',
-        'cin',
         'departement_id',
     ];
 
@@ -121,5 +119,12 @@ class Employe extends Model
     public function noteDeFrais(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(NoteDeFrais::class, 'employe_id', 'user_id');
+    }
+
+    public function scopeVisiblePourAdmin($query)
+    {
+        if (!auth()->hasUser() || !auth()->user()->hasRole('Super Admin')) {
+            $query->whereHas('user', fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->where('name', 'Super Admin')));
+        }
     }
 }

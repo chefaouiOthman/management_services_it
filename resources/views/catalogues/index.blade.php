@@ -14,6 +14,8 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par intitulé, description..." :filters="[]" />
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($catalogues as $catalogue)
                     <x-card class="flex flex-col h-full">
@@ -49,6 +51,8 @@
                         Aucun programme de formation dans le catalogue.
                     </div>
                 @endforelse
+
+                {{ $catalogues->appends(request()->query())->links() }}
             </div>
         </div>
     </div>

@@ -51,6 +51,11 @@
                         <x-input-error :messages="$errors->get('statut_presence')" class="mt-1" />
                     </div>
 
+                    <div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+                        <strong>Créé par :</strong> {{ Auth::user()->nom_complet }}
+                        <span class="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-semibold">Saisie manuelle</span>
+                    </div>
+
                     <div class="flex justify-end pt-2">
                         <x-primary-button>Enregistrer le pointage</x-primary-button>
                     </div>

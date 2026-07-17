@@ -8,9 +8,11 @@ use App\Models\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class HistoriquePassageController extends Controller
 {
+    use FilterSuperAdmin;
     public function __construct()
     {
         $this->middleware('permission:historique-passage-view', ['only' => ['index', 'show']]);
@@ -29,10 +31,26 @@ class HistoriquePassageController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $historiques = HistoriquePassage::with(['user', 'zone'])->get();
-        return view('historiques.index', compact('historiques'));
+        $query = HistoriquePassage::with(['user', 'zone']);
+
+        if ($request->filled('search')) {
+            $s = addcslashes($request->search, '%_');
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhereHas('zone', fn ($z) => $z->where('nom_salle', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('date_debut')) {
+            $query->whereDate('horodatage', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('horodatage', '<=', $request->date_fin);
+        }
+
+        $historiques = $query->orderByDesc('horodatage')->paginate(25)->appends($request->query());
+        return view('historique_passages.index', compact('historiques'));
     }
 
     /**
@@ -40,9 +58,9 @@ class HistoriquePassageController extends Controller
      */
     public function create()
     {
-        $users = User::all();
+        $users = $this->excludeSuperAdminsFromUsers(User::query())->get();
         $zones = Zone::all();
-        return view('historiques.create', compact('users', 'zones'));
+        return view('historique_passages.create', compact('users', 'zones'));
     }
 
     /**
@@ -56,6 +74,8 @@ class HistoriquePassageController extends Controller
             'horodatage'       => 'required|date_format:d/m/Y H:i',
             'tentative_statut' => 'required|in:autorise,refuse_niveau_insuffisant,refuse_zone_desactivee',
         ]);
+
+        $this->validateNotSuperAdminTarget($request);
 
         $horodatageFormatted = Carbon::createFromFormat('d/m/Y H:i', $request->horodatage)->format('Y-m-d H:i:s');
 
@@ -86,7 +106,7 @@ class HistoriquePassageController extends Controller
     public function edit($id)
     {
         $historique = HistoriquePassage::findOrFail($id);
-        $users = User::all();
+        $users = $this->excludeSuperAdminsFromUsers(User::query())->get();
         $zones = Zone::all();
         return view('historique_passages.edit', compact('historique', 'users', 'zones'));
     }
@@ -104,6 +124,8 @@ class HistoriquePassageController extends Controller
             'horodatage'       => 'required|date_format:d/m/Y H:i',
             'tentative_statut' => 'required|in:autorise,refuse_niveau_insuffisant,refuse_zone_desactivee',
         ]);
+
+        $this->validateNotSuperAdminTarget($request);
 
         $horodatageFormatted = Carbon::createFromFormat('d/m/Y H:i', $request->horodatage)->format('Y-m-d H:i:s');
 

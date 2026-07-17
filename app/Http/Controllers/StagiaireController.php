@@ -22,9 +22,26 @@ class StagiaireController extends Controller
     /**
      * 1. INDEX : LISTE DES STAGIAIRES
      */
-    public function index()
+    public function index(Request $request)
     {
-        $stagiaires = Stagiaire::with('user')->get();
+        $query = Stagiaire::with('user');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhere('ecole_origine', 'like', "%{$s}%")
+                  ->orWhere('sujet_stage', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('ecole_origine')) {
+            $query->where('ecole_origine', $request->ecole_origine);
+        }
+        if ($request->filled('departement_id')) {
+            $query->where('departement_id', $request->departement_id);
+        }
+
+        $stagiaires = $query->paginate(25)->appends($request->query());
         return view('stagiaires.index', compact('stagiaires'));
     }
 

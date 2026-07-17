@@ -11,42 +11,42 @@ class ZoneController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
-            return $next($request);
-        }, ['only' => ['index', 'show']]);
-
+        $this->middleware('permission:zone-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:zone-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:zone-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:zone-delete', ['only' => ['destroy']]);
-
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit aux clients.');
-            }
-            return $next($request);
-        });
     }
 
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $zones = Zone::all();
+        $zq = Zone::query();
 
-        if (!auth()->user()->hasRole('Admin')) {
-            $logs = \App\Models\HistoriquePassage::with(['user', 'zone'])
-                ->where('user_id', auth()->id())
-                ->orderBy('horodatage', 'desc')
-                ->paginate(25);
-        } else {
-            $logs = \App\Models\HistoriquePassage::with(['user', 'zone'])
-                ->orderBy('horodatage', 'desc')
-                ->paginate(25);
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $zq->where(function ($q) use ($s) {
+                $q->where('nom_salle', 'like', "%{$s}%")
+                  ->orWhere('code_zone', 'like', "%{$s}%");
+            });
         }
+
+        $zones = $zq->get();
+
+        $lq = \App\Models\HistoriquePassage::with(['user', 'zone']);
+        if (!auth()->user()->hasRole('Admin')) {
+            $lq->where('user_id', auth()->id());
+        }
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $lq->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhereHas('zone', fn ($z) => $z->where('nom_salle', 'like', "%{$s}%"));
+            });
+        }
+
+        $logs = $lq->orderBy('horodatage', 'desc')->paginate(25, ['*'], 'logs_page')->appends($request->query());
 
         return view('zones.index', compact('zones', 'logs'));
     }

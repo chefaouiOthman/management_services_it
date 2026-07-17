@@ -56,18 +56,20 @@ class FinanceSeeder extends Seeder
 
                 $totalTTC = $totalHT * 1.20;
 
-                // Générer le flux de trésorerie entrant si la facture est soldée
-                if ($statutPaiement === 'soldee') {
-                    $flux = FluxTresorerie::create([
-                        'categorie_flux_id' => $catVentes->id,
-                        'type_mouvement' => 'entree',
-                        'montant_operation' => $totalTTC,
-                        'date_comptable' => Carbon::parse($dateEmission)->addDays(rand(5, 30)),
-                    ]);
+                // Flux de trésorerie pour toute facture (0 NULL)
+                $dateComptable = match ($statutPaiement) {
+                    'soldee' => Carbon::parse($dateEmission)->addDays(rand(5, 30)),
+                    'en_retard_paiement' => Carbon::parse($dateEmission)->addDays(rand(45, 90)),
+                    default => Carbon::parse($dateEmission),
+                };
+                $flux = FluxTresorerie::create([
+                    'categorie_flux_id' => $catVentes->id,
+                    'type_mouvement' => 'entree',
+                    'montant_operation' => $totalTTC,
+                    'date_comptable' => $dateComptable,
+                ]);
 
-                    // Update la facture avec le flux_tresorerie_id
-                    $facture->update(['flux_tresorerie_id' => $flux->id]);
-                }
+                $facture->update(['flux_tresorerie_id' => $flux->id]);
             }
         }
 
@@ -111,12 +113,14 @@ class FinanceSeeder extends Seeder
                         'statut_remboursement' => $statutNDF,
                     ]);
 
-                    if ($statutNDF === 'rembourse') {
+                    if (in_array($statutNDF, ['rembourse', 'approuve_manager'])) {
                         $flux = FluxTresorerie::create([
                             'categorie_flux_id' => $catFrais->id,
                             'type_mouvement' => 'sortie',
                             'montant_operation' => $montantNDF,
-                            'date_comptable' => Carbon::parse($dateSoumission)->addDays(rand(10, 20)),
+                            'date_comptable' => $statutNDF === 'rembourse'
+                                ? Carbon::parse($dateSoumission)->addDays(rand(10, 20))
+                                : Carbon::parse($dateSoumission)->addDays(rand(1, 5)),
                         ]);
                         $ndf->update(['flux_tresorerie_id' => $flux->id]);
                     }

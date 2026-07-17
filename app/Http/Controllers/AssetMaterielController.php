@@ -14,12 +14,10 @@ class AssetMaterielController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
+            if (auth()->user()?->hasRole('Client')) abort(403, 'Accès interdit aux clients.');
             return $next($request);
-        }, ['only' => ['index', 'show']]);
-
+        });
+        $this->middleware('permission:asset-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:asset-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:asset-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:asset-delete', ['only' => ['destroy']]);
@@ -28,9 +26,26 @@ class AssetMaterielController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $assets = AssetMateriel::with('typeMateriel')->get();
+        $query = AssetMateriel::with('typeMateriel');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('num_serie', 'like', "%{$s}%")
+                  ->orWhere('marque', 'like', "%{$s}%")
+                  ->orWhere('modele', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut_materiel', $request->statut);
+        }
+        if ($request->filled('type_id')) {
+            $query->where('type_materiel_id', $request->type_id);
+        }
+
+        $assets = $query->paginate(25)->appends($request->query());
         return view('assets.index', compact('assets'));
     }
 

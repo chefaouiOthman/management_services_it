@@ -10,37 +10,72 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class NoteDeFraisController extends Controller
 {
+    use FilterSuperAdmin;
+
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
-            return $next($request);
-        }, ['only' => ['index', 'show', 'download']]);
-
         $this->middleware('permission:note-de-frais-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:note-de-frais-edit', ['only' => ['edit', 'update', 'updateStatut']]);
         $this->middleware('permission:note-de-frais-delete', ['only' => ['destroy']]);
     }
 
+    private function isStagiaireOuClient(): bool
+    {
+        return Auth::user()->hasAnyRole(['Stagiaire', 'Client']);
+    }
+
+    private function isEmployeStandard(): bool
+    {
+        return Auth::user()->hasRole('Employe_Standard');
+    }
+
+    private function isAdmin(): bool
+    {
+        return Auth::user()->hasRole('Admin');
+    }
+
+    private function isSuperAdmin(): bool
+    {
+        return Auth::user()->hasRole('Super Admin');
+    }
+
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        if (Auth::user()->hasRole('Admin')) {
-            return redirect()->route('flux_tresoreries.index')->withFragment('#notes-frais');
+        if ($this->isStagiaireOuClient()) {
+            abort(403, 'Accès interdit.');
         }
 
-        $notes = NoteDeFrais::with('employe.user')
-            ->where('employe_id', Auth::id())
-            ->orderByDesc('created_at')
-            ->get();
+        if ($this->isSuperAdmin()) {
+            $query = NoteDeFrais::with('employe.user');
+        } elseif ($this->isAdmin()) {
+            $query = NoteDeFrais::with('employe.user')->whereDoesntHave('employe.user.roles', fn ($q) => $q->where('name', 'Super Admin'));
+        } else {
+            $query = NoteDeFrais::with('employe.user')->where('employe_id', Auth::id());
+        }
 
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('motif_depense', 'like', "%{$s}%")
+                  ->orWhereHas('employe.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhere('statut_remboursement', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut_remboursement')) {
+            $query->where('statut_remboursement', $request->statut_remboursement);
+        }
+        if ($request->filled('employe_id') && !$this->isEmployeStandard()) {
+            $query->where('employe_id', $request->employe_id);
+        }
+
+        $notes = $query->orderByDesc('created_at')->paginate(25)->appends($request->query());
         return view('note_de_frais.index', compact('notes'));
     }
 
@@ -49,7 +84,14 @@ class NoteDeFraisController extends Controller
      */
     public function create()
     {
-        $employes = (Auth::user()->hasRole('Admin') || Auth::user()->hasPermissionTo('flux-tresorerie-view')) ? Employe::with('user')->get() : Employe::where('user_id', Auth::id())->get();
+        if ($this->isStagiaireOuClient()) {
+            abort(403, 'Accès interdit.');
+        }
+
+        $employes = ($this->isAdmin() || Auth::user()->hasPermissionTo('flux-tresorerie-view'))
+            ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get()
+            : Employe::where('user_id', Auth::id())->get();
+
         return view('note_de_frais.create', compact('employes'));
     }
 
@@ -68,9 +110,11 @@ class NoteDeFraisController extends Controller
             'new_categorie_flux'   => 'nullable|string|max:100',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $request->employe_id != Auth::id()) {
+        if (!$this->isAdmin() && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $request->employe_id != Auth::id()) {
             abort(403);
         }
+
+        $this->validateNotSuperAdminTarget($request, 'employe_id');
 
         $path = $request->file('justificatif_fichier')->store('notes_de_frais', 'private');
 
@@ -89,7 +133,7 @@ class NoteDeFraisController extends Controller
             }
         });
 
-        if (Auth::user()->hasRole('Admin')) {
+        if ($this->isAdmin() || $this->isSuperAdmin()) {
             return redirect()->route('flux_tresoreries.index')->with('success', 'Note de frais créée avec succès.');
         }
 
@@ -103,8 +147,16 @@ class NoteDeFraisController extends Controller
     {
         $note = NoteDeFrais::with(['employe.user', 'fluxTresorerie'])->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
+        if ($this->isStagiaireOuClient()) {
+            abort(403, 'Accès interdit.');
+        }
+
+        if (!$this->isAdmin() && !$this->isSuperAdmin() && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
             abort(403);
+        }
+
+        if ($this->isAdmin() && $note->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
         }
 
         return view('note_de_frais.show', compact('note'));
@@ -115,9 +167,20 @@ class NoteDeFraisController extends Controller
      */
     public function edit($id)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $note = NoteDeFrais::findOrFail($id);
-        $employes = Employe::with('user')->get();
+
+        if ($this->isAdmin() && $note->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
+        }
+
+        $employes = $this->isAdmin()
+            ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get()
+            : Employe::with('user')->get();
+
         return view('note_de_frais.edit', compact('note', 'employes'));
     }
 
@@ -126,8 +189,15 @@ class NoteDeFraisController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $note = NoteDeFrais::findOrFail($id);
+
+        if ($this->isAdmin() && $note->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
+        }
 
         $request->validate([
             'employe_id'           => 'required|exists:employes,user_id',
@@ -138,6 +208,8 @@ class NoteDeFraisController extends Controller
             'categorie_flux_id'    => 'nullable|exists:categorie_flux,id',
             'new_categorie_flux'   => 'nullable|string|max:100',
         ]);
+
+        $this->validateNotSuperAdminTarget($request, 'employe_id');
 
         $path = $note->justificatif_path;
         if ($request->hasFile('justificatif_fichier')) {
@@ -176,16 +248,23 @@ class NoteDeFraisController extends Controller
      */
     public function destroy($id)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $note = NoteDeFrais::findOrFail($id);
+
+        if ($this->isAdmin() && $note->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
+        }
 
         DB::transaction(function () use ($note) {
             $flux_id = $note->flux_tresorerie_id;
-            
+
             if (Storage::disk('private')->exists($note->justificatif_path)) {
                 Storage::disk('private')->delete($note->justificatif_path);
             }
-            
+
             $note->delete();
 
             if ($flux_id) {
@@ -217,8 +296,12 @@ class NoteDeFraisController extends Controller
      */
     public function updateStatut(Request $request, NoteDeFrais $note)
     {
-        if (!Auth::user()->hasRole('Admin')) {
+        if (!$this->isAdmin() && !$this->isSuperAdmin()) {
             return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        if ($this->isAdmin() && $note->employe?->user?->hasRole('Super Admin')) {
+            return response()->json(['error' => 'Action non autorisée sur un Super Administrateur.'], 403);
         }
 
         $request->validate([

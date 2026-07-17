@@ -8,11 +8,11 @@
                 <p class="text-sm text-gray-500 mt-1">{{ $feuille->employe?->user?->nom_complet ?? 'N/A' }} &mdash; {{ $feuille->projet?->nom_projet ?? 'N/A' }}</p>
             </div>
             <div class="flex gap-2">
-                @can('feuille-temps-edit')
-                <a href="{{ route('feuille_temps.edit', $feuille->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
-                    Modifier
-                </a>
-                @endcan
+                @if(auth()->user()->hasRole('Super Admin') || (auth()->user()->hasRole('Admin') && $feuille->created_by === auth()->id()))
+                    <a href="{{ route('feuille_temps.edit', $feuille->id) }}" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
+                        Modifier
+                    </a>
+                @endif
                 <a href="{{ route('feuille_temps.index') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700 transition">
                     &larr; Retour
                 </a>

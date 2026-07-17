@@ -5,18 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\LicenceLogiciel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class LicenceLogicielController extends Controller
 {
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
+            if (auth()->user()?->hasRole('Client')) abort(403, 'Accès interdit aux clients.');
             return $next($request);
-        }, ['only' => ['index', 'show']]);
-
+        });
+        $this->middleware('permission:licence-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:licence-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:licence-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:licence-delete', ['only' => ['destroy']]);
@@ -25,9 +24,27 @@ class LicenceLogicielController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $licences = LicenceLogiciel::all();
+        $query = LicenceLogiciel::query();
+
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $query->whereHas('assignations', fn ($q) => $q->where('user_id', Auth::id())->whereNull('date_revocation'));
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('nom_logiciel', 'like', "%{$s}%")
+                  ->orWhere('date_expiration', 'like', "%{$s}%")
+                  ->orWhere('cle_licence', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+
+        $licences = $query->paginate(25)->appends($request->query());
         return view('licences.index', compact('licences'));
     }
 
@@ -70,7 +87,13 @@ class LicenceLogicielController extends Controller
      */
     public function show($id)
     {
-        $licence = LicenceLogiciel::findOrFail($id);
+        $licence = LicenceLogiciel::with('assignations')->findOrFail($id);
+
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
+            $hasAccess = $licence->assignations->contains(fn ($a) => $a->user_id === Auth::id() && $a->date_revocation === null);
+            if (!$hasAccess) abort(403);
+        }
+
         return view('licences.show', compact('licence'));
     }
 

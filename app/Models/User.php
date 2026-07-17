@@ -7,7 +7,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
@@ -74,6 +73,12 @@ class User extends Authenticatable
         return $this->hasMany(Pointage::class, 'user_id');
     }
 
+    /** Pointages que cet utilisateur a créés (via badge ou saisie manuelle) */
+    public function createdPointages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Pointage::class, 'created_by');
+    }
+
     /** Historique des tentatives de passage en zones sécurisées */
     public function historiquePassages(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
@@ -126,5 +131,12 @@ class User extends Authenticatable
     public function ticketsMaintenance(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(TicketMaintenance::class, 'user_id');
+    }
+
+    public function scopeVisiblePourAdmin($query)
+    {
+        if (!auth()->hasUser() || !auth()->user()->hasRole('Super Admin')) {
+            $query->whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'));
+        }
     }
 }

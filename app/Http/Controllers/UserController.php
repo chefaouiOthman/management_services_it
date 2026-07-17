@@ -14,6 +14,8 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    use \App\Http\Controllers\Traits\FilterSuperAdmin;
+
     public function __construct()
     {
         $this->middleware('permission:user-view', ['only' => ['index']]);
@@ -27,7 +29,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             return redirect()->route('users.show', auth()->id());
         }
 
@@ -39,7 +41,16 @@ class UserController extends Controller
             'client',
         ]);
 
-        // Filter by profile type if query parameter is present
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('nom_complet', 'like', "%{$s}%")
+                  ->orWhere('email', 'like', "%{$s}%");
+            });
+        }
+
+        $this->excludeSuperAdminsFromUsers($query);
+
         if ($request->has('role') && !empty($request->role)) {
             $role = $request->role;
             if ($role === 'employe') {
@@ -51,7 +62,7 @@ class UserController extends Controller
             }
         }
 
-        $users = $query->paginate(25);
+        $users = $query->paginate(25)->appends($request->query());
         return view('users.index', compact('users'));
     }
 
@@ -62,6 +73,9 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
+        if (!auth()->user()->hasRole('Super Admin')) {
+            $roles = $roles->reject(fn($r) => $r->name === 'Super Admin');
+        }
         $user = new User();
         return view('users.create', compact('roles', 'user'));
     }
@@ -71,10 +85,18 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('Super Admin') && in_array('Super Admin', $request->roles ?? [])) {
+            abort(403, 'Seul le Super Admin peut attribuer le rôle Super Admin.');
+        }
+
+        $isEmployeeRole = $request->has('roles') && (
+            in_array('Employe_Standard', $request->roles) || in_array('Admin', $request->roles)
+        );
+
         $request->validate([
             'nom_complet'    => 'required|string|max:150',
             'email'          => 'required|string|email|max:255|unique:users',
-            'cin'            => 'nullable|string|max:50|unique:users,cin|unique:employes,CIN',
+            'cin'            => 'nullable|string|max:50|unique:users,cin',
             'est_actif'      => 'boolean',
             'roles'          => 'nullable|array',
             'roles.*'        => 'exists:roles,name',
@@ -85,12 +107,12 @@ class UserController extends Controller
             'type_client'    => 'nullable|in:physique,morale',
             'nom_societe'    => 'nullable|string|max:150',
             'ice'            => 'nullable|string|max:50',
-            'type_contrat'   => 'nullable|in:CDI,CDD,Freelance',
-            'date_debut'     => 'nullable|date',
-            'date_fin'       => 'nullable|date',
-            'salaire_base'   => 'nullable|numeric',
-            'heures_hebdo'   => 'nullable|integer',
-            'statut'         => 'nullable|in:actif,suspendu,termine',
+            'type_contrat'   => $isEmployeeRole ? 'required|in:CDI,CDD,Freelance' : 'nullable|in:CDI,CDD,Freelance',
+            'date_debut'     => $isEmployeeRole ? 'required|date' : 'nullable|date',
+            'date_fin'       => $isEmployeeRole ? 'nullable|date|required_if:type_contrat,CDD,Freelance' : 'nullable|date',
+            'salaire_base'   => $isEmployeeRole ? 'required|numeric' : 'nullable|numeric',
+            'heures_hebdo'   => $isEmployeeRole ? 'required|integer' : 'nullable|integer',
+            'statut'         => $isEmployeeRole ? 'required|in:actif,suspendu,termine' : 'nullable|in:actif,suspendu,termine',
         ]);
 
         $plainPassword = Str::password(12);
@@ -110,22 +132,18 @@ class UserController extends Controller
                 // Create child entity based on role
                 if (in_array('Employe_Standard', $request->roles) || in_array('Admin', $request->roles)) {
                     $employe = $user->employe()->create([
-                        'cin'            => $request->cin ?: 'TEMP-' . uniqid(),
                         'departement_id' => $request->departement_id,
                         'date_embauche'  => $request->date_embauche ?: now(),
                     ]);
                     
-                    // Create contract if contract fields are provided
-                    if ($request->filled('type_contrat') && $request->filled('date_debut')) {
-                        $employe->contrats()->create([
-                            'type_contrat' => $request->type_contrat,
-                            'date_debut'   => $request->date_debut,
-                            'date_fin'     => $request->date_fin,
-                            'salaire_base' => $request->salaire_base,
-                            'heures_hebdo' => $request->heures_hebdo,
-                            'statut'       => $request->statut ?? 'actif',
-                        ]);
-                    }
+                    $employe->contrats()->create([
+                        'type_contrat' => $request->type_contrat,
+                        'date_debut'   => $request->date_debut,
+                        'date_fin'     => $request->date_fin,
+                        'salaire_base' => $request->salaire_base,
+                        'heures_hebdo' => $request->heures_hebdo,
+                        'statut'       => $request->statut ?? 'actif',
+                    ]);
                 } elseif (in_array('Stagiaire', $request->roles)) {
                     $user->stagiaire()->create([
                         'departement_id' => $request->input('departement_id') ?: null,
@@ -152,7 +170,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->hasRole('Admin') && auth()->id() != $id) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin']) && auth()->id() != $id) {
             abort(403);
         }
 
@@ -163,6 +181,9 @@ class UserController extends Controller
             'stagiaire.departement',
             'client',
         ])->findOrFail($id);
+
+        $this->abortIfTargetIsSuperAdmin($user);
+
         return view('users.show', compact('user'));
     }
 
@@ -171,7 +192,7 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             abort(403);
         }
 
@@ -182,7 +203,11 @@ class UserController extends Controller
             'stagiaire.departement',
             'client',
         ])->findOrFail($id);
+        $this->abortIfTargetIsSuperAdmin($user);
         $roles = Role::all();
+        if (!auth()->user()->hasRole('Super Admin')) {
+            $roles = $roles->reject(fn($r) => $r->name === 'Super Admin');
+        }
         return view('users.edit', compact('user', 'roles'));
     }
 
@@ -191,11 +216,17 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             abort(403);
         }
 
         $user = User::with(['employe', 'stagiaire', 'client'])->findOrFail($id);
+
+        $this->abortIfTargetIsSuperAdmin($user);
+
+        if (!auth()->user()->hasRole('Super Admin') && in_array('Super Admin', $request->roles ?? [])) {
+            abort(403, 'Seul le Super Admin peut attribuer le rôle Super Admin.');
+        }
 
         $request->validate([
             'nom_complet'    => 'required|string|max:150',
@@ -231,7 +262,6 @@ class UserController extends Controller
             // 2. Mise à jour polymorphique de l'entité fille
            if ($user->employe) {
                 $user->employe->update([
-                    'cin'            => $request->cin ?? $user->employe->cin, 
                     'departement_id' => $request->departement_id,
                     'date_embauche'  => $request->date_embauche ?? $user->employe->date_embauche,
                 ]);
@@ -253,10 +283,17 @@ class UserController extends Controller
             // Handle role changes - create new entity if role changed to employee/stagiaire/client
             if ($request->has('roles')) {
                 if ((in_array('Employe_Standard', $request->roles) || in_array('Admin', $request->roles)) && !$user->employe) {
-                    $user->employe()->create([
-                        'CIN'            => $request->input('cin') ?: 'TEMP-' . uniqid(),
+                    $employe = $user->employe()->create([
                         'departement_id' => $request->input('departement_id') ?: null,
                         'date_embauche'  => $request->input('date_embauche') ?: now(),
+                    ]);
+                    $employe->contrats()->create([
+                        'type_contrat' => $request->type_contrat ?? 'CDI',
+                        'date_debut'   => $request->date_debut ?? now(),
+                        'date_fin'     => $request->date_fin,
+                        'salaire_base' => $request->salaire_base ?? 0,
+                        'heures_hebdo' => $request->heures_hebdo ?? 40,
+                        'statut'       => 'actif',
                     ]);
                 } elseif (in_array('Stagiaire', $request->roles) && !$user->stagiaire) {
                     $user->stagiaire()->create([
@@ -282,7 +319,7 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             abort(403);
         }
 
@@ -298,6 +335,8 @@ class UserController extends Controller
             'assignationsLicence',
             'ticketsMaintenance',
         ])->findOrFail($id);
+
+        $this->abortIfTargetIsSuperAdmin($user);
 
         DB::transaction(function () use ($user) {
             // Delete child entities explicitly

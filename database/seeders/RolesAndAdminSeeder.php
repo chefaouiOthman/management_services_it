@@ -7,6 +7,9 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use App\Models\User;
+use App\Models\Employe;
+use App\Models\Contrat;
+use Illuminate\Support\Facades\Hash;
 
 class RolesAndAdminSeeder extends Seeder
 {
@@ -15,7 +18,7 @@ class RolesAndAdminSeeder extends Seeder
         // 1. Reset du cache Spatie pour éviter tout conflit de mémoire
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 2. Liste des ressources de l'application (31 au total)
+        // 2. Liste des ressources de l'application (32 au total)
         $ressources = [
             // MODULE 1
             'user', 'employe', 'stagiaire', 'client',
@@ -28,10 +31,12 @@ class RolesAndAdminSeeder extends Seeder
             // MODULE 5
             'type-materiel', 'asset', 'ticket', 'licence', 'assignation-materiel', 'assignation-licence',
             // MODULE 6
-            'categorie-flux', 'flux-tresorerie', 'facture', 'ligne-facture', 'fiche-paie', 'note-de-frais'
+            'categorie-flux', 'flux-tresorerie', 'facture', 'ligne-facture', 'fiche-paie', 'note-de-frais',
+            // GESTION DYNAMIQUE (réservé Super Admin)
+            'role'
         ];
 
-        // Génération des 4 permissions par ressource (Total : 124 permissions)
+        // Génération des 4 permissions par ressource (Total : 128 permissions)
         $allPermissions = [];
         foreach ($ressources as $ressource) {
             $allPermissions[] = $ressource . '-view';
@@ -52,8 +57,9 @@ class RolesAndAdminSeeder extends Seeder
         $roleClient = Role::firstOrCreate(['name' => 'Client']);
 
         // 4. Attribution des permissions aux rôles
-        // --> L'Admin reçoit absolument toutes les permissions (124 permissions)
-        $roleAdmin->syncPermissions($allPermissions);
+        // --> L'Admin reçoit toutes les permissions SAUF celles liées aux rôles (réservées Super Admin)
+        $adminPermissions = array_filter($allPermissions, fn ($p) => !str_starts_with($p, 'role-'));
+        $roleAdmin->syncPermissions($adminPermissions);
         
         // --> L'Employé standard
         // Lecture sur ce qui est public ou utile
@@ -96,11 +102,25 @@ class RolesAndAdminSeeder extends Seeder
             ['email' => 'admin@entreprise.com'],
             [
                 'nom_complet' => 'Administrateur Système',
-                'password'    => bcrypt('password'), // password fixe pour dev
+                'password'    => Hash::make('password'),
                 'est_actif'   => true,
+                'cin'         => 'AA000001',
             ]
         );
         $adminUser->assignRole($roleAdmin);
+        Employe::firstOrCreate(
+            ['user_id' => $adminUser->id],
+            ['date_embauche' => now(), 'departement_id' => null]
+        );
+        Contrat::firstOrCreate(
+            ['employe_id' => $adminUser->id, 'type_contrat' => 'CDI'],
+            [
+                'date_debut' => now()->subYear(),
+                'salaire_base' => 25000,
+                'heures_hebdo' => 40,
+                'statut' => 'actif',
+            ]
+        );
 
         // Création d'utilisateurs de test supplémentaires pour que la table ne soit pas vide 
         // et pour pouvoir tester les autres rôles.
@@ -108,18 +128,33 @@ class RolesAndAdminSeeder extends Seeder
             ['email' => 'employe@entreprise.com'],
             [
                 'nom_complet' => 'Employé Test',
-                'password'    => bcrypt('password'),
+                'password'    => Hash::make('password'),
                 'est_actif'   => true,
+                'cin'         => 'BB000002',
             ]
         );
         $employeUser->assignRole($roleEmploye);
+        Employe::firstOrCreate(
+            ['user_id' => $employeUser->id],
+            ['date_embauche' => now(), 'departement_id' => null]
+        );
+        Contrat::firstOrCreate(
+            ['employe_id' => $employeUser->id, 'type_contrat' => 'CDI'],
+            [
+                'date_debut' => now()->subMonths(6),
+                'salaire_base' => 8000,
+                'heures_hebdo' => 44,
+                'statut' => 'actif',
+            ]
+        );
 
         $stagiaireUser = User::firstOrCreate(
             ['email' => 'stagiaire@entreprise.com'],
             [
                 'nom_complet' => 'Stagiaire Test',
-                'password'    => bcrypt('password'),
+                'password'    => Hash::make('password'),
                 'est_actif'   => true,
+                'cin'         => 'CC000003',
             ]
         );
         $stagiaireUser->assignRole($roleStagiaire);
@@ -128,8 +163,9 @@ class RolesAndAdminSeeder extends Seeder
             ['email' => 'client@entreprise.com'],
             [
                 'nom_complet' => 'Client Test',
-                'password'    => bcrypt('password'),
+                'password'    => Hash::make('password'),
                 'est_actif'   => true,
+                'cin'         => 'DD000004',
             ]
         );
         $clientUser->assignRole($roleClient);

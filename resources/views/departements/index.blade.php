@@ -28,6 +28,8 @@
                     </form>
                 </x-card>
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par nom de département..." :filters="[]" />
+
                 <x-card class="md:col-span-2">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Départements Existants</h3>
                     <div class="overflow-x-auto">
@@ -109,6 +111,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $departements->appends(request()->query())->links() }}
             </x-card>
 
             @endif

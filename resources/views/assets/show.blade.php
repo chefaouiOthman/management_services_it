@@ -87,7 +87,7 @@
                             <x-input-label for="user_id" value="Assigner à un collaborateur" />
                             <select name="user_id" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500">
                                 <option value="">-- Sélectionner --</option>
-                                @foreach(\App\Models\User::orderBy('nom_complet')->get() as $u)
+                                @foreach(\App\Models\User::when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->whereDoesntHave('roles', fn($r) => $r->where('name', 'Super Admin')))->orderBy('nom_complet')->get() as $u)
                                     <option value="{{ $u->id }}">{{ $u->nom_complet }}</option>
                                 @endforeach
                             </select>

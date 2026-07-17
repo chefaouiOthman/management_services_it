@@ -14,6 +14,11 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par nom, catégorie..."
+    :filters="[
+        'categorie' => ['label' => 'Catégorie', 'options' => ['langage' => 'Langage', 'framework' => 'Framework', 'base_de_données' => 'Base de données', 'outil' => 'Outil', 'cloud' => 'Cloud', 'sécurité' => 'Sécurité']],
+    ]" />
+
             <x-card>
                 <table class="w-full text-sm text-left text-gray-600">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
@@ -25,7 +30,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse(\App\Models\Technologie::all() as $tech)
+                        @forelse($technologies as $tech)
                             <tr class="border-b last:border-0 hover:bg-gray-50">
                                 <td class="px-6 py-4">{{ $tech->id }}</td>
                                 <td class="px-6 py-4 font-bold">{{ $tech->nom_tech }}</td>
@@ -51,6 +56,8 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                {{ $technologies->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

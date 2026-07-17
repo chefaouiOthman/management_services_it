@@ -6,9 +6,11 @@ use App\Models\LicenceLogiciel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class AssignationLicenceController extends Controller
 {
+    use FilterSuperAdmin;
     public function __construct()
     {
         $this->middleware('permission:manage-assets');
@@ -27,6 +29,8 @@ class AssignationLicenceController extends Controller
             'user_id' => 'required|exists:users,id',
             'date_attribution' => 'required|date',
         ]);
+
+        $this->validateNotSuperAdminTarget($request);
 
         DB::transaction(function () use ($request, $licence) {
             $licence->users()->attach($request->user_id, [

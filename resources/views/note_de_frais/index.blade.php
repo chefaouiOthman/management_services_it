@@ -20,6 +20,11 @@
                 </div>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par motif, employé, statut..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['en_attente' => 'En attente', 'approuvée' => 'Approuvée', 'refusée' => 'Refusée', 'remboursée' => 'Remboursée']],
+    ]" />
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -73,6 +78,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $notes->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

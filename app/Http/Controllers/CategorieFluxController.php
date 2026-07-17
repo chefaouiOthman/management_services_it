@@ -26,12 +26,25 @@ class CategorieFluxController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->hasRole('Admin')) {
             return redirect()->route('flux_tresoreries.index');
         }
-        $categories = CategorieFlux::all();
+        $query = CategorieFlux::query();
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('libelle_categorie', 'like', "%{$s}%")
+                  ->orWhere('code_comptable', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('type')) {
+            $query->where('type_categorie', $request->type);
+        }
+
+        $categories = $query->paginate(25)->appends($request->query());
         return view('categorie_flux.index', compact('categories'));
     }
 

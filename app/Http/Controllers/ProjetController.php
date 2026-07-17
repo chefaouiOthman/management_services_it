@@ -24,7 +24,7 @@ class ProjetController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = Projet::with(['client.user', 'technologies'])
             ->withCount('taches');
@@ -33,7 +33,22 @@ class ProjetController extends Controller
             $query->where('client_id', auth()->id());
         }
 
-        $projets = $query->get();
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('nom_projet', 'like', "%{$s}%")
+                  ->orWhere('statut_projet', 'like', "%{$s}%")
+                  ->orWhereHas('client.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('statut_projet')) {
+            $query->where('statut_projet', $request->statut_projet);
+        }
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+
+        $projets = $query->paginate(25)->appends($request->query());
         return view('projets.index', compact('projets'));
     }
 

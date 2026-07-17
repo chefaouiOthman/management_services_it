@@ -19,6 +19,8 @@ class FormationSeeder extends Seeder
     {
         $faker = Faker::create('fr_FR');
         $employes = Employe::all();
+        // note_technique fixe par employé (indépendante du contexte de la session)
+        $noteTechniqueMap = $employes->mapWithKeys(fn($e) => [$e->user_id => rand(3, 5)]);
         // Apprenants potentiels : tout utilisateur (Employé, Stagiaire, Client)
         $apprenants = User::whereHas('roles', function($q) {
             $q->whereIn('name', ['Employe_Standard', 'Stagiaire', 'Client']);
@@ -79,15 +81,14 @@ class FormationSeeder extends Seeder
 
                     // 5. Évaluation de la session si l'apprenant était présent ou certifié
                     if (in_array($statutInscrit, ['present', 'certifie'])) {
-                        // Il évalue chaque formateur de la session
                         foreach ($formateurs as $formateur) {
                             EvaluationSession::create([
                                 'session_formation_id' => $session->id,
-                                'user_id' => $inscrit->id,          // Apprenant
-                                'employe_id' => $formateur->user_id, // Formateur évalué
+                                'user_id' => $inscrit->id,
+                                'employe_id' => $formateur->user_id,
                                 'note_pedagogie' => rand(3, 5),
-                                'note_technique' => rand(3, 5),
-                                'avis_textuel' => $faker->boolean(70) ? $faker->sentence() : null, // 70% de chance d'avoir un avis
+                                'note_technique' => $noteTechniqueMap[$formateur->user_id] ?? rand(3, 5),
+                                'avis_textuel' => $faker->boolean(70) ? $faker->sentence() : null,
                             ]);
                         }
                     }

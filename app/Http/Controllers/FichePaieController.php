@@ -8,37 +8,72 @@ use App\Models\FluxTresorerie;
 use App\Models\CategorieFlux;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class FichePaieController extends Controller
 {
+    use FilterSuperAdmin;
+
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
-            return $next($request);
-        }, ['only' => ['index', 'show']]);
-
         $this->middleware('permission:fiche-paie-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:fiche-paie-edit', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:fiche-paie-edit', ['only' => ['edit', 'update', 'payer']]);
         $this->middleware('permission:fiche-paie-delete', ['only' => ['destroy']]);
+    }
+
+    private function isStagiaireOuClient(): bool
+    {
+        return Auth::user()->hasAnyRole(['Stagiaire', 'Client']);
+    }
+
+    private function isEmployeStandard(): bool
+    {
+        return Auth::user()->hasRole('Employe_Standard');
+    }
+
+    private function isAdmin(): bool
+    {
+        return Auth::user()->hasRole('Admin');
+    }
+
+    private function isSuperAdmin(): bool
+    {
+        return Auth::user()->hasRole('Super Admin');
     }
 
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        if (Auth::user()->hasRole('Admin')) {
-            return redirect()->route('flux_tresoreries.index')->withFragment('#rh');
+        if ($this->isStagiaireOuClient()) {
+            abort(403, 'Accès interdit.');
         }
 
-        $fiches = FichePaie::with('employe.user')
-            ->where('employe_id', Auth::id())
-            ->orderByDesc('created_at')
-            ->get();
+        if ($this->isSuperAdmin()) {
+            $query = FichePaie::with('employe.user');
+        } elseif ($this->isAdmin()) {
+            $query = FichePaie::with('employe.user')->whereDoesntHave('employe.user.roles', fn ($q) => $q->where('name', 'Super Admin'));
+        } else {
+            $query = FichePaie::with('employe.user')->where('employe_id', Auth::id());
+        }
 
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('mois_annee', 'like', "%{$s}%")
+                  ->orWhereHas('employe.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('employe_id') && !$this->isEmployeStandard()) {
+            $query->where('employe_id', $request->employe_id);
+        }
+        if ($request->filled('mois_annee')) {
+            $query->where('mois_annee', $request->mois_annee);
+        }
+
+        $fiches = $query->orderByDesc('created_at')->paginate(25)->appends($request->query());
         return view('fiche_paies.index', compact('fiches'));
     }
 
@@ -47,8 +82,14 @@ class FichePaieController extends Controller
      */
     public function create()
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
-        $employes = Employe::with('user')->get();
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
+        $employes = $this->isAdmin()
+            ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get()
+            : Employe::with('user')->get();
+
         return view('fiche_paies.create', compact('employes'));
     }
 
@@ -57,7 +98,10 @@ class FichePaieController extends Controller
      */
     public function store(Request $request)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $request->validate([
             'employe_id'  => 'required|exists:employes,user_id',
             'mois_annee'  => 'required|string|max:7',
@@ -65,6 +109,8 @@ class FichePaieController extends Controller
             'categorie_flux_id' => 'nullable|exists:categorie_flux,id',
             'new_categorie_flux' => 'nullable|string|max:100',
         ]);
+
+        $this->validateNotSuperAdminTarget($request, 'employe_id');
 
         DB::transaction(function () use ($request) {
             $fiche = FichePaie::create([
@@ -87,8 +133,16 @@ class FichePaieController extends Controller
     {
         $fiche = FichePaie::with(['employe.user', 'fluxTresorerie'])->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $fiche->employe_id != Auth::id()) {
+        if ($this->isStagiaireOuClient()) {
+            abort(403, 'Accès interdit.');
+        }
+
+        if ($this->isEmployeStandard() && $fiche->employe_id != Auth::id()) {
             abort(403);
+        }
+
+        if ($this->isAdmin() && $fiche->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
         }
 
         return view('fiche_paies.show', compact('fiche'));
@@ -99,9 +153,20 @@ class FichePaieController extends Controller
      */
     public function edit($id)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $fiche = FichePaie::findOrFail($id);
-        $employes = Employe::with('user')->get();
+
+        if ($this->isAdmin() && $fiche->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
+        }
+
+        $employes = $this->isAdmin()
+            ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get()
+            : Employe::with('user')->get();
+
         return view('fiche_paies.edit', compact('fiche', 'employes'));
     }
 
@@ -110,8 +175,15 @@ class FichePaieController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $fiche = FichePaie::findOrFail($id);
+
+        if ($this->isAdmin() && $fiche->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
+        }
 
         $request->validate([
             'employe_id'  => 'required|exists:employes,user_id',
@@ -120,6 +192,8 @@ class FichePaieController extends Controller
             'categorie_flux_id' => 'nullable|exists:categorie_flux,id',
             'new_categorie_flux' => 'nullable|string|max:100',
         ]);
+
+        $this->validateNotSuperAdminTarget($request, 'employe_id');
 
         DB::transaction(function () use ($request, $fiche) {
             $fiche->update([
@@ -140,8 +214,15 @@ class FichePaieController extends Controller
      */
     public function destroy($id)
     {
-        if (!Auth::user()->hasRole('Admin')) { abort(403); }
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            abort(403, 'Accès interdit.');
+        }
+
         $fiche = FichePaie::findOrFail($id);
+
+        if ($this->isAdmin() && $fiche->employe?->user?->hasRole('Super Admin')) {
+            abort(403, 'Action non autorisée sur un Super Administrateur.');
+        }
 
         DB::transaction(function () use ($fiche) {
             $flux_id = $fiche->flux_tresorerie_id;
@@ -153,6 +234,35 @@ class FichePaieController extends Controller
         });
 
         return redirect()->route('flux_tresoreries.index')->withFragment('#rh')->with('success', 'Fiche de paie supprimée avec succès.');
+    }
+
+    /**
+     * 8. PAYER (Asynchrone Alpine Fetch)
+     */
+    public function payer(Request $request, FichePaie $fiche)
+    {
+        if ($this->isStagiaireOuClient() || $this->isEmployeStandard()) {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        if ($this->isAdmin() && $fiche->employe?->user?->hasRole('Super Admin')) {
+            return response()->json(['error' => 'Action non autorisée sur un Super Administrateur.'], 403);
+        }
+
+        DB::transaction(function () use ($fiche) {
+            if ($fiche->flux_tresorerie_id) {
+                FluxTresorerie::where('id', $fiche->flux_tresorerie_id)->update([
+                    'date_comptable' => now(),
+                ]);
+            } else {
+                $this->syncFluxTresorerie($fiche);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fiche de paie payée (Flux mis à jour).',
+        ]);
     }
 
     /**
@@ -200,36 +310,5 @@ class FichePaieController extends Controller
         }
 
         return null;
-    }
-
-    /**
-     * 8. PAYER (Asynchrone Alpine Fetch)
-     */
-    public function payer(Request $request, FichePaie $fiche)
-    {
-        if (!auth()->user()->hasRole('Admin')) {
-            return response()->json(['error' => 'Non autorisé'], 403);
-        }
-
-        DB::transaction(function () use ($fiche) {
-            // Dans ce scénario métier, la paie est émise puis payée
-            // On s'assure qu'elle n'est pas déjà payée (id de flux existant)
-            // Bien que dans la logique de store() elle crée un flux automatiquement, 
-            // la DAF peut valider le paiement ici si on considère qu'une Fiche a un statut "Payée"
-            // Pour l'instant, le store() crée directement le flux, donc `payer()` pourrait juste mettre à jour la date comptable du flux.
-            
-            if ($fiche->flux_tresorerie_id) {
-                FluxTresorerie::where('id', $fiche->flux_tresorerie_id)->update([
-                    'date_comptable' => now(),
-                ]);
-            } else {
-                $this->syncFluxTresorerie($fiche);
-            }
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Fiche de paie payée (Flux mis à jour).',
-        ]);
     }
 }

@@ -14,6 +14,11 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par nom, email..."
+    :filters="[
+        'role' => ['label' => 'Profil', 'options' => ['employe' => 'Employé', 'stagiaire' => 'Stagiaire', 'client' => 'Client']],
+    ]" />
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -107,7 +112,7 @@
                                                     <div class="grid grid-cols-2 gap-3">
                                                         <div><strong>Date d'embauche :</strong> {{ $user->employe?->date_embauche?->format('d/m/Y') ?? '-' }}</div>
                                                         <div><strong>Département :</strong> {{ $user->employe?->departement?->nom_departement ?? 'Non assigné' }}</div>
-                                                        <div><strong>CIN Employé :</strong> {{ $user->employe?->CIN ?? '-' }}</div>
+
                                                     </div>
                                                     @if($contratActuel = $user->employe?->contratActuel)
                                                         <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">

@@ -1,8 +1,10 @@
 @php
     $isEdit = isset($user) && $user->exists;
-    $defaultRole = 'Employe_Standard';
     $contratActuel = $isEdit && $user->employe ? $user->employe?->contratActuel : null;
-    if ($isEdit) {
+    $defaultRole = 'Employe_Standard';
+    if ($isEdit && $user->roles->isNotEmpty()) {
+        $defaultRole = $user->roles->first()->name;
+    } elseif ($isEdit) {
         if ($user->employe) $defaultRole = 'Employe_Standard';
         elseif ($user->stagiaire) $defaultRole = 'Stagiaire';
         elseif ($user->client) $defaultRole = 'Client';
@@ -13,14 +15,12 @@
 <div x-data="{
     role: '{{ old('roles.0', old('roles', $defaultRole)) }}',
     isEdit: {{ $isEdit ? 'true' : 'false' }},
-    actions: {
-        'Admin': '{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}',
-        'Employe_Standard': '{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}',
-        'Stagiaire': '{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}',
-        'Client': '{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}'
+    typeContrat: '{{ old('type_contrat', $contratActuel->type_contrat ?? '') }}',
+    get dateFinRequired() {
+        return this.typeContrat === 'CDD' || this.typeContrat === 'Freelance';
     }
 }">
-    <form :action="actions[role]" method="POST" autocomplete="off" class="prevent-autofill">
+    <form action="{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}" method="POST" autocomplete="off" class="prevent-autofill">
         @csrf
         @if($isEdit)
             @method('PUT')
@@ -39,10 +39,11 @@
                     <div class="col-span-full">
                         <x-input-label for="role" value="Type de profil" />
                         <select id="role" name="roles[]" x-model="role" :disabled="isEdit" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
-                            <option value="Employe_Standard">Employé Standard</option>
-                            <option value="Stagiaire">Stagiaire</option>
-                            <option value="Client">Client</option>
-                            <option value="Admin">Employe Admin</option>
+                            @foreach($roles as $roleOption)
+                                <option value="{{ $roleOption->name }}" {{ old('roles.0', old('roles', $defaultRole)) == $roleOption->name ? 'selected' : '' }}>
+                                    {{ $roleOption->name === 'Admin' ? 'Employé Admin' : ($roleOption->name === 'Employe_Standard' ? 'Employé Standard' : $roleOption->name) }}
+                                </option>
+                            @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('roles')" class="mt-2" />
                         <x-input-error :messages="$errors->get('roles.0')" class="mt-2" />
@@ -83,7 +84,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <x-input-label for="departement_id_employe" value="Département" />
-                                <select id="departement_id_employe" name="departement_id" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'">
+                                <select id="departement_id_employe" name="departement_id" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'">
                                     <option value="">-- Sélectionner un département --</option>
                                     @foreach(\App\Models\Departement::all() as $dept)
                                         <option value="{{ $dept->id }}" {{ old('departement_id', $user->employe?->departement_id ?? '') == $dept->id ? 'selected' : '' }}>{{ $dept->nom_departement }}</option>
@@ -93,7 +94,7 @@
                             </div>
                             <div>
                                 <x-input-label for="date_embauche" value="Date d'embauche" />
-                                <x-text-input id="date_embauche" name="date_embauche" type="date" class="mt-1 block w-full" value="{{ old('date_embauche', $user->employe?->date_embauche?->format('Y-m-d') ?? '') }}" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
+                                <x-text-input id="date_embauche" name="date_embauche" type="date" class="mt-1 block w-full" value="{{ old('date_embauche', $user->employe?->date_embauche?->format('Y-m-d') ?? '') }}" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
                                 <x-input-error :messages="$errors->get('date_embauche')" class="mt-2" />
                             </div>
                         </div>
@@ -106,7 +107,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <x-input-label for="type_contrat" value="Type de Contrat" />
-                                <select id="type_contrat" name="type_contrat" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'">
+                                <select id="type_contrat" name="type_contrat" x-model="typeContrat" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'">
                                     <option value="CDI" {{ old('type_contrat', $contratActuel->type_contrat ?? '') == 'CDI' ? 'selected' : '' }}>CDI</option>
                                     <option value="CDD" {{ old('type_contrat', $contratActuel->type_contrat ?? '') == 'CDD' ? 'selected' : '' }}>CDD</option>
                                     <option value="Freelance" {{ old('type_contrat', $contratActuel->type_contrat ?? '') == 'Freelance' ? 'selected' : '' }}>Freelance</option>
@@ -115,27 +116,31 @@
                             </div>
                             <div>
                                 <x-input-label for="date_debut" value="Date de Début" />
-                                <x-text-input id="date_debut" name="date_debut" type="date" class="mt-1 block w-full" value="{{ old('date_debut', $contratActuel?->date_debut?->format('Y-m-d') ?? '') }}" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
+                                <x-text-input id="date_debut" name="date_debut" type="date" class="mt-1 block w-full" value="{{ old('date_debut', $contratActuel?->date_debut?->format('Y-m-d') ?? '') }}" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
                                 <x-input-error :messages="$errors->get('date_debut')" class="mt-2" />
                             </div>
                             <div>
-                                <x-input-label for="date_fin" value="Date de Fin (Optionnelle)" />
+                                <x-input-label for="date_fin">
+                                    Date de Fin
+                                    <span x-show="dateFinRequired" class="text-red-500 font-bold">*</span>
+                                    <span x-show="!dateFinRequired" class="text-gray-400 text-xs font-normal">(Optionnelle)</span>
+                                </x-input-label>
                                 <x-text-input id="date_fin" name="date_fin" type="date" class="mt-1 block w-full" value="{{ old('date_fin', $contratActuel?->date_fin?->format('Y-m-d') ?? '') }}" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
                                 <x-input-error :messages="$errors->get('date_fin')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="salaire_base" value="Salaire de Base" />
-                                <x-text-input id="salaire_base" name="salaire_base" type="number" step="0.01" class="mt-1 block w-full" value="{{ old('salaire_base', $contratActuel->salaire_base ?? '') }}" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
+                                <x-text-input id="salaire_base" name="salaire_base" type="number" step="0.01" class="mt-1 block w-full" value="{{ old('salaire_base', $contratActuel->salaire_base ?? '') }}" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
                                 <x-input-error :messages="$errors->get('salaire_base')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="heures_hebdo" value="Heures Hebdomadaires" />
-                                <x-text-input id="heures_hebdo" name="heures_hebdo" type="number" class="mt-1 block w-full" value="{{ old('heures_hebdo', $contratActuel->heures_hebdo ?? '') }}" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
+                                <x-text-input id="heures_hebdo" name="heures_hebdo" type="number" class="mt-1 block w-full" value="{{ old('heures_hebdo', $contratActuel->heures_hebdo ?? '') }}" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'" />
                                 <x-input-error :messages="$errors->get('heures_hebdo')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="statut" value="Statut du Contrat" />
-                                <select id="statut" name="statut" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" x-bind:required="role === 'Employe_Standard' || role === 'Admin'" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'">
+                                <select id="statut" name="statut" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" x-bind:disabled="role !== 'Employe_Standard' && role !== 'Admin'">
                                     <option value="actif" {{ old('statut', $contratActuel->statut ?? '') == 'actif' ? 'selected' : '' }}>Actif</option>
                                     <option value="suspendu" {{ old('statut', $contratActuel->statut ?? '') == 'suspendu' ? 'selected' : '' }}>Suspendu</option>
                                     <option value="termine" {{ old('statut', $contratActuel->statut ?? '') == 'termine' ? 'selected' : '' }}>Terminé</option>

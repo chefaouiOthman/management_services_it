@@ -17,6 +17,11 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par logiciel, éditeur, clé..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['active' => 'Active', 'expirée' => 'Expirée', 'révoquée' => 'Révoquée']],
+    ]" />
+
             <div class="grid grid-cols-1 gap-6">
                 @forelse($licences as $licence)
                     <x-card class="relative overflow-hidden" x-data="licenceManager()">
@@ -66,7 +71,7 @@
                                         @csrf
                                         <select name="user_id" required class="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 text-sm">
                                             <option value="">Sélectionner un utilisateur...</option>
-                                            @foreach(\App\Models\User::all() as $u)
+                                            @foreach(\App\Models\User::when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->whereDoesntHave('roles', fn($r) => $r->where('name', 'Super Admin')))->get() as $u)
                                                 <option value="{{ $u->id }}">{{ $u->nom_complet }}</option>
                                             @endforeach
                                         </select>
@@ -143,6 +148,8 @@
                         <p class="text-center text-gray-500 py-8">Aucune licence enregistrée.</p>
                     </x-card>
                 @endforelse
+
+                {{ $licences->appends(request()->query())->links() }}
             </div>
         </div>
     </div>

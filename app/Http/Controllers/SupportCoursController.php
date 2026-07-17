@@ -20,9 +20,22 @@ class SupportCoursController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $supports = SupportCours::with('catalogueFormations')->get();
+        $query = SupportCours::with('catalogueFormations');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('nom_fichier', 'like', "%{$s}%")
+                  ->orWhere('url_stockage', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('url_stockage')) {
+            $query->where('url_stockage', $request->url_stockage);
+        }
+
+        $supports = $query->paginate(25)->appends($request->query());
         return view('supports.index', compact('supports'));
     }
 

@@ -21,9 +21,26 @@ class LivrableController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $livrables = Livrable::with('projet')->orderByDesc('date_limite_soumission')->get();
+        $query = Livrable::with('projet');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('titre_jalon', 'like', "%{$s}%")
+                  ->orWhereHas('projet', fn ($p) => $p->where('nom_projet', 'like', "%{$s}%"))
+                  ->orWhere('statut_client', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('statut_client')) {
+            $query->where('statut_client', $request->statut_client);
+        }
+        if ($request->filled('projet_id')) {
+            $query->where('projet_id', $request->projet_id);
+        }
+
+        $livrables = $query->orderByDesc('date_limite_soumission')->paginate(25)->appends($request->query());
         return view('livrables.index', compact('livrables'));
     }
 

@@ -32,6 +32,13 @@
                 </div>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par employé, projet, statut..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['en_attente' => 'En attente', 'validée' => 'Validée', 'refusée' => 'Refusée']],
+        'date_debut' => ['label' => 'Date début', 'type' => 'date'],
+        'date_fin' => ['label' => 'Date fin', 'type' => 'date'],
+    ]" />
+
             <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg overflow-hidden">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <div class="overflow-x-auto">
@@ -78,18 +85,20 @@
                                             @can('feuille-temps-view')
                                                 <a href="{{ route('feuille_temps.show', $feuille->id) }}" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Voir</a>
                                             @endcan
-                                            @if(auth()->user()->hasRole('Admin'))
+                                            @if(auth()->user()->hasRole('Super Admin') || (auth()->user()->hasRole('Admin') && $feuille->created_by === auth()->id()))
                                                 <a href="{{ route('feuille_temps.edit', $feuille->id) }}" class="font-medium text-indigo-600 dark:text-indigo-500 hover:underline">Modifier</a>
                                             @endif
-                                            @can('feuille-temps-delete')
-                                                <form action="{{ route('feuille_temps.destroy', $feuille->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmez-vous la suppression de cette feuille de temps ?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="font-medium text-red-600 dark:text-red-500 hover:underline">
-                                                        Supprimer
-                                                    </button>
-                                                </form>
-                                            @endcan
+                                            @if(auth()->user()->hasRole('Super Admin') || (auth()->user()->hasRole('Admin') && $feuille->created_by === auth()->id()))
+                                                @can('feuille-temps-delete')
+                                                    <form action="{{ route('feuille_temps.destroy', $feuille->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Confirmez-vous la suppression de cette feuille de temps ?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="font-medium text-red-600 dark:text-red-500 hover:underline">
+                                                            Supprimer
+                                                        </button>
+                                                    </form>
+                                                @endcan
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
@@ -102,6 +111,8 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{ $feuilles->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>

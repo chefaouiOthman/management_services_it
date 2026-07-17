@@ -27,7 +27,12 @@
             </div>
             @endif
 
-            <x-card>
+            <x-search-filters :search="request('search')" searchPlaceholder="Rechercher par numéro série, marque, modèle..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['disponible' => 'Disponible', 'en_maintenance' => 'En maintenance', 'hors_service' => 'Hors service', 'assigne' => 'Assigné']],
+    ]" />
+
+<x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -91,6 +96,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $assets->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

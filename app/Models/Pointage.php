@@ -20,6 +20,7 @@ class Pointage extends Model
         'heure_arrivee',
         'heure_depart',
         'statut_presence',
+        'created_by',
     ];
 
     /**
@@ -45,6 +46,18 @@ class Pointage extends Model
             'nom_complet' => 'Utilisateur inconnu',
             'name'        => 'Inconnu',
             'email'       => 'N/A',
+        ]);
+    }
+
+    /**
+     * L'utilisateur (admin/agent RH) qui a créé ce pointage manuellement,
+     * ou l'employé lui-même via le badge automatique.
+     */
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by')->withDefault([
+            'nom_complet' => 'Système',
+            'name'        => 'Système',
         ]);
     }
 }

@@ -18,6 +18,12 @@
                 </div>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par titre, statut, priorité..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['à_faire' => 'À faire', 'en_cours' => 'En cours', 'terminée' => 'Terminée', 'en_pause' => 'En pause']],
+        'priorite' => ['label' => 'Priorité', 'options' => ['basse' => 'Basse', 'moyenne' => 'Moyenne', 'haute' => 'Haute', 'critique' => 'Critique']],
+    ]" />
+
             <x-card>
                 <table class="w-full text-sm text-left text-gray-600">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
@@ -53,6 +59,8 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                {{ $taches->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

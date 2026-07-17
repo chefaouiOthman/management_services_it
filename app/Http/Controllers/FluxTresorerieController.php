@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FluxTresorerie;
 use App\Models\CategorieFlux;
+use App\Services\FinanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,19 +28,54 @@ class FluxTresorerieController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        // 1. Charger les flux pour le Grand Livre
-        $flux = FluxTresorerie::with(['categorieFlux', 'facture', 'fichePaie', 'noteDeFrais'])->orderByDesc('date_comptable')->get();
-        
-        // 2. Charger les données pour l'onglet Facturation
-        $factures = \App\Models\Facture::with(['client.user', 'ligneFactures'])->orderByDesc('date_emission')->get();
-        
-        // 3. Charger les données pour l'onglet Masse Salariale & Frais
+        $q = FluxTresorerie::with(['categorieFlux', 'facture', 'fichePaie', 'noteDeFrais']);
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $q->where(function ($query) use ($s) {
+                $query->whereHas('categorieFlux', fn ($c) => $c->where('libelle_categorie', 'like', "%{$s}%"))
+                      ->orWhere('montant_operation', 'like', "%{$s}%")
+                      ->orWhere('type_mouvement', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('type')) {
+            $q->where('type_mouvement', $request->type);
+        }
+        if ($request->filled('categorie_id')) {
+            $q->where('categorie_flux_id', $request->categorie_id);
+        }
+        if ($request->filled('date_debut')) {
+            $q->whereDate('date_comptable', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $q->whereDate('date_comptable', '<=', $request->date_fin);
+        }
+
+        $flux = $q->orderByDesc('date_comptable')->paginate(25)->appends($request->query());
+
+        // Facturation
+        $fq = \App\Models\Facture::with(['client.user', 'ligneFactures']);
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $fq->where(function ($query) use ($s) {
+                $query->where('num_facture', 'like', "%{$s}%")
+                      ->orWhereHas('client.user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"));
+            });
+        }
+        $factures = $fq->orderByDesc('date_emission')->paginate(25, ['*'], 'factures_page')->appends($request->query());
+
+        // RH
         $fiches = \App\Models\FichePaie::with('employe.user')->orderByDesc('created_at')->get();
         $notes = \App\Models\NoteDeFrais::with('employe.user')->orderByDesc('created_at')->get();
 
-        return view('flux_tresoreries.index', compact('flux', 'factures', 'fiches', 'notes'));
+        $kpis = FinanceService::getKpis();
+        $evolution = FinanceService::getEvolutionMensuelle();
+        $depenses = FinanceService::getRepartitionDepenses();
+        $facturation = FinanceService::getFacturationMensuelle();
+
+        return view('flux_tresoreries.index', compact('flux', 'factures', 'fiches', 'notes', 'kpis', 'evolution', 'depenses', 'facturation'));
     }
 
     /**

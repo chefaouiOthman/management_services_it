@@ -5,31 +5,74 @@
         </h2>
     </x-slot>
 
-    @php
-        $totalEntrees = $flux->where('type_mouvement', 'entree')->sum('montant_operation');
-        $totalSorties = $flux->where('type_mouvement', 'sortie')->sum('montant_operation');
-        $soldeNet = $totalEntrees - $totalSorties;
-    @endphp
-
     <div class="py-12" x-data="{ tab: window.location.hash ? (['notes-frais','fiches-paie'].includes(window.location.hash.substring(1)) ? 'rh' : window.location.hash.substring(1)) : 'dashboard' }" @hashchange.window="tab = (['notes-frais','fiches-paie'].includes(window.location.hash.substring(1)) ? 'rh' : window.location.hash.substring(1))">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <!-- KPIs Master -->
+            <!-- KPIs Master - Modern Cards (global totals from FinanceService) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <x-card class="border-l-4 border-green-500 bg-green-50 dark:bg-green-900/20">
-                    <p class="text-sm text-green-700 dark:text-green-400 font-bold uppercase tracking-wider">Total Entrées (Factures)</p>
-                    <p class="text-3xl font-black text-green-800 dark:text-green-300 mt-2 font-mono">+ {{ number_format($totalEntrees, 2, ',', ' ') }} DHS</p>
-                </x-card>
-                <x-card class="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20">
-                    <p class="text-sm text-red-700 dark:text-red-400 font-bold uppercase tracking-wider">Total Sorties (Paie & Frais)</p>
-                    <p class="text-3xl font-black text-red-800 dark:text-red-300 mt-2 font-mono">- {{ number_format($totalSorties, 2, ',', ' ') }} DHS</p>
-                </x-card>
-                <x-card class="border-l-4 {{ $soldeNet >= 0 ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-red-600 bg-red-100' }}">
-                    <p class="text-sm {{ $soldeNet >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-red-800' }} font-bold uppercase tracking-wider">Solde de Trésorerie Actuel</p>
-                    <p class="text-3xl font-black {{ $soldeNet >= 0 ? 'text-indigo-800 dark:text-indigo-300' : 'text-red-900' }} mt-2 font-mono">
-                        {{ number_format($soldeNet, 2, ',', ' ') }} DHS
-                    </p>
-                </x-card>
+                {{-- Total Entrées --}}
+                <div class="group relative bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12 group-hover:scale-150 transition-transform duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-white/80 text-sm font-semibold uppercase tracking-wider">Total Entrées</span>
+                            <svg class="w-10 h-10 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                            </svg>
+                        </div>
+                        <p class="text-4xl font-black text-white font-mono tracking-tight">+ {{ number_format($kpis['total_entrees'], 2, ',', ' ') }} DHS</p>
+                        <p class="text-white/60 text-sm mt-2">Encaissements validés</p>
+                    </div>
+                </div>
+
+                {{-- Total Sorties --}}
+                <div class="group relative bg-gradient-to-br from-rose-500 to-rose-700 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12 group-hover:scale-150 transition-transform duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-white/80 text-sm font-semibold uppercase tracking-wider">Total Sorties</span>
+                            <svg class="w-10 h-10 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                            </svg>
+                        </div>
+                        <p class="text-4xl font-black text-white font-mono tracking-tight">- {{ number_format($kpis['total_sorties'], 2, ',', ' ') }} DHS</p>
+                        <p class="text-white/60 text-sm mt-2">Paie & Frais décaissés</p>
+                    </div>
+                </div>
+
+                {{-- Solde Net --}}
+                <div class="group relative bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12 group-hover:scale-150 transition-transform duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-white/80 text-sm font-semibold uppercase tracking-wider">Solde de Trésorerie</span>
+                            <svg class="w-10 h-10 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p class="text-4xl font-black text-white font-mono tracking-tight">{{ number_format($kpis['solde_net'], 2, ',', ' ') }} DHS</p>
+                        <p class="text-white/60 text-sm mt-2">{{ $kpis['solde_net'] >= 0 ? 'Trésorerie positive' : 'Déficit' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Charts Section --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Évolution des Flux Financiers</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Entrées vs Sorties mensuelles ({{ date('Y') }})</p>
+                    <div id="chart-evolution" class="w-full"></div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Répartition des Dépenses</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Masse Salariale vs Frais de Fonctionnement</p>
+                    <div id="chart-depenses" class="w-full"></div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Performance de Facturation</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Montant Facturé vs Encaissé par mois ({{ date('Y') }})</p>
+                <div id="chart-facturation" class="w-full"></div>
             </div>
 
             <!-- Tabs Navigation -->
@@ -43,6 +86,13 @@
 
             <!-- TAB 1: GRAND LIVRE -->
             <div x-show="tab === 'dashboard'" x-cloak class="space-y-4">
+                <x-search-filters :search="request('search')" searchPlaceholder="Rechercher par libellé, catégorie, montant..."
+                    :filters="[
+                        'type' => ['label' => 'Type', 'options' => ['entree' => 'Recette', 'sortie' => 'Dépense']],
+                        'date_debut' => ['label' => 'Date début', 'type' => 'date'],
+                        'date_fin' => ['label' => 'Date fin', 'type' => 'date'],
+                    ]" />
+
                 <x-card>
                     <x-slot name="header">
                         <div class="flex justify-between items-center">
@@ -105,6 +155,8 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{ $flux->appends(request()->query())->links() }}
                 </x-card>
             </div>
 
@@ -458,5 +510,64 @@
                 }
             }
         }
+    </script>
+
+    {{-- ApexCharts CDN & Chart Init --}}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var evolutionData = @json($evolution);
+            var depensesData = @json($depenses);
+            var facturationData = @json($facturation);
+
+            var months = evolutionData.map(function (d) { return d.month; });
+
+            // 1. Area Chart
+            new ApexCharts(document.querySelector('#chart-evolution'), {
+                chart: { type: 'area', height: 320, toolbar: { show: false }, animations: { initialAnimation: { enabled: true, speed: 800 } } },
+                series: [
+                    { name: 'Entrées', data: evolutionData.map(function (d) { return d.entrees; }), color: '#10B981' },
+                    { name: 'Sorties', data: evolutionData.map(function (d) { return d.sorties; }), color: '#F43F5E' }
+                ],
+                xaxis: { categories: months, labels: { style: { colors: '#9CA3AF' } } },
+                yaxis: { labels: { formatter: function (v) { return v.toLocaleString('fr-FR'); }, style: { colors: '#9CA3AF' } } },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 3 },
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0, 90, 100] } },
+                tooltip: { y: { formatter: function (v) { return v.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DHS'; } } },
+                grid: { borderColor: '#F3F4F6' },
+                legend: { position: 'top', labels: { colors: '#6B7280' } }
+            }).render();
+
+            // 2. Donut Chart
+            new ApexCharts(document.querySelector('#chart-depenses'), {
+                chart: { type: 'donut', height: 320, animations: { initialAnimation: { enabled: true, speed: 800 } } },
+                series: [depensesData.masse_salariale, depensesData.frais_fonctionnement],
+                labels: ['Masse Salariale', 'Frais de Fonctionnement'],
+                colors: ['#6366F1', '#F59E0B'],
+                dataLabels: { enabled: true, formatter: function (v) { return v.toFixed(1) + '%'; }, style: { fontSize: '12px', fontWeight: 'bold' } },
+                plotOptions: { pie: { donut: { size: '60%', labels: { show: true, total: { show: true, label: 'Total', formatter: function () { return (depensesData.masse_salariale + depensesData.frais_fonctionnement).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DHS'; } } } } } },
+                tooltip: { y: { formatter: function (v) { return v.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DHS'; } } },
+                legend: { position: 'bottom', labels: { colors: '#6B7280' } },
+                responsive: [{ breakpoint: 480, options: { chart: { height: 280 } } }]
+            }).render();
+
+            // 3. Bar Chart
+            new ApexCharts(document.querySelector('#chart-facturation'), {
+                chart: { type: 'bar', height: 350, toolbar: { show: false }, animations: { initialAnimation: { enabled: true, speed: 800 } } },
+                series: [
+                    { name: 'Facturé', data: facturationData.map(function (d) { return d.facture; }), color: '#3B82F6' },
+                    { name: 'Encaissé', data: facturationData.map(function (d) { return d.encaisse; }), color: '#10B981' }
+                ],
+                xaxis: { categories: facturationData.map(function (d) { return d.month; }), labels: { style: { colors: '#9CA3AF' } } },
+                yaxis: { labels: { formatter: function (v) { return v.toLocaleString('fr-FR'); }, style: { colors: '#9CA3AF' } } },
+                dataLabels: { enabled: false },
+                stroke: { show: true, width: 2, colors: ['transparent'] },
+                tooltip: { y: { formatter: function (v) { return v.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DHS'; } } },
+                grid: { borderColor: '#F3F4F6' },
+                legend: { position: 'top', labels: { colors: '#6B7280' } },
+                plotOptions: { bar: { borderRadius: 6, columnWidth: '60%' } }
+            }).render();
+        });
     </script>
 </x-app-layout>

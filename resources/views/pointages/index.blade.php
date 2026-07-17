@@ -4,11 +4,13 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Historique des Pointages
             </h2>
-            @if(Auth::user()->hasRole('Admin'))
+            @can('pointage-create')
+            @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
             <a href="{{ route('pointages.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-bold text-xs hover:bg-indigo-700 transition">
                 + Saisir Pointage Manuel
             </a>
             @endif
+            @endcan
         </div>
     </x-slot>
 
@@ -19,8 +21,17 @@
                 <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md text-sm">{{ session('success') }}</div>
             @endif
 
-            {{-- Filtre Admin --}}
-            @if(Auth::user()->hasRole('Admin'))
+            @if(session('error'))
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{{ session('error') }}</div>
+            @endif
+
+            @php
+                $isSuperAdmin = auth()->user()->hasRole('Super Admin');
+                $isAdmin = auth()->user()->hasRole('Admin');
+                $canManageAll = $isSuperAdmin || $isAdmin;
+            @endphp
+
+            @if($canManageAll)
             <x-card>
                 <form method="GET" action="{{ route('pointages.index') }}" class="flex gap-4 items-end">
                     <div class="flex-1">
@@ -40,6 +51,13 @@
             </x-card>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par employé, statut..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['a_l_heure' => 'À l\'heure', 'en_retard' => 'En retard', 'depart_anticipe' => 'Départ anticipé']],
+        'date_debut' => ['label' => 'Date début', 'type' => 'date'],
+        'date_fin' => ['label' => 'Date fin', 'type' => 'date'],
+    ]" />
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
@@ -51,7 +69,7 @@
                                 <th class="px-6 py-3">Départ</th>
                                 <th class="px-6 py-3">Durée</th>
                                 <th class="px-6 py-3">Statut</th>
-                                @if(Auth::user()->hasRole('Admin'))
+                                @if($canManageAll)
                                  <th class="px-6 py-3 text-right">Actions</th>
                                 @endif
                             </tr>
@@ -78,13 +96,17 @@
                                             {{ str_replace('_', ' ', $pointage->statut_presence) }}
                                         </span>
                                     </td>
-                                    @if(Auth::user()->hasRole('Admin'))
+                                    @if($canManageAll)
                                     <td class="px-6 py-4 text-right">
+                                        @if($isSuperAdmin || ($isAdmin && $pointage->created_by === auth()->id()))
                                         <a href="{{ route('pointages.edit', $pointage->id) }}" class="text-indigo-600 hover:underline text-xs font-semibold">Modifier</a>
                                         <form action="{{ route('pointages.destroy', $pointage->id) }}" method="POST" class="inline ml-3" onsubmit="return confirm('Supprimer ce pointage ?')">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-semibold">Supprimer</button>
                                         </form>
+                                        @else
+                                        <span class="text-xs text-gray-400 italic">Créé par {{ $pointage->creator?->nom_complet ?? 'Système' }}</span>
+                                        @endif
                                     </td>
                                     @endif
                                 </tr>

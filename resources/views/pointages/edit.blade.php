@@ -9,21 +9,29 @@
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             <x-card>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-xs text-blue-700">
+                    <strong>Créé par :</strong> {{ $pointage->creator?->nom_complet ?? 'Système' }}
+                    @if($pointage->created_by === auth()->id())
+                        <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-semibold">Vous avez créé ce pointage</span>
+                    @else
+                        <span class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full font-semibold">Modification réservée au créateur</span>
+                    @endif
+                </div>
+
                 <form method="POST" action="{{ route('pointages.update', $pointage->id) }}" class="space-y-4">
                     @csrf
                     @method('PUT')
 
-                    @can('pointage-create')
                     <div>
                         <x-input-label for="user_id" value="Employé" />
                         <select id="user_id" name="user_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <option value="">Sélectionner un employé</option>
                             @foreach($users as $u)
                                 <option value="{{ $u->id }}" {{ old('user_id', $pointage->user_id) == $u->id ? 'selected' : '' }}>{{ $u->nom_complet }}</option>
                             @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('user_id')" class="mt-1" />
                     </div>
-                    @endcan
 
                     <div>
                         <x-input-label for="date_jour" value="Date" />

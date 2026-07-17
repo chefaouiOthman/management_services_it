@@ -11,13 +11,7 @@ class TechnologieController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Client')) {
-                abort(403, 'Accès interdit.');
-            }
-            return $next($request);
-        }, ['only' => ['index', 'show']]);
-
+        $this->middleware('permission:technologie-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:technologie-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:technologie-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:technologie-delete', ['only' => ['destroy']]);
@@ -26,9 +20,22 @@ class TechnologieController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $technologies = Technologie::all();
+        $query = Technologie::query();
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('nom_tech', 'like', "%{$s}%")
+                  ->orWhere('version', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('version')) {
+            $query->where('version', $request->version);
+        }
+
+        $technologies = $query->paginate(25)->appends($request->query());
         return view('technologies.index', compact('technologies'));
     }
 

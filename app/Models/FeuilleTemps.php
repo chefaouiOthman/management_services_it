@@ -17,6 +17,7 @@ class FeuilleTemps extends Model
         'date_effort',
         'duree_heures',
         'commentaire',
+        'created_by',
     ];
 
     protected $casts = [
@@ -47,6 +48,14 @@ class FeuilleTemps extends Model
      * Tâches rattachées à cette feuille de temps (via pivot feuille_temps_tache).
      * Pivot simple sans attributs supplémentaires ni timestamps.
      */
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by')->withDefault([
+            'nom_complet' => 'Système',
+            'name'        => 'Système',
+        ]);
+    }
+
     public function taches(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(

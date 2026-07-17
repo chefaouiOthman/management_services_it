@@ -21,9 +21,20 @@ class CatalogueFormationController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $catalogues = CatalogueFormation::with('supportCours')->get();
+        $query = CatalogueFormation::with('supportCours');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('titre_formation', 'like', "%{$s}%")
+                  ->orWhere('description_programme', 'like', "%{$s}%")
+                  ->orWhere('prix_standard', 'like', "%{$s}%");
+            });
+        }
+
+        $catalogues = $query->paginate(25)->appends($request->query());
         return view('catalogues.index', compact('catalogues'));
     }
 

@@ -20,6 +20,11 @@
                 </div>
             @endif
 
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par utilisateur, formation, statut..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['inscrit' => 'Inscrit', 'présent' => 'Présent', 'absent' => 'Absent', 'terminé' => 'Terminé']],
+    ]" />
+
             <div class="space-y-4">
                 @php
                     $groupedInscriptions = $inscriptions->groupBy('session_formation_id');

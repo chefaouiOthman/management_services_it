@@ -38,8 +38,13 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par nom, type..."
+    :filters="[
+        'type' => ['label' => 'Type', 'options' => ['recette' => 'Recette', 'depense' => 'Dépense']],
+    ]" />
+
             <x-card>
-                <div class="overflow-x-auto">
+                    <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-600 dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300">
                             <tr>
@@ -78,6 +83,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $categories->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

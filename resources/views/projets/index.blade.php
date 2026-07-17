@@ -15,6 +15,11 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par nom, client, statut..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['planifié' => 'Planifié', 'en_cours' => 'En cours', 'en_pause' => 'En pause', 'terminé' => 'Terminé', 'annulé' => 'Annulé']],
+    ]" />
+
             <x-card>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -99,6 +104,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $projets->appends(request()->query())->links() }}
             </x-card>
         </div>
     </div>

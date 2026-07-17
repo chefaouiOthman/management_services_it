@@ -8,11 +8,17 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class TicketMaintenanceController extends Controller
 {
+    use FilterSuperAdmin;
     public function __construct()
     {
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()?->hasRole('Client')) abort(403, 'Accès interdit aux clients.');
+            return $next($request);
+        });
         $this->middleware('permission:ticket-view', ['only' => ['index', 'show']]);
         $this->middleware('permission:ticket-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:ticket-edit', ['only' => ['edit', 'update']]);
@@ -22,7 +28,7 @@ class TicketMaintenanceController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = TicketMaintenance::with(['assetMateriel', 'user']);
         
@@ -30,7 +36,22 @@ class TicketMaintenanceController extends Controller
             $query->where('user_id', Auth::id());
         }
 
-        $tickets = $query->get();
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('description_panne', 'like', "%{$s}%")
+                  ->orWhere('statut_ticket', 'like', "%{$s}%")
+                  ->orWhereHas('assetMateriel', fn ($a) => $a->where('num_serie', 'like', "%{$s}%"));
+            });
+        }
+        if ($request->filled('statut_ticket')) {
+            $query->where('statut_ticket', $request->statut_ticket);
+        }
+        if ($request->filled('asset_id')) {
+            $query->where('asset_materiel_id', $request->asset_id);
+        }
+
+        $tickets = $query->orderByDesc('created_at')->get();
         $assets = AssetMateriel::with('typeMateriel')->get();
         return view('tickets.index', compact('tickets', 'assets'));
     }
@@ -40,10 +61,8 @@ class TicketMaintenanceController extends Controller
      */
     public function create()
     {
-        $this->denyInventaireMutation();
-
         $assets = AssetMateriel::all();
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         return view('tickets.create', compact('assets', 'users'));
     }
 
@@ -52,31 +71,32 @@ class TicketMaintenanceController extends Controller
      */
     public function store(Request $request)
     {
-        $this->denyInventaireMutation();
-
         $request->validate([
             'asset_materiel_id' => 'required|exists:asset_materiels,id',
-            'user_id'           => 'required|exists:users,id',
             'description_panne' => 'required|string',
-            'cout_reparation'   => 'required|numeric|min:0',
-            'statut_ticket'     => 'required|in:signale,en_atelier,resolu',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
-            abort(403, 'Vous ne pouvez pas créer un ticket au nom d\'un autre utilisateur.');
+        // Force l'utilisateur connecté si pas Admin, Admin choisit le user_id dans le formulaire
+        $userId = Auth::user()->hasRole('Admin') ? $request->user_id : Auth::id();
+
+        if (!$userId) {
+            return back()->withErrors(['user_id' => 'Utilisateur requis.'])->withInput();
         }
 
-        DB::transaction(function () use ($request) {
+        $this->validateNotSuperAdminTarget($request->merge(['user_id' => $userId]));
+
+        $this->validateNotSuperAdminTarget($request);
+
+        DB::transaction(function () use ($request, $userId) {
             TicketMaintenance::create([
                 'asset_materiel_id' => $request->asset_materiel_id,
-                'user_id'           => $request->user_id,
+                'user_id'           => $userId,
                 'description_panne' => $request->description_panne,
-                'cout_reparation'   => $request->cout_reparation,
-                'statut_ticket'     => $request->statut_ticket,
+                'cout_reparation'   => $request->cout_reparation ?? 0,
+                'statut_ticket'     => $request->statut_ticket ?? 'signale',
             ]);
 
-            // Mettre à jour le statut du matériel s'il est signalé en panne
-            if (in_array($request->statut_ticket, ['signale', 'en_atelier'])) {
+            if (in_array($request->statut_ticket ?? 'signale', ['signale', 'en_atelier'])) {
                 AssetMateriel::where('id', $request->asset_materiel_id)->update(['statut_materiel' => 'en_panne']);
             }
         });
@@ -112,7 +132,7 @@ class TicketMaintenanceController extends Controller
         }
 
         $assets = AssetMateriel::all();
-        $users = Auth::user()->hasRole('Admin') ? User::all() : collect([Auth::user()]);
+        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         return view('tickets.edit', compact('ticket', 'assets', 'users'));
     }
 
@@ -140,6 +160,8 @@ class TicketMaintenanceController extends Controller
         if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
             abort(403);
         }
+
+        $this->validateNotSuperAdminTarget($request);
 
         DB::transaction(function () use ($request, $ticket) {
             $ticket->update([

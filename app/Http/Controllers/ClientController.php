@@ -22,9 +22,19 @@ class ClientController extends Controller
     /**
      * 1. INDEX : LISTE DES CLIENTS
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clients = Client::with('user')->get();
+        $query = Client::with('user');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('user', fn ($u) => $u->where('nom_complet', 'like', "%{$s}%"))
+                  ->orWhere('nom_societe', 'like', "%{$s}%");
+            });
+        }
+
+        $clients = $query->paginate(25)->appends($request->query());
         return view('clients.index', compact('clients'));
     }
 

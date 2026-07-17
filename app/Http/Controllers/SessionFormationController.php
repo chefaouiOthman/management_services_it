@@ -7,9 +7,11 @@ use App\Models\CatalogueFormation;
 use App\Models\Employe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\FilterSuperAdmin;
 
 class SessionFormationController extends Controller
 {
+    use FilterSuperAdmin;
     public function __construct()
     {
         $this->middleware('role:Admin|Employe_Standard|Stagiaire|Client', ['only' => ['index', 'show']]);
@@ -21,9 +23,23 @@ class SessionFormationController extends Controller
     /**
      * 1. INDEX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $sessions   = SessionFormation::with(['catalogueFormation', 'formateurs.user'])->get();
+        $query = SessionFormation::with(['catalogueFormation', 'formateurs.user']);
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->whereHas('catalogueFormation', fn ($c) => $c->where('titre_formation', 'like', "%{$s}%"))
+                  ->orWhere('salle_virtuelle', 'like', "%{$s}%")
+                  ->orWhere('salle_concrete', 'like', "%{$s}%");
+            });
+        }
+        if ($request->filled('catalogue_id')) {
+            $query->where('catalogue_formation_id', $request->catalogue_id);
+        }
+
+        $sessions   = $query->paginate(25)->appends($request->query());
         $catalogues = CatalogueFormation::with('supportCours')->get();
         return view('sessions.index', compact('sessions', 'catalogues'));
     }
@@ -34,7 +50,7 @@ class SessionFormationController extends Controller
     public function create()
     {
         $catalogues = CatalogueFormation::all();
-        $employes = Employe::with('user')->has('user')->get();
+        $employes = $this->excludeSuperAdminsFromEmployes(Employe::with('user')->has('user'))->get();
         return view('sessions.create', compact('catalogues', 'employes'));
     }
 
@@ -52,6 +68,12 @@ class SessionFormationController extends Controller
             'formateurs'             => 'nullable|array',
             'formateurs.*'           => 'exists:employes,user_id',
         ]);
+
+        if ($request->has('formateurs')) {
+            foreach ((array) $request->formateurs as $formateurId) {
+                $this->validateNotSuperAdminTarget(new Request(['user_id' => $formateurId]));
+            }
+        }
 
         DB::transaction(function () use ($request) {
             $session = SessionFormation::create([
@@ -76,7 +98,7 @@ class SessionFormationController extends Controller
     public function show($id)
     {
         $session = SessionFormation::with(['catalogueFormation', 'formateurs.user', 'inscriptions.user', 'evaluations.user', 'evaluations.formateur.user'])->findOrFail($id);
-        $allUsers = \App\Models\User::orderBy('nom_complet')->get(['id', 'nom_complet', 'email']);
+        $allUsers = $this->excludeSuperAdminsFromUsers(\App\Models\User::orderBy('nom_complet'))->get(['id', 'nom_complet', 'email']);
         return view('sessions.show', compact('session', 'allUsers'));
     }
 
@@ -87,7 +109,7 @@ class SessionFormationController extends Controller
     {
         $session = SessionFormation::with('formateurs')->findOrFail($id);
         $catalogues = CatalogueFormation::all();
-        $employes = Employe::with('user')->has('user')->get();
+        $employes = $this->excludeSuperAdminsFromEmployes(Employe::with('user')->has('user'))->get();
         return view('sessions.edit', compact('session', 'catalogues', 'employes'));
     }
 
@@ -107,6 +129,12 @@ class SessionFormationController extends Controller
             'formateurs'             => 'nullable|array',
             'formateurs.*'           => 'exists:employes,user_id',
         ]);
+
+        if ($request->has('formateurs')) {
+            foreach ((array) $request->formateurs as $formateurId) {
+                $this->validateNotSuperAdminTarget(new Request(['user_id' => $formateurId]));
+            }
+        }
 
         DB::transaction(function () use ($request, $session) {
             $session->update([

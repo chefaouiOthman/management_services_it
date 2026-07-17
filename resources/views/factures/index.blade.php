@@ -19,6 +19,13 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<x-search-filters :search="request('search')" searchPlaceholder="Rechercher par numéro, client, statut..."
+    :filters="[
+        'statut' => ['label' => 'Statut', 'options' => ['payée' => 'Payée', 'impayée' => 'Impayée', 'en_attente' => 'En attente', 'annulée' => 'Annulée']],
+        'date_debut' => ['label' => 'Date début', 'type' => 'date'],
+        'date_fin' => ['label' => 'Date fin', 'type' => 'date'],
+    ]" />
+
             <div class="grid grid-cols-1 gap-4">
                 @forelse($factures as $facture)
                     <x-card>
@@ -63,6 +70,8 @@
                         <p class="text-center text-gray-500 py-8">Aucune facture émise.</p>
                     </x-card>
                 @endforelse
+
+                {{ $factures->appends(request()->query())->links() }}
             </div>
         </div>
     </div>

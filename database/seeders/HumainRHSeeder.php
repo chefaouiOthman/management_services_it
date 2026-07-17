@@ -49,27 +49,30 @@ class HumainRHSeeder extends Seeder
         $employes = [];
         for ($i = 0; $i < 10; $i++) {
             $dateEmbauche = Carbon::now()->subDays(rand(100, 730));
+            $cin = $faker->unique()->regexify('[A-Z]{2}[0-9]{5,6}');
             $user = User::create([
                 'nom_complet' => $faker->name,
                 'email' => "employe{$i}@entreprise.com",
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('password'),
                 'est_actif' => true,
+                'cin' => $cin,
             ]);
             $user->assignRole('Employe_Standard');
 
             $employe = Employe::create([
                 'user_id' => $user->id,
                 'date_embauche' => $dateEmbauche,
-                'CIN' => $faker->unique()->regexify('[A-Z]{2}[0-9]{5,6}'),
+                'departement_id' => $depts[array_rand($depts)]->id,
             ]);
             $employes[] = $employe;
 
-            // Contrat
+            $typeContrat = $faker->randomElement(['CDI', 'CDD', 'Freelance']);
             Contrat::create([
                 'employe_id' => $employe->user_id,
-                'type_contrat' => $faker->randomElement(['CDI', 'CDD']),
+                'type_contrat' => $typeContrat,
                 'date_debut' => $dateEmbauche,
-                'date_fin' => null,
+                'date_fin' => in_array($typeContrat, ['CDD', 'Freelance'])
+                    ? (clone $dateEmbauche)->addMonths(rand(6, 12)) : null,
                 'salaire_base' => $faker->randomFloat(2, 4000, 15000),
                 'heures_hebdo' => 44,
                 'statut' => 'actif',
@@ -82,8 +85,9 @@ class HumainRHSeeder extends Seeder
             $user = User::create([
                 'nom_complet' => $faker->name,
                 'email' => "stagiaire{$i}@entreprise.com",
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('password'),
                 'est_actif' => true,
+                'cin' => $faker->unique()->regexify('[A-Z]{2}[0-9]{5,6}'),
             ]);
             $user->assignRole('Stagiaire');
 
@@ -91,6 +95,7 @@ class HumainRHSeeder extends Seeder
                 'user_id' => $user->id,
                 'ecole_origine' => "Ecole " . $faker->company,
                 'sujet_stage' => "Sujet de stage de {$user->nom_complet}",
+                'departement_id' => $depts[array_rand($depts)]->id,
             ]);
         }
 
@@ -99,10 +104,11 @@ class HumainRHSeeder extends Seeder
         for ($i = 0; $i < 5; $i++) {
             $type = $faker->randomElement(['physique', 'morale']);
             $user = User::create([
-                'nom_complet' => $faker->name, // Toujours requis par la BDD (même pour une entreprise, c'est le contact)
+                'nom_complet' => $faker->name,
                 'email' => "client{$i}@domaine.com",
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('password'),
                 'est_actif' => true,
+                'cin' => $faker->unique()->regexify('[A-Z]{2}[0-9]{5,6}'),
             ]);
             $user->assignRole('Client');
 
@@ -114,32 +120,77 @@ class HumainRHSeeder extends Seeder
             ]);
         }
 
-        // 6. Génération de quelques Pointages et Historique de passages pour les employés (dernier mois)
-        foreach ($employes as $employe) {
+        // 5-bis. 5 Administrateurs supplémentaires (le 6e vient du RolesAndAdminSeeder)
+        $additionalAdmins = [];
+        for ($i = 2; $i <= 6; $i++) {
+            $dateEmbauche = Carbon::now()->subDays(rand(100, 730));
+            $user = User::create([
+                'nom_complet' => $faker->name,
+                'email' => "admin{$i}@entreprise.com",
+                'password' => Hash::make('password'),
+                'est_actif' => true,
+                'cin' => $faker->unique()->regexify('[A-Z]{2}[0-9]{5,6}'),
+            ]);
+            $user->assignRole('Admin');
+            $employe = Employe::create([
+                'user_id' => $user->id,
+                'date_embauche' => $dateEmbauche,
+                'departement_id' => $depts[array_rand($depts)]->id,
+            ]);
+            Contrat::create([
+                'employe_id' => $employe->user_id,
+                'type_contrat' => 'CDI',
+                'date_debut' => $dateEmbauche,
+                'salaire_base' => $faker->randomFloat(2, 12000, 25000),
+                'heures_hebdo' => 40,
+                'statut' => 'actif',
+            ]);
+            $additionalAdmins[] = $user;
+        }
+
+        // 6. Récupération des IDs Admin pour la logique de répartition
+        $adminUsers = User::whereHas('roles', fn ($q) => $q->where('name', 'Admin'))
+            ->orderBy('id')
+            ->get();
+
+        $firstAdminId = $adminUsers->first()->id;
+        $otherAdminIds = $adminUsers->where('id', '!=', $firstAdminId)->pluck('id')->toArray();
+
+        // 7. Génération des Pointages avec la distribution 50/50 exclusivement Admin
+        $allWorkers = array_merge(
+            array_map(fn($e) => ['id' => $e->user_id, 'type' => 'employe'], $employes),
+            array_map(fn($s) => ['id' => $s->user_id, 'type' => 'stagiaire'], $stagiaires)
+        );
+
+        foreach ($allWorkers as $worker) {
             for ($day = 1; $day <= 30; $day++) {
-                if (rand(1, 10) > 8) continue; // 20% de jours d'absence
-                
+                if (rand(1, 10) > 8) continue;
+
                 $dateJour = Carbon::now()->subDays($day);
-                // Si c'est un week-end, on ignore
                 if ($dateJour->isWeekend()) continue;
 
                 $heureArrivee = $dateJour->copy()->setTime(rand(8, 9), rand(0, 59));
                 $heureDepart = $dateJour->copy()->setTime(rand(17, 18), rand(0, 59));
                 $statut = $heureArrivee->hour >= 9 ? 'en_retard' : 'a_l_heure';
 
+                // Distribution exclusive 50/50 entre Admins uniquement
+                $createdBy = rand(0, 1)
+                    ? $firstAdminId
+                    : $otherAdminIds[array_rand($otherAdminIds)];
+
                 Pointage::create([
-                    'user_id' => $employe->user_id,
-                    'date_jour' => $dateJour->toDateString(),
-                    'heure_arrivee' => $heureArrivee,
-                    'heure_depart' => $heureDepart,
+                    'user_id'         => $worker['id'],
+                    'date_jour'       => $dateJour->toDateString(),
+                    'heure_arrivee'   => $heureArrivee,
+                    'heure_depart'    => $heureDepart,
                     'statut_presence' => $statut,
+                    'created_by'      => $createdBy,
                 ]);
 
-                // Historique de passage à l'entrée
                 HistoriquePassage::create([
-                    'user_id' => $employe->user_id,
-                    'zone_id' => $zonesDb[0]->id, // Accueil
-                    'horodatage' => $heureArrivee,
+                    'user_id'         => $worker['id'],
+                    'zone_id'         => $zonesDb[0]->id,
+                    'horodatage'      => $heureArrivee,
                     'tentative_statut' => 'autorise',
                 ]);
             }
