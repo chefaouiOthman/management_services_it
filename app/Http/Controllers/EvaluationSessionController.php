@@ -16,9 +16,9 @@ class EvaluationSessionController extends Controller
 
     public function __construct()
     {
-        $this->middleware('permission:evaluation-view', ['only' => ['index', 'show']]);
-        $this->middleware('permission:evaluation-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:evaluation-edit', ['only' => ['edit', 'update']]);
+        // index, create, store, show : accessibles à tout utilisateur connecté (auth)
+        // edit, update, destroy     : réservés aux Admin/Super Admin via route group + permission
+        $this->middleware('permission:evaluation-edit',   ['only' => ['edit',    'update']]);
         $this->middleware('permission:evaluation-delete', ['only' => ['destroy']]);
     }
 
@@ -35,7 +35,7 @@ class EvaluationSessionController extends Controller
                          ->where('session_formation_id', $session->id);
         } else {
             $query = EvaluationSession::with(['sessionFormation.catalogueFormation', 'user', 'formateur.user']);
-            if (!Auth::user()->hasRole('Admin')) {
+            if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
                 $query->where('user_id', Auth::id())
                       ->orWhere('employe_id', Auth::id());
             }
@@ -63,7 +63,7 @@ class EvaluationSessionController extends Controller
     public function create()
     {
         $sessions = SessionFormation::all();
-        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $users = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         $formateurs = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         return view('evaluations.create', compact('sessions', 'users', 'formateurs'));
     }
@@ -82,7 +82,7 @@ class EvaluationSessionController extends Controller
             'avis_textuel'         => 'nullable|string',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $request->user_id != Auth::id()) {
             abort(403, 'Vous ne pouvez pas évaluer à la place d\'un autre utilisateur.');
         }
 
@@ -107,7 +107,7 @@ class EvaluationSessionController extends Controller
     {
         $evaluation = EvaluationSession::with(['sessionFormation', 'user', 'employe.user'])->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $evaluation->user_id != Auth::id() && $evaluation->employe_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $evaluation->user_id != Auth::id() && $evaluation->employe_id != Auth::id()) {
             abort(403);
         }
 
@@ -121,12 +121,12 @@ class EvaluationSessionController extends Controller
     {
         $evaluation = EvaluationSession::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $evaluation->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $evaluation->user_id != Auth::id()) {
             abort(403);
         }
 
         $sessions = SessionFormation::all();
-        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $users = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         $formateurs = $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get();
         return view('evaluations.edit', compact('evaluation', 'sessions', 'users', 'formateurs'));
     }
@@ -138,7 +138,7 @@ class EvaluationSessionController extends Controller
     {
         $evaluation = EvaluationSession::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $evaluation->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $evaluation->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -151,7 +151,7 @@ class EvaluationSessionController extends Controller
             'avis_textuel'         => 'nullable|string',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $request->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -176,7 +176,7 @@ class EvaluationSessionController extends Controller
     {
         $evaluation = EvaluationSession::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $evaluation->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $evaluation->user_id != Auth::id()) {
             abort(403);
         }
 

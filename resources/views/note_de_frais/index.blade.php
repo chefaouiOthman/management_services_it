@@ -60,9 +60,9 @@
                                     <td class="px-6 py-4 text-right space-x-2">
                                         <a href="{{ route('note_de_frais.show', $note->id) }}" class="text-blue-600 hover:text-blue-900 font-medium text-xs">Voir</a>
                                         <a href="{{ route('note_de_frais.download', $note->id) }}" class="text-green-600 hover:text-green-900 font-medium text-xs">Télécharger</a>
-                                        @can('note-de-frais-edit')
+                                        @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Employé Admin']))
                                         <a href="{{ route('note_de_frais.edit', $note->id) }}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">Modifier</a>
-                                        @endcan
+                                        @endif
                                         @can('note-de-frais-delete')
                                         <form action="{{ route('note_de_frais.destroy', $note->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Supprimer cette note de frais ?');">
                                             @csrf

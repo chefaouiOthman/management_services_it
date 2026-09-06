@@ -34,7 +34,7 @@
                     <input type="hidden" name="statut_remboursement" value="soumis">
                     
                     <div class="flex justify-end gap-3 mt-6">
-                        <a href="{{ route('flux_tresoreries.index') }}#rh" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md">Annuler</a>
+                        <a href="{{ route('note_de_frais.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md">Annuler</a>
                         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Soumettre</button>
                     </div>
                 </form>

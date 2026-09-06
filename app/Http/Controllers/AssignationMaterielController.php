@@ -21,7 +21,8 @@ class AssignationMaterielController extends Controller
     private function authorizeAction(): void
     {
         $user = Auth::user();
-        $allowed = $user->hasRole('Admin')
+        $allowed = $user->hasRole('Super Admin')
+            || $user->hasRole('Admin')
             || $user->hasRole('Manager')
             || (method_exists($user, 'hasPermissionTo') && $user->can('manage-assets'));
 

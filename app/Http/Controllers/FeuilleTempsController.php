@@ -29,7 +29,7 @@ class FeuilleTempsController extends Controller
     {
         $query = FeuilleTemps::with(['employe.user', 'projet', 'taches']);
 
-        if (!Auth::user()->hasRole('Admin')) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
             $query->where('employe_id', Auth::id());
         }
 
@@ -76,7 +76,7 @@ class FeuilleTempsController extends Controller
      */
     public function create(Projet $projet)
     {
-        $employes = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get() : Employe::where('user_id', Auth::id())->get();
+        $employes = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get() : Employe::where('user_id', Auth::id())->get();
         // Les tâches affichées seront uniquement celles de ce projet
         $taches = $projet->taches;
         
@@ -97,7 +97,7 @@ class FeuilleTempsController extends Controller
             'taches.*'     => 'exists:taches,id',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->employe_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $request->employe_id != Auth::id()) {
             abort(403, 'Vous ne pouvez pas créer de feuille de temps pour un autre employé.');
         }
 
@@ -128,7 +128,7 @@ class FeuilleTempsController extends Controller
     {
         $feuille = FeuilleTemps::with(['employe.user', 'projet', 'taches'])->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $feuille->employe_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $feuille->employe_id != Auth::id()) {
             abort(403);
         }
 

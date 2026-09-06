@@ -32,7 +32,7 @@ class TicketMaintenanceController extends Controller
     {
         $query = TicketMaintenance::with(['assetMateriel', 'user']);
         
-        if (!Auth::user()->hasRole('Admin')) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
             $query->where('user_id', Auth::id());
         }
 
@@ -62,7 +62,7 @@ class TicketMaintenanceController extends Controller
     public function create()
     {
         $assets = AssetMateriel::all();
-        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $users = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         return view('tickets.create', compact('assets', 'users'));
     }
 
@@ -77,7 +77,7 @@ class TicketMaintenanceController extends Controller
         ]);
 
         // Force l'utilisateur connecté si pas Admin, Admin choisit le user_id dans le formulaire
-        $userId = Auth::user()->hasRole('Admin') ? $request->user_id : Auth::id();
+        $userId = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $request->user_id : Auth::id();
 
         if (!$userId) {
             return back()->withErrors(['user_id' => 'Utilisateur requis.'])->withInput();
@@ -111,7 +111,7 @@ class TicketMaintenanceController extends Controller
     {
         $ticket = TicketMaintenance::with(['assetMateriel', 'user'])->findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $ticket->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $ticket->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -127,12 +127,12 @@ class TicketMaintenanceController extends Controller
 
         $ticket = TicketMaintenance::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $ticket->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $ticket->user_id != Auth::id()) {
             abort(403);
         }
 
         $assets = AssetMateriel::all();
-        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $users = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         return view('tickets.edit', compact('ticket', 'assets', 'users'));
     }
 
@@ -145,7 +145,7 @@ class TicketMaintenanceController extends Controller
 
         $ticket = TicketMaintenance::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $ticket->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $ticket->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -157,7 +157,7 @@ class TicketMaintenanceController extends Controller
             'statut_ticket'     => 'required|in:signale,en_atelier,resolu',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $request->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -190,7 +190,7 @@ class TicketMaintenanceController extends Controller
 
         $ticket = TicketMaintenance::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin')) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
             abort(403);
         }
 
@@ -212,7 +212,7 @@ class TicketMaintenanceController extends Controller
             'statut_ticket' => 'required|in:signale,en_atelier,resolu',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('manage-assets') && !Auth::user()->hasPermissionTo('ticket-edit')) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && !Auth::user()->hasPermissionTo('manage-assets') && !Auth::user()->hasPermissionTo('ticket-edit')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 

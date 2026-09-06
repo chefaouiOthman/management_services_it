@@ -22,7 +22,7 @@ class DepartementController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             $departement = auth()->user()->employe?->departement
                 ?? auth()->user()->stagiaire?->departement;
             abort_unless($departement, 404, 'Aucun département associé à votre profil.');

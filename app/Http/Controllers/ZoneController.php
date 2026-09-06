@@ -35,7 +35,7 @@ class ZoneController extends Controller
         $zones = $zq->get();
 
         $lq = \App\Models\HistoriquePassage::with(['user', 'zone']);
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             $lq->where('user_id', auth()->id());
         }
         if ($request->filled('search')) {

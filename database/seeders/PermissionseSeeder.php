@@ -17,10 +17,12 @@ class PermissionseSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin']);
-        $superAdmin->syncPermissions(Permission::all());
+        // 1. S'assurer que le rôle existe
+        $superAdminRole = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
+        $superAdminRole->syncPermissions(Permission::all());
 
-        $superAdminUser = User::firstOrCreate(
+        // 2. Créer ou récupérer le Super Admin
+        $superAdmin = User::updateOrCreate(
             ['email' => 'superadmin@entreprise.com'],
             [
                 'nom_complet' => 'Super Administrateur',
@@ -29,13 +31,17 @@ class PermissionseSeeder extends Seeder
                 'cin'         => 'EE000005',
             ]
         );
-        $superAdminUser->assignRole($superAdmin);
-        Employe::firstOrCreate(
-            ['user_id' => $superAdminUser->id],
+
+        // 3. Forcer la relation dans model_has_roles
+        $superAdmin->syncRoles([$superAdminRole]);
+
+        Employe::updateOrCreate(
+            ['user_id' => $superAdmin->id],
             ['date_embauche' => now(), 'departement_id' => null]
         );
-        Contrat::firstOrCreate(
-            ['employe_id' => $superAdminUser->id, 'type_contrat' => 'CDI'],
+
+        Contrat::updateOrCreate(
+            ['employe_id' => $superAdmin->id, 'type_contrat' => 'CDI'],
             [
                 'date_debut' => now()->subYears(2),
                 'salaire_base' => 50000,
@@ -45,3 +51,4 @@ class PermissionseSeeder extends Seeder
         );
     }
 }
+

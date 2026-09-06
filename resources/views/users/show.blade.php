@@ -34,6 +34,22 @@
                 <x-slot name="header">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Informations Générales</h3>
                 </x-slot>
+                <div class="flex justify-center mb-6">
+                    @if($user->avatar)
+                        <button type="button" onclick="document.getElementById('show_user_avatar_lightbox').showModal()" class="relative group cursor-pointer focus:outline-none rounded-full border-4 border-white shadow-md overflow-hidden flex-shrink-0">
+                            <img src="{{ asset('storage/' . $user->avatar) }}" class="w-24 h-24 sm:w-32 sm:h-32 object-cover group-hover:opacity-90 group-hover:scale-105 transition-all duration-200">
+                            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                </svg>
+                            </div>
+                        </button>
+                    @else
+                        <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-md flex-shrink-0">
+                            {{ strtoupper(substr($user->nom_complet, 0, 1)) }}
+                        </div>
+                    @endif
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Nom Complet</p>
@@ -64,6 +80,22 @@
                         </div>
                     </div>
                 </div>
+
+                @if($user->avatar)
+                    <dialog id="show_user_avatar_lightbox" class="backdrop:bg-black/80 rounded-2xl p-0 max-w-xl w-full overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                        <div class="relative p-6 flex flex-col items-center">
+                            <button type="button" onclick="document.getElementById('show_user_avatar_lightbox').close()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all duration-200 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ $user->nom_complet }}</h3>
+
+                            <img src="{{ asset('storage/' . $user->avatar) }}" class="max-w-full max-h-[75vh] rounded-xl object-contain shadow-md">
+                        </div>
+                    </dialog>
+                @endif
             </x-card>
 
             <!-- Spécifique Employé & Contrat -->

@@ -16,9 +16,13 @@
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-gray-100 text-sm leading-4 font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-200 focus:outline-none transition-all duration-200 shadow-sm">
                             <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                                    {{ substr(Auth::user()->nom_complet ?? Auth::user()->name ?? '?', 0, 1) }}
-                                </div>
+                                @if(Auth::user()->avatar)
+                                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar" class="w-8 h-8 rounded-full object-cover shadow-sm">
+                                @else
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                                        {{ substr(Auth::user()->nom_complet ?? Auth::user()->name ?? '?', 0, 1) }}
+                                    </div>
+                                @endif
                                 <span class="hidden sm:inline-block text-[#1E293B] font-medium">{{ Auth::user()->nom_complet ?? Auth::user()->name }}</span>
                             </div>
 

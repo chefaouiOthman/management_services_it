@@ -28,7 +28,7 @@ class CategorieFluxController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
             return redirect()->route('flux_tresoreries.index');
         }
         $query = CategorieFlux::query();
@@ -53,7 +53,7 @@ class CategorieFluxController extends Controller
      */
     public function create()
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         return view('categorie_flux.create');
     }
 
@@ -62,7 +62,7 @@ class CategorieFluxController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $request->validate([
             'libelle_categorie' => 'required|string|max:100|unique:categorie_flux,libelle_categorie',
             'code_comptable'    => 'nullable|string|max:50',
@@ -83,7 +83,7 @@ class CategorieFluxController extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
         return view('categorie_flux.show', compact('categorie'));
     }
@@ -93,7 +93,7 @@ class CategorieFluxController extends Controller
      */
     public function edit($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
         return view('categorie_flux.edit', compact('categorie'));
     }
@@ -103,7 +103,7 @@ class CategorieFluxController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
 
         $request->validate([
@@ -126,7 +126,7 @@ class CategorieFluxController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $categorie = CategorieFlux::findOrFail($id);
 
         DB::transaction(function () use ($categorie) {

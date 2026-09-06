@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -113,15 +114,22 @@ class UserController extends Controller
             'salaire_base'   => $isEmployeeRole ? 'required|numeric' : 'nullable|numeric',
             'heures_hebdo'   => $isEmployeeRole ? 'required|integer' : 'nullable|integer',
             'statut'         => $isEmployeeRole ? 'required|in:actif,suspendu,termine' : 'nullable|in:actif,suspendu,termine',
+            'avatar'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $plainPassword = Str::password(12);
 
         DB::transaction(function () use ($request, &$user, $plainPassword) {
+            $avatarPath = null;
+            if ($request->hasFile('avatar')) {
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            }
+
             $user = User::create([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
                 'cin'         => $request->cin,
+                'avatar'      => $avatarPath,
                 'password'    => Hash::make($plainPassword),
                 'est_actif'   => $request->input('est_actif', true),
             ]);
@@ -242,14 +250,25 @@ class UserController extends Controller
             'type_client'    => 'nullable|in:physique,morale',
             'nom_societe'    => 'nullable|string|max:150',
             'ice'            => 'nullable|string|max:50',
+            'avatar'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::transaction(function () use ($request, $user) {
+            // Avatar : supprimer l'ancien si nouveau fichier fourni
+            $avatarPath = $user->avatar;
+            if ($request->hasFile('avatar')) {
+                if ($user->avatar) {
+                    Storage::disk('public')->delete($user->avatar);
+                }
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            }
+
             // 1. Mise à jour du User parent
             $user->update([
                 'nom_complet' => $request->nom_complet,
                 'email'       => $request->email,
                 'cin'         => $request->cin,
+                'avatar'      => $avatarPath,
                 'est_actif'   => $request->has('est_actif') ? (bool)$request->est_actif : $user->est_actif,
             ]);
 
@@ -339,6 +358,11 @@ class UserController extends Controller
         $this->abortIfTargetIsSuperAdmin($user);
 
         DB::transaction(function () use ($user) {
+            // Supprimer l'avatar physique
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
             // Delete child entities explicitly
             if ($user->employe) {
                 $user->employe->delete();

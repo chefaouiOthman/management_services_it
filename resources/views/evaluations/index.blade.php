@@ -124,16 +124,18 @@
                             <div class="px-6 pb-4 flex justify-between items-center">
                                 <span class="text-xs text-gray-400">{{ $evaluation->created_at?->format('d/m/Y') ?? 'N/A' }}</span>
                                 <div class="flex gap-2">
-                                    @can('evaluation-edit')
+                                    @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin']))
                                     <a href="{{ route('evaluations.edit', $evaluation->id) }}" class="text-xs text-indigo-600 hover:text-indigo-900 font-medium">Modifier</a>
-                                    @endcan
-                                    @can('evaluation-delete')
+                                    @elseif($evaluation->user_id === auth()->id())
+                                    <a href="{{ route('evaluations.edit', $evaluation->id) }}" class="text-xs text-indigo-600 hover:text-indigo-900 font-medium">Modifier mon avis</a>
+                                    @endif
+                                    @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin']))
                                     <form action="{{ route('evaluations.destroy', $evaluation->id) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer cette évaluation ?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-xs text-red-600 hover:text-red-900 font-medium">Supprimer</button>
                                     </form>
-                                    @endcan
+                                    @endif
                                 </div>
                             </div>
                         </div>

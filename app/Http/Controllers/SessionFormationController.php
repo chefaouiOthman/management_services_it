@@ -14,7 +14,7 @@ class SessionFormationController extends Controller
     use FilterSuperAdmin;
     public function __construct()
     {
-        $this->middleware('role:Admin|Employe_Standard|Stagiaire|Client', ['only' => ['index', 'show']]);
+        $this->middleware('role:Super Admin|Admin|Employe_Standard|Stagiaire|Client', ['only' => ['index', 'show']]);
         $this->middleware('permission:session-formation-create', ['only' => ['create', 'store']]);
         $this->middleware('permission:session-formation-edit', ['only' => ['edit', 'update']]);
         $this->middleware('permission:session-formation-delete', ['only' => ['destroy']]);

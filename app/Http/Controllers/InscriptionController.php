@@ -28,7 +28,7 @@ class InscriptionController extends Controller
     {
         $query = Inscription::with(['user', 'sessionFormation.catalogueFormation']);
         
-        if (!Auth::user()->hasRole('Admin')) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin'])) {
             $query->where('user_id', Auth::id());
         }
 
@@ -57,7 +57,7 @@ class InscriptionController extends Controller
     public function create()
     {
         $sessions = SessionFormation::with('catalogueFormation')->get();
-        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $users = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         return view('inscriptions.create', compact('sessions', 'users'));
     }
 
@@ -72,7 +72,7 @@ class InscriptionController extends Controller
             'statut_inscription'   => 'required|in:valide,annule,present,certifie',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $request->user_id != Auth::id()) {
             abort(403, 'Vous ne pouvez pas inscrire un autre utilisateur.');
         }
 
@@ -104,12 +104,12 @@ class InscriptionController extends Controller
     {
         $inscription = Inscription::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $inscription->user_id != Auth::id()) {
             abort(403);
         }
 
         $sessions = SessionFormation::with('catalogueFormation')->get();
-        $users = Auth::user()->hasRole('Admin') ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
+        $users = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromUsers(User::query())->get() : collect([Auth::user()]);
         
         return view('inscriptions.edit', compact('inscription', 'sessions', 'users'));
     }
@@ -121,7 +121,7 @@ class InscriptionController extends Controller
     {
         $inscription = Inscription::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $inscription->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -131,7 +131,7 @@ class InscriptionController extends Controller
             'statut_inscription'   => 'required|in:valide,annule,present,certifie',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && $request->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $request->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -164,7 +164,7 @@ class InscriptionController extends Controller
     {
         $inscription = Inscription::findOrFail($id);
 
-        if (!Auth::user()->hasRole('Admin') && $inscription->user_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && $inscription->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -184,7 +184,7 @@ class InscriptionController extends Controller
             'statut_inscription' => 'required|in:valide,annule,present,certifie',
         ]);
 
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('inscription-edit')) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && !Auth::user()->hasPermissionTo('inscription-edit')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 

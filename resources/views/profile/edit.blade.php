@@ -19,14 +19,28 @@
             <div class="space-y-6">
 
                 {{-- ========== BLOC 1 : Informations du Profil ========== --}}
+
+                <!-- Avatar cliquable (Style Réseau Social) -->
+                <div class="flex justify-center">
+                    @if(auth()->user()->avatar)
+                        <button type="button" onclick="document.getElementById('main_avatar_lightbox').showModal()" class="relative group cursor-pointer focus:outline-none rounded-full border-4 border-white shadow-md overflow-hidden flex-shrink-0">
+                            <img src="{{ asset('storage/' . auth()->user()->avatar) }}" class="w-24 h-24 sm:w-32 sm:h-32 object-cover group-hover:opacity-90 group-hover:scale-105 transition-all duration-200">
+                            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                </svg>
+                            </div>
+                        </button>
+                    @else
+                        <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-md flex-shrink-0">
+                            {{ strtoupper(substr(auth()->user()->nom_complet, 0, 1)) }}
+                        </div>
+                    @endif
+                </div>
+
                 <x-card>
                     <x-slot name="header">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center font-bold shadow-sm">
-                                {{ substr($user->nom_complet ?? '?', 0, 1) }}
-                            </div>
-                            <h3 class="text-lg font-semibold text-[#1E293B]">Informations du Profil</h3>
-                        </div>
+                        <h3 class="text-lg font-semibold text-[#1E293B]">Informations du Profil</h3>
                     </x-slot>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -170,59 +184,72 @@
                     </x-card>
                 @endif
 
-                {{-- ========== BOUTON MODIFIER (Admin uniquement) ========== --}}
-                @if(auth()->user()->hasRole('Admin'))
-                    <div class="flex justify-center pt-2">
-                        <button @click="editMode = true" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] transition-all duration-200">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            Modifier mon profil
-                        </button>
-                    </div>
+                {{-- ========== BOUTON MODIFIER ========== --}}
+                <div class="flex justify-center pt-2">
+                    <button @click="editMode = true" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] transition-all duration-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        Modifier mon profil
+                    </button>
+                </div>
+
+                <!-- Modale de Zoom principale (Lightbox) -->
+                @if(auth()->user()->avatar)
+                    <dialog id="main_avatar_lightbox" class="backdrop:bg-black/80 rounded-2xl p-0 max-w-xl w-full overflow-hidden shadow-2xl border border-gray-200 bg-white">
+                        <div class="relative p-6 flex flex-col items-center">
+                            <button type="button" onclick="document.getElementById('main_avatar_lightbox').close()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all duration-200 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ auth()->user()->nom_complet }}</h3>
+
+                            <img src="{{ asset('storage/' . auth()->user()->avatar) }}" class="max-w-full max-h-[75vh] rounded-xl object-contain shadow-md">
+                        </div>
+                    </dialog>
                 @endif
 
             </div>
         </div>
 
         {{-- ================================================================ --}}
-        {{-- SECTION ADMIN : FORMULAIRES BREEZE (modification)                --}}
+        {{-- SECTION MODIFICATION : FORMULAIRES                               --}}
         {{-- ================================================================ --}}
 
-        @if(auth()->user()->hasRole('Admin'))
-            <div x-show="editMode" x-transition>
-                <div class="space-y-6">
+        <div x-show="editMode" x-transition>
+            <div class="space-y-6">
 
-                    {{-- Bouton retour lecture seule --}}
-                    <div class="flex justify-start">
-                        <button @click="editMode = false" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#475569] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98] transition-all duration-200 shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                            Retour à la fiche profil
-                        </button>
-                    </div>
-
-                    {{-- Formulaire infos profil --}}
-                    <div class="p-4 sm:p-8 bg-white shadow-sm rounded-xl border border-gray-100">
-                        <div class="max-w-xl">
-                            @include('profile.partials.update-profile-information-form')
-                        </div>
-                    </div>
-
-                    {{-- Formulaire mot de passe --}}
-                    <div class="p-4 sm:p-8 bg-white shadow-sm rounded-xl border border-gray-100">
-                        <div class="max-w-xl">
-                            @include('profile.partials.update-password-form')
-                        </div>
-                    </div>
-
-                    {{-- Suppression de compte --}}
-                    <div class="p-4 sm:p-8 bg-white shadow-sm rounded-xl border border-gray-100">
-                        <div class="max-w-xl">
-                            @include('profile.partials.delete-user-form')
-                        </div>
-                    </div>
-
+                {{-- Bouton retour lecture seule --}}
+                <div class="flex justify-start">
+                    <button @click="editMode = false" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#475569] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98] transition-all duration-200 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Retour à la fiche profil
+                    </button>
                 </div>
+
+                {{-- Formulaire infos profil --}}
+                <div class="p-4 sm:p-8 bg-white shadow-sm rounded-xl border border-gray-100">
+                    <div class="max-w-xl">
+                        @include('profile.partials.update-profile-information-form')
+                    </div>
+                </div>
+
+                {{-- Formulaire mot de passe --}}
+                <div class="p-4 sm:p-8 bg-white shadow-sm rounded-xl border border-gray-100">
+                    <div class="max-w-xl">
+                        @include('profile.partials.update-password-form')
+                    </div>
+                </div>
+
+                {{-- Suppression de compte --}}
+                <div class="p-4 sm:p-8 bg-white shadow-sm rounded-xl border border-gray-100">
+                    <div class="max-w-xl">
+                        @include('profile.partials.delete-user-form')
+                    </div>
+                </div>
+
             </div>
-        @endif
+        </div>
 
     </div>
 </x-app-layout>

@@ -25,17 +25,17 @@ class NoteDeFraisController extends Controller
 
     private function isStagiaireOuClient(): bool
     {
-        return Auth::user()->hasAnyRole(['Stagiaire', 'Client']);
+        return !Auth::user()->hasRole('Super Admin') && Auth::user()->hasAnyRole(['Stagiaire', 'Client']);
     }
 
     private function isEmployeStandard(): bool
     {
-        return Auth::user()->hasRole('Employe_Standard');
+        return !Auth::user()->hasRole('Super Admin') && Auth::user()->hasRole('Employe_Standard');
     }
 
     private function isAdmin(): bool
     {
-        return Auth::user()->hasRole('Admin');
+        return !Auth::user()->hasRole('Super Admin') && Auth::user()->hasRole('Admin');
     }
 
     private function isSuperAdmin(): bool
@@ -280,7 +280,7 @@ class NoteDeFraisController extends Controller
      */
     public function download(NoteDeFrais $note)
     {
-        if (!Auth::user()->hasRole('Admin') && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
+        if (!Auth::user()->hasAnyRole(['Admin', 'Super Admin']) && !Auth::user()->hasPermissionTo('flux-tresorerie-view') && $note->employe_id != Auth::id()) {
             abort(403);
         }
 

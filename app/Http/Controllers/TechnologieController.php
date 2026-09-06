@@ -44,7 +44,7 @@ class TechnologieController extends Controller
      */
     public function create()
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         return view('technologies.create');
     }
 
@@ -53,7 +53,7 @@ class TechnologieController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
 
         $request->validate([
             'nom_tech' => 'required|string|max:50|unique:technologies,nom_tech',
@@ -84,7 +84,7 @@ class TechnologieController extends Controller
      */
     public function edit($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $technologie = Technologie::findOrFail($id);
         return view('technologies.edit', compact('technologie'));
     }
@@ -94,7 +94,7 @@ class TechnologieController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $technologie = Technologie::findOrFail($id);
 
         $request->validate([
@@ -117,7 +117,7 @@ class TechnologieController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $technologie = Technologie::findOrFail($id);
 
         DB::transaction(function () use ($technologie) {

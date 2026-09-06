@@ -12,13 +12,22 @@ class Controller extends BaseController
 
     protected function authorizeRole(string ...$roles): void
     {
-        if (! auth()->user() || ! auth()->user()->hasAnyRole($roles)) {
+        if (! auth()->user()) {
+            abort(403, 'Non authentifié.');
+        }
+        if (auth()->user()->hasRole('Super Admin')) {
+            return;
+        }
+        if (! auth()->user()->hasAnyRole($roles)) {
             abort(403, 'Action non autorisée pour votre profil.');
         }
     }
 
     protected function denyInventaireMutation(): void
     {
+        if (auth()->user() && auth()->user()->hasRole('Super Admin')) {
+            return;
+        }
         if (auth()->user() && (auth()->user()->hasRole('Stagiaire') || auth()->user()->hasRole('Employe_Standard'))) {
             abort(403, 'Action non autorisée pour votre profil.');
         }

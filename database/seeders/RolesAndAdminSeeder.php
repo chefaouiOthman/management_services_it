@@ -66,13 +66,15 @@ class RolesAndAdminSeeder extends Seeder
         $employePermissions = [
             'employe-view', 'departement-view', 'projet-view', 'tache-view',
             'catalogue-formation-view', 'session-formation-view',
-            'type-materiel-view', 'asset-view'
+            'type-materiel-view', 'asset-view',
+            // Accès lecture sur les modules Zones, Technologies et Licences
+            'zone-view', 'technologie-view', 'licence-view',
         ];
         // Self-Service (Création/Édition sur ses propres éléments)
         $selfService = [
             'pointage-view', 'pointage-create', 'pointage-edit',
             'feuille-temps-view', 'feuille-temps-create', 'feuille-temps-edit',
-            'evaluation-view', 'evaluation-create', 'evaluation-edit',
+            'evaluation-view', 'evaluation-create', // evaluation-edit retiré : contrôlé par ownership en vue
             'ticket-view', 'ticket-create', 'ticket-edit',
             'note-de-frais-view', 'note-de-frais-create', 'note-de-frais-edit',
             'inscription-view', 'inscription-create' // Peut s'inscrire
@@ -85,8 +87,11 @@ class RolesAndAdminSeeder extends Seeder
             'catalogue-formation-view', 'session-formation-view',
             'pointage-view', 'pointage-create', 'pointage-edit',
             'feuille-temps-view', 'feuille-temps-create', 'feuille-temps-edit',
-            'evaluation-view', 'evaluation-create', 'evaluation-edit',
-            'ticket-view', 'ticket-create', 'ticket-edit'
+            'evaluation-view', 'evaluation-create', // evaluation-edit retiré : contrôlé par ownership en vue
+            'ticket-view', 'ticket-create', 'ticket-edit',
+            'licence-view', // Lecture seule sur les licences logicielles
+            'zone-view', // Lecture seule sur les zones de sécurité
+            'asset-view', 'type-materiel-view', // Lecture seule sur le matériel IT
         ];
         $roleStagiaire->syncPermissions($stagiairePermissions);
 

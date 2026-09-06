@@ -5,7 +5,7 @@
                 {{ __('Zones de Sécurité') }}
             </h2>
             @can('zone-create')
-            @if(auth()->user()->hasRole('Admin'))
+            @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
             <a href="{{ route('zones.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 Ajouter une Zone
             </a>
@@ -50,14 +50,14 @@
 
                             <x-slot name="footer">
                                 <div class="flex justify-between items-center">
-                                    @if(auth()->user()->hasRole('Admin'))
+                                    @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
                                     <a href="{{ route('zones.show', $zone->id) }}" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
                                         Voir le journal →
                                     </a>
                                     @else
                                     <span></span>
                                     @endif
-                                    @if(auth()->user()->hasRole('Admin'))
+                                    @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
                                     <div class="flex space-x-2">
                                         @can('zone-edit')
                                         <a href="{{ route('zones.edit', $zone->id) }}" class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Modifier</a>
@@ -82,7 +82,7 @@
             <div class="mt-12">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ auth()->user()->hasRole('Admin') ? 'Historique des Passages (Global)' : 'Mon Historique de Passages' }}
+                        {{ auth()->user()->hasAnyRole(['Admin', 'Super Admin']) ? 'Historique des Passages (Global)' : 'Mon Historique de Passages' }}
                     </h2>
                     @can('zone-create')
                     <div x-data="{ openLogModal: false }">
@@ -99,8 +99,8 @@
                                         <x-input-label value="Utilisateur" />
                                         <select name="user_id" required
                                             class="mt-1 w-full border-gray-300 rounded-md"
-                                            @if(!auth()->user()->hasRole('Admin')) disabled @endif>
-                                            @if(auth()->user()->hasRole('Admin'))
+                                            @if(!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) disabled @endif>
+                                            @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
                                                 @foreach(\App\Models\User::when(!auth()->user()->hasRole('Super Admin'), fn($q) => $q->whereDoesntHave('roles', fn($r) => $r->where('name', 'Super Admin')))->get() as $u)
                                                     <option value="{{ $u->id }}">{{ $u->nom_complet }}</option>
                                                 @endforeach
@@ -108,7 +108,7 @@
                                                 <option value="{{ auth()->id() }}" selected>{{ auth()->user()->nom_complet }}</option>
                                             @endif
                                         </select>
-                                        @if(!auth()->user()->hasRole('Admin'))
+                                        @if(!auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
                                             <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                                         @endif
                                     </div>
@@ -158,7 +158,7 @@
                                     <th class="px-6 py-3">Utilisateur</th>
                                     <th class="px-6 py-3">Zone</th>
                                     <th class="px-6 py-3">Statut actuel</th>
-                                    @if(auth()->user()->hasRole('Admin'))
+                                    @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
                                     <th class="px-6 py-3 text-right">Actions</th>
                                     @endif
                                 </tr>
@@ -180,7 +180,7 @@
                                                 <x-badge type="gray">En attente / {{ $log->tentative_statut }}</x-badge>
                                             @endif
                                         </td>
-                                        @if(auth()->user()->hasRole('Admin'))
+                                        @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
                                         <td class="px-6 py-4 text-right space-x-2">
                                             @can('historique-passage-edit')
                                                 <a href="{{ route('historique_passages.edit', $log->id) }}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">Modifier</a>
@@ -197,7 +197,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ auth()->user()->hasRole('Admin') ? '5' : '4' }}" class="px-6 py-8 text-center text-gray-500">Aucun historique d'accès disponible.</td>
+                                        <td colspan="{{ auth()->user()->hasAnyRole(['Admin', 'Super Admin']) ? '5' : '4' }}" class="px-6 py-8 text-center text-gray-500">Aucun historique d'accès disponible.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

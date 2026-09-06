@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'MSI') }}</title>
+    <title>{{ config('app.name', 'M.S.I') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -146,7 +146,7 @@
                 <div class="text-center lg:text-left mb-8">
                     <a href="/" class="inline-flex items-center gap-2">
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-md">M</div>
-                        <span class="text-2xl font-extrabold text-gray-900 tracking-tight">MSI</span>
+                        <span class="text-2xl font-extrabold text-gray-900 tracking-tight">M.S.I</span>
                     </a>
                 </div>
                 <div class="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">

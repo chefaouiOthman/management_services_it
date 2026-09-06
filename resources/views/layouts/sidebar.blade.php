@@ -5,7 +5,7 @@
     <div class="flex items-center justify-between mb-6 px-2">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">M</div>
-            <span class="text-xl font-extrabold tracking-tight text-[#1E293B]">S.I</span>
+            <span class="text-xl font-extrabold tracking-tight text-[#1E293B]">M.S.I</span>
         </a>
         <button @click="sidebarOpen = false" class="md:hidden p-2 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -72,7 +72,7 @@
 
             <!-- Module 1: Humain -->
             @can('user-view')
-            @if(auth()->user()->hasRole('Admin'))
+            @if(auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Employé Admin') || auth()->user()->hasRole('Admin'))
             <div x-data="{ expanded: {{ request()->routeIs('users.*') || request()->routeIs('employes.*') || request()->routeIs('stagiaires.*') || request()->routeIs('clients.*') ? 'true' : 'false' }} }">
                 <button @click="expanded = !expanded" class="group flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-[#475569] transition-all duration-300 ease-in-out rounded-xl hover:bg-gray-50 hover:text-[#1E293B] border-l-2 border-transparent hover:border-l-2 hover:border-indigo-300 hover:pl-[13px]">
                     <div class="flex items-center gap-x-3">
@@ -147,7 +147,7 @@
                 <div x-show="expanded" x-transition class="pl-11 pr-3 mt-0.5 space-y-0.5">
                     <a href="{{ route('catalogue.index') }}" class="group block px-3 py-2 text-sm rounded-lg transition-all duration-300 ease-in-out {{ request()->routeIs('catalogue.*') ? 'bg-indigo-50/80 text-indigo-700 font-medium border-l-2 border-indigo-500' : 'text-gray-500 hover:text-[#1E293B] hover:bg-gray-50 border-l-2 border-transparent hover:border-l-2 hover:border-indigo-300' }}">Catalogue Formations</a>
                     <a href="{{ route('sessions.index') }}" class="group block px-3 py-2 text-sm rounded-lg transition-all duration-300 ease-in-out {{ request()->routeIs('sessions.*') ? 'bg-indigo-50/80 text-indigo-700 font-medium border-l-2 border-indigo-500' : 'text-gray-500 hover:text-[#1E293B] hover:bg-gray-50 border-l-2 border-transparent hover:border-l-2 hover:border-indigo-300' }}">Sessions</a>
-                    @if(auth()->user()->hasRole('Admin'))
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Employé Admin') || auth()->user()->hasRole('Super Admin'))
                     <a href="{{ route('inscriptions.index') }}" class="group block px-3 py-2 text-sm rounded-lg transition-all duration-300 ease-in-out {{ request()->routeIs('inscriptions.*') ? 'bg-indigo-50/80 text-indigo-700 font-medium border-l-2 border-indigo-500' : 'text-gray-500 hover:text-[#1E293B] hover:bg-gray-50 border-l-2 border-transparent hover:border-l-2 hover:border-indigo-300' }}">Inscriptions</a>
                     @endif
                     <a href="{{ route('supports.index') }}" class="group block px-3 py-2 text-sm rounded-lg transition-all duration-300 ease-in-out {{ request()->routeIs('supports.*') ? 'bg-indigo-50/80 text-indigo-700 font-medium border-l-2 border-indigo-500' : 'text-gray-500 hover:text-[#1E293B] hover:bg-gray-50 border-l-2 border-transparent hover:border-l-2 hover:border-indigo-300' }}">Supports de Cours</a>
@@ -172,7 +172,7 @@
             </div>
 
             <!-- Module 6: Finance -->
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Super Admin'))
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->hasRole('Employé Admin') || auth()->user()->hasRole('Super Admin'))
             @can('flux-tresorerie-view')
             <div x-data="{ expanded: {{ request()->routeIs('flux_tresoreries.*') || request()->routeIs('categorie_flux.*') || request()->routeIs('factures.*') || request()->routeIs('fiche_paies.*') || request()->routeIs('note_de_frais.*') ? 'true' : 'false' }} }">
                 <button @click="expanded = !expanded" class="group flex items-center justify-between w-full px-3 py-2.5 text-sm font-medium text-[#475569] transition-all duration-300 ease-in-out rounded-xl hover:bg-gray-50 hover:text-[#1E293B] border-l-2 border-transparent hover:border-l-2 hover:border-indigo-300 hover:pl-[13px]">

@@ -20,7 +20,7 @@
         return this.typeContrat === 'CDD' || this.typeContrat === 'Freelance';
     }
 }">
-    <form action="{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}" method="POST" autocomplete="off" class="prevent-autofill">
+    <form action="{{ $isEdit ? route('users.update', $user->id) : route('users.store') }}" method="POST" autocomplete="off" class="prevent-autofill" enctype="multipart/form-data">
         @csrf
         @if($isEdit)
             @method('PUT')
@@ -65,6 +65,22 @@
                         <x-input-label for="cin" value="CIN" />
                         <x-text-input id="cin" name="cin" type="text" class="mt-1 block w-full" value="{{ old('cin', $user->cin ?? '') }}" autocomplete="new-password" data-lpignore="true" readonly onfocus="this.removeAttribute('readonly');" />
                         <x-input-error :messages="$errors->get('cin')" class="mt-2" />
+                    </div>
+
+                    <div>
+                        <x-input-label for="avatar" value="Photo de profil" />
+                        <div class="mt-1 flex items-center gap-4">
+                            @if($isEdit && $user->avatar)
+                                <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
+                            @elseif($isEdit)
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center font-bold shadow-sm">
+                                    {{ substr($user->nom_complet ?? '?', 0, 1) }}
+                                </div>
+                            @endif
+                            <input type="file" id="avatar" name="avatar" accept="image/jpeg,image/png,image/jpg,image/gif" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">JPG, PNG ou GIF. Max 2 Mo.</p>
+                        <x-input-error :messages="$errors->get('avatar')" class="mt-2" />
                     </div>
 
                     

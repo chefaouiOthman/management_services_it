@@ -4,11 +4,21 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Annuaire & RH (Hub Utilisateurs)') }}
             </h2>
-            @can('user-create')
-            <a href="{{ route('users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                Ajouter un Profil
-            </a>
-            @endcan
+            <div class="flex items-center gap-3">
+                @if(auth()->user()->hasRole('Super Admin') || auth()->user()->hasRole('Admin'))
+                <a href="{{ route('users.show', auth()->id()) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg shadow-sm transition-all duration-200">
+                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Voir mon profil
+                </a>
+                @endif
+                @can('user-create')
+                <a href="{{ route('users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Ajouter un Profil
+                </a>
+                @endcan
+            </div>
         </div>
     </x-slot>
 
@@ -35,7 +45,7 @@
                         </thead>
                         <tbody>
                             @forelse ($users as $user)
-                                <tr x-data="{ detailsOpen: false, historyOpen: false }" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                         {{ $user->nom_complet }}
                                     </td>
@@ -69,154 +79,153 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <button @click="detailsOpen = true" class="font-medium text-blue-600 dark:text-blue-500 hover:underline mr-3">Voir les détails</button>
-                                        @if($user->employe && $user->hasRole('Employe_Standard'))
-                                            <button @click="historyOpen = true" class="inline-flex items-center font-medium text-amber-600 dark:text-amber-500 hover:underline mr-3">
-                                                <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                Historique contrats
-                                            </button>
-                                        @endif
-                                        @can('user-edit')
-                                            <a href="{{ route('users.edit', $user->id) }}" class="font-medium text-indigo-600 dark:text-indigo-500 hover:underline mr-3">Modifier</a>
-                                        @endcan
-                                        @can('user-delete')
-                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="font-medium text-red-600 dark:text-red-500 hover:underline">Supprimer</button>
-                                            </form>
-                                        @endcan
-                                    </td>
-                                    
-                                    <!-- Modale Détails Polymorphiques -->
-                                    <td x-show="detailsOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" @click.self="detailsOpen = false">
-                                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-lg mx-auto text-left">
-                                            <div class="flex justify-between items-center border-b pb-3 mb-4">
-                                                <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-                                                    Détails : {{ $user->nom_complet }}
-                                                </h3>
-                                                <button @click="detailsOpen = false" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
-                                            </div>
-                                            
-                                            <div class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
-                                                <div class="grid grid-cols-2 gap-4">
-                                                    <div><strong>Email :</strong> {{ $user->email }}</div>
-                                                    <div><strong>CIN :</strong> {{ $user->cin ?? 'Non renseigné' }}</div>
-                                                </div>
-                                                <hr class="border-gray-200 dark:border-gray-700">
-                                                
-                                                @if($user->employe)
-                                                    <h4 class="font-bold text-lg text-indigo-600">Profil Employé</h4>
-                                                    <div class="grid grid-cols-2 gap-3">
-                                                        <div><strong>Date d'embauche :</strong> {{ $user->employe?->date_embauche?->format('d/m/Y') ?? '-' }}</div>
-                                                        <div><strong>Département :</strong> {{ $user->employe?->departement?->nom_departement ?? 'Non assigné' }}</div>
+                                         <button type="button" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal_user_{{ $user->id }}').showModal();" class="font-medium text-blue-600 dark:text-blue-500 hover:underline mr-3">Voir les détails</button>
+                                         @if($user->employe && $user->hasRole('Employe_Standard'))
+                                             <button type="button" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal_history_{{ $user->id }}').showModal();" class="inline-flex items-center font-medium text-amber-600 dark:text-amber-500 hover:underline mr-3">
+                                                 <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                 </svg>
+                                                 Historique contrats
+                                             </button>
+                                         @endif
+                                         @can('user-edit')
+                                             <a href="{{ route('users.edit', $user->id) }}" class="font-medium text-indigo-600 dark:text-indigo-500 hover:underline mr-3">Modifier</a>
+                                         @endcan
+                                         @can('user-delete')
+                                             <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');">
+                                                 @csrf
+                                                 @method('DELETE')
+                                                 <button type="submit" class="font-medium text-red-600 dark:text-red-500 hover:underline">Supprimer</button>
+                                             </form>
+                                         @endcan
 
-                                                    </div>
-                                                    @if($contratActuel = $user->employe?->contratActuel)
-                                                        <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
-                                                            <p class="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wider">Contrat Actuel</p>
-                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                                                <div class="flex flex-col">
-                                                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Type</span>
-                                                                    <span class="mt-1 px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded text-xs font-bold w-fit">{{ $contratActuel->type_contrat }}</span>
-                                                                </div>
-                                                                <div class="flex flex-col">
-                                                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Statut</span>
-                                                                    <span class="mt-1 px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-bold capitalize w-fit">{{ $contratActuel->statut }}</span>
-                                                                </div>
-                                                                <div class="flex flex-col">
-                                                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Salaire de base</span>
-                                                                    <span class="mt-1 font-mono font-bold text-gray-900 dark:text-white">{{ number_format($contratActuel->salaire_base, 2, ',', ' ') }} DHS</span>
-                                                                </div>
-                                                                <div class="flex flex-col">
-                                                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Heures / semaine</span>
-                                                                    <span class="mt-1 font-medium text-gray-800 dark:text-gray-200">{{ $contratActuel->heures_hebdo }}h</span>
-                                                                </div>
-                                                                <div class="flex flex-col">
-                                                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Date de début</span>
-                                                                    <span class="mt-1 text-gray-800 dark:text-gray-200">{{ $contratActuel->date_debut?->format('d/m/Y') ?? 'N/A' }}</span>
-                                                                </div>
-                                                                <div class="flex flex-col">
-                                                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Date de fin</span>
-                                                                    <span class="mt-1 text-gray-800 dark:text-gray-200">
-                                                                        {{ $contratActuel?->date_fin?->format('d/m/Y') ?? 'Non définie' }}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @else
-                                                        <p class="text-xs italic text-gray-400 mt-2">Aucun contrat enregistré.</p>
-                                                    @endif
-                                                @elseif($user->stagiaire)
-                                                    <h4 class="font-bold text-lg text-yellow-600">Profil Stagiaire</h4>
-                                                    <div class="space-y-2">
-                                                        <div><strong>École d'origine :</strong> {{ $user->stagiaire?->ecole_origine ?? '-' }}</div>
-                                                        <div><strong>Sujet de stage :</strong> {{ $user->stagiaire?->sujet_stage ?? '-' }}</div>
-                                                        <div><strong>Département :</strong> {{ $user->stagiaire?->departement?->nom_departement ?? 'Non assigné' }}</div>
-                                                    </div>
-                                                @elseif($user->client)
-                                                    <h4 class="font-bold text-lg text-green-600">Profil Client</h4>
-                                                    <div class="space-y-2">
-                                                        <div><strong>Type :</strong> <span class="capitalize">{{ $user->client?->type_client ?? '-' }}</span></div>
-                                                        <div><strong>Société :</strong> {{ $user->client?->nom_societe ?? '-' }}</div>
-                                                        <div><strong>ICE :</strong> {{ $user->client?->ice ?? '-' }}</div>
-                                                    </div>
-                                                @else
-                                                    <p class="text-gray-500 italic">Cet utilisateur n'est lié à aucune entité métier (ni Employé, ni Stagiaire, ni Client).</p>
-                                                @endif
-                                            </div>
-                                            
-                                            <div class="mt-6 flex justify-end">
-                                                <button @click="detailsOpen = false" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md font-medium transition">Fermer</button>
-                                            </div>
-                                        </div>
-                                    </td>
+                                         <!-- Modale Détails Polymorphiques (HTML5 Dialog natif isolé) -->
+                                         <dialog id="modal_user_{{ $user->id }}" onclick="if (event.target === this) this.close()" class="backdrop:bg-black/60 rounded-xl p-0 max-w-lg w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 m-auto text-left">
+                                             <div class="p-6">
+                                                 <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-4">
+                                                     <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                                                         Détails : {{ $user->nom_complet }}
+                                                     </h3>
+                                                     <button type="button" onclick="document.getElementById('modal_user_{{ $user->id }}').close()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl font-bold focus:outline-none">&times;</button>
+                                                 </div>
+                                                 
+                                                 <div class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+                                                     <div class="grid grid-cols-2 gap-4">
+                                                         <div><strong>Email :</strong> {{ $user->email }}</div>
+                                                         <div><strong>CIN :</strong> {{ $user->cin ?? 'Non renseigné' }}</div>
+                                                     </div>
+                                                     <hr class="border-gray-200 dark:border-gray-700">
+                                                     
+                                                     @if($user->employe)
+                                                         <h4 class="font-bold text-lg text-indigo-600 dark:text-indigo-400">Profil Employé</h4>
+                                                         <div class="grid grid-cols-2 gap-3">
+                                                             <div><strong>Date d'embauche :</strong> {{ $user->employe?->date_embauche?->format('d/m/Y') ?? '-' }}</div>
+                                                             <div><strong>Département :</strong> {{ $user->employe?->departement?->nom_departement ?? 'Non assigné' }}</div>
+                                                         </div>
+                                                         @if($contratActuel = $user->employe?->contratActuel)
+                                                             <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
+                                                                 <p class="text-xs font-bold uppercase text-gray-400 mb-2 tracking-wider">Contrat Actuel</p>
+                                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                                                     <div class="flex flex-col">
+                                                                         <span class="text-xs text-gray-400 uppercase tracking-wide">Type</span>
+                                                                         <span class="mt-1 px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded text-xs font-bold w-fit">{{ $contratActuel->type_contrat }}</span>
+                                                                     </div>
+                                                                     <div class="flex flex-col">
+                                                                         <span class="text-xs text-gray-400 uppercase tracking-wide">Statut</span>
+                                                                         <span class="mt-1 px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-bold capitalize w-fit">{{ $contratActuel->statut }}</span>
+                                                                     </div>
+                                                                     <div class="flex flex-col">
+                                                                         <span class="text-xs text-gray-400 uppercase tracking-wide">Salaire de base</span>
+                                                                         <span class="mt-1 font-mono font-bold text-gray-900 dark:text-white">{{ number_format($contratActuel->salaire_base, 2, ',', ' ') }} DHS</span>
+                                                                     </div>
+                                                                     <div class="flex flex-col">
+                                                                         <span class="text-xs text-gray-400 uppercase tracking-wide">Heures / semaine</span>
+                                                                         <span class="mt-1 font-medium text-gray-800 dark:text-gray-200">{{ $contratActuel->heures_hebdo }}h</span>
+                                                                     </div>
+                                                                     <div class="flex flex-col">
+                                                                         <span class="text-xs text-gray-400 uppercase tracking-wide">Date de début</span>
+                                                                         <span class="mt-1 text-gray-800 dark:text-gray-200">{{ $contratActuel->date_debut?->format('d/m/Y') ?? 'N/A' }}</span>
+                                                                     </div>
+                                                                     <div class="flex flex-col">
+                                                                         <span class="text-xs text-gray-400 uppercase tracking-wide">Date de fin</span>
+                                                                         <span class="mt-1 text-gray-800 dark:text-gray-200">
+                                                                             {{ $contratActuel?->date_fin?->format('d/m/Y') ?? 'Non définie' }}
+                                                                         </span>
+                                                                     </div>
+                                                                 </div>
+                                                             </div>
+                                                         @else
+                                                             <p class="text-xs italic text-gray-400 mt-2">Aucun contrat enregistré.</p>
+                                                         @endif
+                                                     @elseif($user->stagiaire)
+                                                         <h4 class="font-bold text-lg text-yellow-600 dark:text-yellow-400">Profil Stagiaire</h4>
+                                                         <div class="space-y-2">
+                                                             <div><strong>École d'origine :</strong> {{ $user->stagiaire?->ecole_origine ?? '-' }}</div>
+                                                             <div><strong>Sujet de stage :</strong> {{ $user->stagiaire?->sujet_stage ?? '-' }}</div>
+                                                             <div><strong>Département :</strong> {{ $user->stagiaire?->departement?->nom_departement ?? 'Non assigné' }}</div>
+                                                         </div>
+                                                     @elseif($user->client)
+                                                         <h4 class="font-bold text-lg text-green-600 dark:text-green-400">Profil Client</h4>
+                                                         <div class="space-y-2">
+                                                             <div><strong>Type :</strong> <span class="capitalize">{{ $user->client?->type_client ?? '-' }}</span></div>
+                                                             <div><strong>Société :</strong> {{ $user->client?->nom_societe ?? '-' }}</div>
+                                                             <div><strong>ICE :</strong> {{ $user->client?->ice ?? '-' }}</div>
+                                                         </div>
+                                                     @else
+                                                         <p class="text-gray-500 italic">Cet utilisateur n'est lié à aucune entité métier (ni Employé, ni Stagiaire, ni Client).</p>
+                                                     @endif
+                                                 </div>
+                                                 
+                                                 <div class="mt-6 flex justify-end">
+                                                     <button type="button" onclick="document.getElementById('modal_user_{{ $user->id }}').close()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md font-medium transition">Fermer</button>
+                                                 </div>
+                                             </div>
+                                         </dialog>
 
-                                    <!-- Modale Historique des Contrats -->
-                                    @if($user->employe && $user->hasRole('Employe_Standard'))
-                                    @php $contratActuelHistorique = $user->employe?->contratActuel; @endphp
-                                    <td x-show="historyOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" @click.self="historyOpen = false">
-                                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-2xl mx-auto text-left max-h-[90vh] overflow-y-auto">
-                                            <div class="flex justify-between items-center border-b pb-3 mb-4">
-                                                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                                    <svg class="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                    Historique des contrats — {{ $user->nom_complet }}
-                                                </h3>
-                                                <button @click="historyOpen = false" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
-                                            </div>
-                                            @forelse(($user->employe?->contrats ?? collect()) as $contrat)
-                                                <div class="mb-4 p-4 rounded-lg border {{ $contratActuelHistorique && $contrat->id === $contratActuelHistorique->id ? 'border-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-700' : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700' }}">
-                                                    @if($contratActuelHistorique && $contrat->id === $contratActuelHistorique->id)
-                                                        <span class="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-2 block">Contrat actuel</span>
-                                                    @endif
-                                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                                                        <div><strong>Type :</strong> {{ $contrat->type_contrat }}</div>
-                                                        <div><strong>Statut :</strong> <span class="capitalize">{{ $contrat->statut }}</span></div>
-                                                        <div><strong>Salaire :</strong> {{ number_format($contrat->salaire_base, 2, ',', ' ') }} DHS</div>
-                                                        <div><strong>Heures/sem. :</strong> {{ $contrat->heures_hebdo }}h</div>
-                                                        <div><strong>Début :</strong> {{ $contrat->date_debut?->format('d/m/Y') ?? '-' }}</div>
-                                                        <div><strong>Fin :</strong>
-                                                            {{ $contrat?->date_fin?->format('d/m/Y') ?? 'N/A' }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @empty
-                                                <p class="text-sm italic text-gray-400">Aucun contrat enregistré pour cet employé.</p>
-                                            @endforelse
-                                            <div class="mt-4 flex justify-end">
-                                                <button @click="historyOpen = false" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md font-medium transition">Fermer</button>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    @endif
+                                         <!-- Modale Historique des Contrats (HTML5 Dialog natif isolé) -->
+                                         @if($user->employe && $user->hasRole('Employe_Standard'))
+                                         @php $contratActuelHistorique = $user->employe?->contratActuel; @endphp
+                                         <dialog id="modal_history_{{ $user->id }}" onclick="if (event.target === this) this.close()" class="backdrop:bg-black/60 rounded-xl p-0 max-w-2xl w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 m-auto text-left max-h-[90vh]">
+                                             <div class="p-6 overflow-y-auto max-h-[90vh]">
+                                                 <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-4">
+                                                     <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                         <svg class="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                         </svg>
+                                                         Historique des contrats — {{ $user->nom_complet }}
+                                                     </h3>
+                                                     <button type="button" onclick="document.getElementById('modal_history_{{ $user->id }}').close()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl font-bold focus:outline-none">&times;</button>
+                                                 </div>
+                                                 @forelse(($user->employe?->contrats ?? collect()) as $contrat)
+                                                     <div class="mb-4 p-4 rounded-lg border {{ $contratActuelHistorique && $contrat->id === $contratActuelHistorique->id ? 'border-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-700' : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700' }}">
+                                                         @if($contratActuelHistorique && $contrat->id === $contratActuelHistorique->id)
+                                                             <span class="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-2 block">Contrat actuel</span>
+                                                         @endif
+                                                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                                                             <div><strong>Type :</strong> {{ $contrat->type_contrat }}</div>
+                                                             <div><strong>Statut :</strong> <span class="capitalize">{{ $contrat->statut }}</span></div>
+                                                             <div><strong>Salaire :</strong> {{ number_format($contrat->salaire_base, 2, ',', ' ') }} DHS</div>
+                                                             <div><strong>Heures/sem. :</strong> {{ $contrat->heures_hebdo }}h</div>
+                                                             <div><strong>Début :</strong> {{ $contrat->date_debut?->format('d/m/Y') ?? '-' }}</div>
+                                                             <div><strong>Fin :</strong>
+                                                                 {{ $contrat?->date_fin?->format('d/m/Y') ?? 'N/A' }}
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 @empty
+                                                     <p class="text-sm italic text-gray-400">Aucun contrat enregistré pour cet employé.</p>
+                                                 @endforelse
+                                                 <div class="mt-4 flex justify-end">
+                                                     <button type="button" onclick="document.getElementById('modal_history_{{ $user->id }}').close()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md font-medium transition">Fermer</button>
+                                                 </div>
+                                             </div>
+                                         </dialog>
+                                         @endif
+                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                         Aucun utilisateur trouvé.
                                     </td>
                                 </tr>

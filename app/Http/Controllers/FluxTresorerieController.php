@@ -13,7 +13,7 @@ class FluxTresorerieController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Employe_Standard')) {
+            if (auth()->user()->hasRole('Employe_Standard') && !auth()->user()->hasRole('Super Admin')) {
                 abort(403, 'Accès interdit.');
             }
             return $next($request);

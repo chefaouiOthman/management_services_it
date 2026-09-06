@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // --- MODULE 1 : HUMAIN (self-profile) ---
+    Route::get('users/create', [UserController::class, 'create'])->name('users.create')->middleware('role:Super Admin|Admin');
+    Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('role:Super Admin|Admin');
     Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
 
     // --- MODULE 2 : RH & SÉCURITÉ (consultation) ---
@@ -100,6 +102,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('supports', SupportCoursController::class)->only(['index', 'show']);
     Route::get('supports/{support}/download', [SupportCoursController::class, 'download'])->name('supports.download');
 
+    // Évaluations : tout utilisateur connecté peut consulter et soumettre une évaluation
+    Route::get('evaluations', [EvaluationSessionController::class, 'index'])->name('evaluations.index');
+    Route::get('evaluations/create', [EvaluationSessionController::class, 'create'])->name('evaluations.create');
+    Route::post('evaluations', [EvaluationSessionController::class, 'store'])->name('evaluations.store');
+    Route::get('evaluations/{evaluation}', [EvaluationSessionController::class, 'show'])->name('evaluations.show');
+
     // --- MODULE 5 : ACTIFS IT (consultation) ---
     Route::get('assets', [AssetMaterielController::class, 'index'])->name('assets.index');
     Route::get('assets/{asset}', [AssetMaterielController::class, 'show'])->name('assets.show');
@@ -120,8 +128,17 @@ Route::middleware('auth')->group(function () {
     Route::get('fiche_paies', [FichePaieController::class, 'index'])->name('fiche_paies.index');
     Route::get('fiche_paies/{fiche_paie}', [FichePaieController::class, 'show'])->name('fiche_paies.show');
     Route::get('note_de_frais', [NoteDeFraisController::class, 'index'])->name('note_de_frais.index');
+    Route::get('note_de_frais/create', [NoteDeFraisController::class, 'create'])->name('note_de_frais.create');
+    Route::post('note_de_frais', [NoteDeFraisController::class, 'store'])->name('note_de_frais.store');
     Route::get('note_de_frais/{note_de_frai}', [NoteDeFraisController::class, 'show'])->name('note_de_frais.show');
     Route::get('note_de_frais/{note_de_frai}/download', [NoteDeFraisController::class, 'download'])->name('note_de_frais.download');
+});
+
+// ============================================================
+// GESTION DYNAMIQUE DES RÔLES (Super Admin UNIQUEMENT)
+// ============================================================
+Route::middleware(['auth', 'role:Super Admin'])->group(function () {
+    Route::resource('roles', RoleController::class);
 });
 
 // ============================================================
@@ -131,11 +148,8 @@ Route::middleware('auth')->group(function () {
 // ============================================================
 Route::middleware(['auth', 'role:Super Admin|Admin'])->group(function () {
 
-    // --- GESTION DYNAMIQUE DES RÔLES (Super Admin only in controller) ---
-    Route::resource('roles', RoleController::class);
-
     // --- MODULE 1 : HUMAIN ---
-    Route::resource('users', UserController::class)->except(['show']);
+    Route::resource('users', UserController::class)->except(['create', 'store', 'show']);
     Route::resource('employes', EmployeController::class);
     Route::resource('stagiaires', StagiaireController::class);
     Route::resource('clients', ClientController::class);
@@ -170,7 +184,8 @@ Route::middleware(['auth', 'role:Super Admin|Admin'])->group(function () {
     Route::resource('supports', SupportCoursController::class)->except(['index', 'show']);
     Route::resource('inscriptions', InscriptionController::class);
     Route::patch('inscriptions/{inscription}/statut', [InscriptionController::class, 'updateStatut'])->name('inscriptions.statut');
-    Route::resource('evaluations', EvaluationSessionController::class);
+    // Évaluations : mutations réservées aux Admin/Super Admin (index/create/store/show gérés dans le groupe auth public)
+    Route::resource('evaluations', EvaluationSessionController::class)->except(['index', 'create', 'store', 'show']);
 
     // --- MODULE 5 : ACTIFS IT (mutations) ---
     Route::resource('assets', AssetMaterielController::class)->except(['index', 'show']);
@@ -199,7 +214,7 @@ Route::middleware(['auth', 'role:Super Admin|Admin'])->group(function () {
     Route::resource('ligne_factures', LigneFactureController::class);
     Route::resource('fiche_paies', FichePaieController::class)->except(['index', 'show']);
     Route::patch('fiche_paies/{fiche}/payer', [FichePaieController::class, 'payer'])->name('fiche_paies.payer');
-    Route::resource('note_de_frais', NoteDeFraisController::class)->except(['index', 'show']);
+    Route::resource('note_de_frais', NoteDeFraisController::class)->only(['edit', 'update', 'destroy']);
     Route::patch('note_de_frais/{note}/statut', [NoteDeFraisController::class, 'updateStatut'])->name('note_de_frais.statut');
 });
 

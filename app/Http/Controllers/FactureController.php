@@ -15,7 +15,7 @@ class FactureController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (auth()->user()->hasRole('Employe_Standard')) {
+            if (auth()->user()->hasRole('Employe_Standard') && !auth()->user()->hasRole('Super Admin')) {
                 abort(403, 'Accès interdit.');
             }
             return $next($request);
@@ -34,7 +34,7 @@ class FactureController extends Controller
     {
         $query = Facture::with(['client.user', 'fluxTresorerie', 'ligneFactures']);
 
-        if (auth()->user()->hasRole('Client')) {
+        if (auth()->user()->hasRole('Client') && !auth()->user()->hasRole('Super Admin')) {
             $query->where('client_id', auth()->id());
         }
 
@@ -65,7 +65,7 @@ class FactureController extends Controller
      */
     public function create()
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $clients = Client::with('user')->get();
         return view('factures.create', compact('clients'));
     }
@@ -75,7 +75,7 @@ class FactureController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $request->validate([
             'client_id'       => 'required|exists:clients,user_id',
             'num_facture'     => 'required|string|max:50|unique:factures,num_facture',
@@ -84,6 +84,7 @@ class FactureController extends Controller
             'categorie_flux_id' => 'nullable|exists:categorie_flux,id',
             'new_categorie_flux' => 'nullable|string|max:100',
             'lignes'          => 'nullable|array',
+            'lignes.*'        => 'required_with:lignes|array',
             'lignes.*.designation'    => 'required_with:lignes|string|max:255',
             'lignes.*.quantite'       => 'required_with:lignes|numeric|min:0',
             'lignes.*.prix_unitaire_ht' => 'required_with:lignes|numeric|min:0',
@@ -134,7 +135,7 @@ class FactureController extends Controller
      */
     public function edit($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $facture = Facture::findOrFail($id);
         $clients = Client::with('user')->get();
         return view('factures.edit', compact('facture', 'clients'));
@@ -145,7 +146,7 @@ class FactureController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $facture = Facture::findOrFail($id);
 
         $request->validate([
@@ -184,7 +185,7 @@ class FactureController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $facture = Facture::findOrFail($id);
 
         DB::transaction(function () use ($facture) {
@@ -262,7 +263,7 @@ class FactureController extends Controller
             'statut_paiement' => 'required|in:emise,en_retard_paiement,soldee',
         ]);
 
-        if (!auth()->user()->hasPermissionTo('facture-edit')) {
+        if (!auth()->user()->hasRole('Super Admin') && !auth()->user()->hasPermissionTo('facture-edit')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 

@@ -57,7 +57,7 @@ class ProjetController extends Controller
      */
     public function create()
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $clients = Client::with('user')->get();
         $technologies = Technologie::all();
         return view('projets.create', compact('clients', 'technologies'));
@@ -68,7 +68,7 @@ class ProjetController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $request->validate([
             'client_id'        => 'required|exists:clients,user_id',
             'nom_projet'       => 'required|string|max:150',
@@ -125,7 +125,7 @@ class ProjetController extends Controller
             'livrables',
             'taches',
             'feuilleTemps' => function ($query) {
-                if (!auth()->user()->hasRole('Admin')) {
+                if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
                     $query->where('employe_id', auth()->id());
                 }
             },
@@ -151,7 +151,7 @@ class ProjetController extends Controller
      */
     public function edit($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $projet = Projet::with('technologies')->findOrFail($id);
         $clients = Client::with('user')->get();
         $technologies = Technologie::all();
@@ -163,7 +163,7 @@ class ProjetController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $projet = Projet::findOrFail($id);
 
         $request->validate([
@@ -214,7 +214,7 @@ class ProjetController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $projet = Projet::findOrFail($id);
 
         DB::transaction(function () use ($projet) {
@@ -231,7 +231,7 @@ class ProjetController extends Controller
      */
     public function updateTacheStatut(Request $request, Projet $projet, Tache $tache)
     {
-        if (!auth()->user()->hasRole('Admin')) { abort(403); }
+        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) { abort(403); }
         $request->validate([
             'statut_tache' => 'required|in:backlog,en_cours,en_revue,termine',
         ]);
