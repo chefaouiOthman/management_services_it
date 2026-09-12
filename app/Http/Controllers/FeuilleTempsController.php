@@ -74,11 +74,25 @@ class FeuilleTempsController extends Controller
     /**
      * 2. CREATE
      */
-    public function create(Projet $projet)
+    public function create(?Projet $projet = null)
     {
+        if (!$projet || !$projet->exists) {
+            $projetId = request('projet_id') ?? request('projet');
+            if ($projetId) {
+                $projet = Projet::find($projetId);
+            }
+            if (!$projet || !$projet->exists) {
+                $projet = Projet::first();
+            }
+        }
+
+        if (!$projet) {
+            return redirect()->route('projets.index')->with('error', 'Veuillez créer un projet avant de saisir des feuilles de temps.');
+        }
+
         $employes = Auth::user()->hasAnyRole(['Admin', 'Super Admin']) ? $this->excludeSuperAdminsFromEmployes(Employe::with('user'))->get() : Employe::where('user_id', Auth::id())->get();
         // Les tâches affichées seront uniquement celles de ce projet
-        $taches = $projet->taches;
+        $taches = $projet->taches ?? collect();
         
         return view('feuille_temps.create', compact('employes', 'projet', 'taches'));
     }
@@ -86,8 +100,13 @@ class FeuilleTempsController extends Controller
     /**
      * 3. STORE
      */
-    public function store(Request $request, Projet $projet)
+    public function store(Request $request, ?Projet $projet = null)
     {
+        if (!$projet || !$projet->exists) {
+            $projetId = $request->input('projet_id') ?? $request->input('projet');
+            $projet = Projet::findOrFail($projetId);
+        }
+
         $request->validate([
             'employe_id'   => 'required|exists:employes,user_id',
             'date_effort'  => 'required|date',

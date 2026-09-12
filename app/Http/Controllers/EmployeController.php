@@ -172,15 +172,32 @@ class EmployeController extends Controller
                 'date_embauche' => $request->date_embauche,
             ]);
 
-            if ($contratActuel = $employe->contratActuel) {
-                $contratActuel->update([
-                    'type_contrat'  => $request->type_contrat,
-                    'date_debut'    => $request->date_debut,
-                    'date_fin'      => $request->date_fin,
-                    'salaire_base'  => $request->salaire_base,
-                    'heures_hebdo'  => $request->heures_hebdo,
-                    'statut'        => $request->statut,
-                ]);
+            $contratActuel = $employe->contratActuel;
+            if ($contratActuel) {
+                $hasChanged =
+                    $contratActuel->type_contrat !== $request->type_contrat ||
+                    optional($contratActuel->date_debut)->format('Y-m-d') !== $request->date_debut ||
+                    (string) $contratActuel->salaire_base !== (string) $request->salaire_base ||
+                    (string) $contratActuel->heures_hebdo !== (string) $request->heures_hebdo;
+
+                if ($hasChanged) {
+                    // Terminer l'ancien contrat pour conserver l'historique
+                    $contratActuel->update(['statut' => 'termine']);
+
+                    // Créer le nouveau contrat actif
+                    Contrat::create([
+                        'employe_id'    => $employe->user_id,
+                        'type_contrat'  => $request->type_contrat,
+                        'date_debut'    => $request->date_debut,
+                        'date_fin'      => $request->date_fin,
+                        'salaire_base'  => $request->salaire_base,
+                        'heures_hebdo'  => $request->heures_hebdo,
+                        'statut'        => $request->statut,
+                    ]);
+                } else {
+                    // Seul le statut peut changer sans créer un nouvel enregistrement
+                    $contratActuel->update(['statut' => $request->statut]);
+                }
             } else {
                 Contrat::create([
                     'employe_id'    => $employe->user_id,

@@ -87,12 +87,25 @@ Route::middleware('auth')->group(function () {
 
     // --- MODULE 3 : PRODUCTION (consultation filtrée) ---
     Route::get('projets', [ProjetController::class, 'index'])->name('projets.index');
+    // ⚠️ IMPORTANT : projets/create DOIT être déclaré AVANT projets/{projet}
+    // pour éviter que Laravel interprète "create" comme un ID de projet (→ 404).
+    Route::get('projets/create', [ProjetController::class, 'create'])->name('projets.create')->middleware('role:Super Admin|Admin');
+    Route::get('projets/{projet}/edit', [ProjetController::class, 'edit'])->name('projets.edit')->middleware('role:Super Admin|Admin');
     Route::get('projets/{projet}', [ProjetController::class, 'show'])->name('projets.show');
     Route::get('taches', [TacheController::class, 'index'])->name('taches.index');
     Route::get('taches/{tache}', [TacheController::class, 'show'])->name('taches.show');
+    // ⚠️ IMPORTANT : feuille_temps/create et feuille_temps/select_project DOIVENT être déclarés AVANT feuille_temps/{feuille_temp}
+    // pour éviter que Laravel interprète "create" ou "select_project" comme un paramètre dynamique {feuille_temp} (→ 404).
     Route::get('feuille_temps', [FeuilleTempsController::class, 'index'])->name('feuille_temps.index');
-    Route::get('feuille_temps/{feuille_temp}', [FeuilleTempsController::class, 'show'])->name('feuille_temps.show');
+    Route::get('feuille_temps/create', [FeuilleTempsController::class, 'create'])->name('feuille_temps.create');
+    Route::post('feuille_temps', [FeuilleTempsController::class, 'store'])->name('feuille_temps.store');
     Route::get('feuille_temps/select_project', [FeuilleTempsController::class, 'selectProject'])->name('feuille_temps.select_project');
+    Route::get('projets/{projet}/feuille_temps/create', [FeuilleTempsController::class, 'create'])->name('projets.feuille_temps.create');
+    Route::post('projets/{projet}/feuille_temps', [FeuilleTempsController::class, 'store'])->name('projets.feuille_temps.store');
+    // Aliases pour tolérance d'URL (feuilles-de-temps/create, timesheets/create)
+    Route::get('feuilles-de-temps/create', [FeuilleTempsController::class, 'create'])->name('feuilles-de-temps.create');
+    Route::get('timesheets/create', [FeuilleTempsController::class, 'create'])->name('timesheets.create');
+    Route::get('feuille_temps/{feuille_temp}', [FeuilleTempsController::class, 'show'])->name('feuille_temps.show');
     Route::get('technologies', [TechnologieController::class, 'index'])->name('technologies.index');
     Route::get('technologies/{technologie}', [TechnologieController::class, 'show'])->name('technologies.show');
 
@@ -162,13 +175,11 @@ Route::middleware(['auth', 'role:Super Admin|Admin'])->group(function () {
     Route::resource('pointages', PointageController::class)->except(['index']);
 
     // --- MODULE 3 : PRODUCTION (mutations) ---
-    Route::resource('projets', ProjetController::class)->except(['index', 'show']);
+    Route::resource('projets', ProjetController::class)->only(['store', 'update', 'destroy']);
     Route::resource('projets.taches', ProjetTacheController::class)->except(['index', 'show']);
     Route::patch('projets/{projet}/taches/{tache}/statut', [ProjetController::class, 'updateTacheStatut'])->name('projets.taches.statut');
 
     Route::resource('taches', TacheController::class)->except(['index', 'show']);
-    Route::get('projets/{projet}/feuille_temps/create', [FeuilleTempsController::class, 'create'])->name('projets.feuille_temps.create');
-    Route::post('projets/{projet}/feuille_temps', [FeuilleTempsController::class, 'store'])->name('projets.feuille_temps.store');
     Route::resource('feuille_temps', FeuilleTempsController::class)->except(['create', 'store', 'selectProject', 'index', 'show']);
 
     Route::get('projets/{projet}/livrables/create', [LivrableController::class, 'createForProject'])->name('projets.livrables.create');

@@ -80,7 +80,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                          <button type="button" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal_user_{{ $user->id }}').showModal();" class="font-medium text-blue-600 dark:text-blue-500 hover:underline mr-3">Voir les détails</button>
-                                         @if($user->employe && $user->hasRole('Employe_Standard'))
+                                         @if($user->employe && $user->hasAnyRole(['Employe_Standard', 'Admin']))
                                              <button type="button" onclick="event.stopPropagation(); event.preventDefault(); document.getElementById('modal_history_{{ $user->id }}').showModal();" class="inline-flex items-center font-medium text-amber-600 dark:text-amber-500 hover:underline mr-3">
                                                  <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -183,7 +183,7 @@
                                          </dialog>
 
                                          <!-- Modale Historique des Contrats (HTML5 Dialog natif isolé) -->
-                                         @if($user->employe && $user->hasRole('Employe_Standard'))
+                                         @if($user->employe && $user->hasAnyRole(['Employe_Standard', 'Admin']))
                                          @php $contratActuelHistorique = $user->employe?->contratActuel; @endphp
                                          <dialog id="modal_history_{{ $user->id }}" onclick="if (event.target === this) this.close()" class="backdrop:bg-black/60 rounded-xl p-0 max-w-2xl w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 m-auto text-left max-h-[90vh]">
                                              <div class="p-6 overflow-y-auto max-h-[90vh]">

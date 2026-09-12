@@ -245,6 +245,12 @@ class UserController extends Controller
             'roles.*'        => 'exists:roles,name',
             'departement_id' => 'nullable|exists:departements,id',
             'date_embauche'  => 'nullable|date',
+            'type_contrat'   => 'nullable|in:CDI,CDD,Freelance',
+            'date_debut'     => 'nullable|date',
+            'date_fin'       => 'nullable|date|after_or_equal:date_debut',
+            'salaire_base'   => 'nullable|numeric|min:0',
+            'heures_hebdo'   => 'nullable|integer|min:0',
+            'statut'         => 'nullable|in:actif,suspendu,termine',
             'ecole_origine'  => 'nullable|string|max:150',
             'sujet_stage'    => 'nullable|string',
             'type_client'    => 'nullable|in:physique,morale',
@@ -272,20 +278,62 @@ class UserController extends Controller
                 'est_actif'   => $request->has('est_actif') ? (bool)$request->est_actif : $user->est_actif,
             ]);
 
-            if ($request->has('roles')) {
+            // Synchroniser les rôles UNIQUEMENT s'ils sont explicitement fournis et non vides
+            if ($request->has('roles') && !empty($request->roles)) {
                 $user->syncRoles($request->roles);
-            } else {
-                $user->syncRoles([]);
             }
 
             // 2. Mise à jour polymorphique de l'entité fille
-           if ($user->employe) {
+            if ($user->employe) {
                 $user->employe->update([
                     'departement_id' => $request->departement_id,
                     'date_embauche'  => $request->date_embauche ?? $user->employe->date_embauche,
                 ]);
-            }
-         elseif ($user->stagiaire) {
+
+                // Mise à jour ou création du contrat de l'employé
+                // On compare les valeurs pour ne créer un nouveau contrat que si les données ont changé.
+                if ($request->filled('type_contrat')) {
+                    $contratActuel = $user->employe->contratActuel;
+
+                    if ($contratActuel) {
+                        $hasChanged =
+                            $contratActuel->type_contrat !== $request->type_contrat ||
+                            optional($contratActuel->date_debut)->format('Y-m-d') !== $request->date_debut ||
+                            (string) $contratActuel->salaire_base !== (string) $request->salaire_base ||
+                            (string) $contratActuel->heures_hebdo !== (string) $request->heures_hebdo;
+
+                        if ($hasChanged) {
+                            // Terminer l'ancien contrat pour conserver l'historique
+                            $contratActuel->update(['statut' => 'termine']);
+
+                            // Créer le nouveau contrat actif
+                            $user->employe->contrats()->create([
+                                'type_contrat' => $request->type_contrat,
+                                'date_debut'   => $request->date_debut ?? now()->format('Y-m-d'),
+                                'date_fin'     => $request->date_fin,
+                                'salaire_base' => $request->salaire_base ?? $contratActuel->salaire_base,
+                                'heures_hebdo' => $request->heures_hebdo ?? $contratActuel->heures_hebdo,
+                                'statut'       => $request->statut ?? 'actif',
+                            ]);
+                        } else {
+                            // Aucune donnée contractuelle n'a changé — on met juste à jour le statut si fourni
+                            if ($request->filled('statut')) {
+                                $contratActuel->update(['statut' => $request->statut]);
+                            }
+                        }
+                    } else {
+                        // Aucun contrat existant — on en crée un premier
+                        $user->employe->contrats()->create([
+                            'type_contrat' => $request->type_contrat,
+                            'date_debut'   => $request->date_debut ?? now()->format('Y-m-d'),
+                            'date_fin'     => $request->date_fin,
+                            'salaire_base' => $request->salaire_base ?? 0,
+                            'heures_hebdo' => $request->heures_hebdo ?? 40,
+                            'statut'       => $request->statut ?? 'actif',
+                        ]);
+                    }
+                }
+            } elseif ($user->stagiaire) {
                 $user->stagiaire->update([
                     'departement_id' => $request->departement_id,
                     'ecole_origine'  => $request->ecole_origine ?? $user->stagiaire->ecole_origine,
@@ -300,7 +348,7 @@ class UserController extends Controller
             }
 
             // Handle role changes - create new entity if role changed to employee/stagiaire/client
-            if ($request->has('roles')) {
+            if ($request->has('roles') && !empty($request->roles)) {
                 if ((in_array('Employe_Standard', $request->roles) || in_array('Admin', $request->roles)) && !$user->employe) {
                     $employe = $user->employe()->create([
                         'departement_id' => $request->input('departement_id') ?: null,

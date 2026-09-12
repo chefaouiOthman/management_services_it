@@ -45,6 +45,9 @@
                                 </option>
                             @endforeach
                         </select>
+                        @if($isEdit)
+                            <input type="hidden" name="roles[]" :value="role">
+                        @endif
                         <x-input-error :messages="$errors->get('roles')" class="mt-2" />
                         <x-input-error :messages="$errors->get('roles.0')" class="mt-2" />
                     </div>
